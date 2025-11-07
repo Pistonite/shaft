@@ -5,9 +5,9 @@ edition = "2024"
 
 [dependencies]
 cu = { workspace = true, features = ["print", "process"] }
-drillshaft-env = { path = "../drillshaft-env" }
 enum-map.workspace = true
 enumset.workspace = true
+op.workspace = true
 phf = { version = "0.13.1", features = ["macros"] }
 
 [build-dependencies]

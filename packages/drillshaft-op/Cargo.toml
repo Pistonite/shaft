@@ -1,11 +1,12 @@
 [package]
-name = "drillshaft-env"
+name = "drillshaft-op"
 version = "0.0.0"
 edition = "2024"
 
 [dependencies]
 cu = { workspace = true, features = ["print", "process", "json"] }
 enumset.workspace = true
+reqwest = { version = "0.12.24", features = ["gzip"] }
 serde = "1"
 
 [target.'cfg(windows)'.dependencies]

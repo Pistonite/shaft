@@ -1,4 +1,7 @@
-use drillshaft_env::Platform;
+use std::path::{Path, PathBuf};
+
+use cu::pre::*;
+use op::Platform;
 use enumset::EnumSet;
 
 macro_rules! metadata_binaries {
@@ -111,7 +114,25 @@ pub enum Verified {
 }
 
 pub struct Context {
+    /// The id of the package being operated on
+    pub pkg: PkgId,
     pub platform: Platform,
+}
+impl Context {
+    pub fn package_name(&self) -> &'static str {
+        self.pkg.to_str()
+    }
+    pub fn temp_dir(&self) -> PathBuf {
+        op::home::temp_dir(self.package_name())
+    }
+    pub fn install_dir(&self) -> PathBuf {
+        op::home::install_dir(self.package_name())
+    }
+    pub fn check_bin_location(&self, binary: &str, expected: &Path) -> cu::Result<()> {
+        let actual = cu::which(binary)?;
+        cu::ensure!(expected== actual, "expected location: '{}', actual location: '{}'", expected.display(), actual.display());
+        Ok(())
+    }
 }
 
 #[path = "./packages.gen.rs"]
@@ -123,5 +144,5 @@ pub(crate) mod pre {
     pub(crate) use crate::{
         BinId, Context, Package, PkgId, Verified, metadata_binaries, metadata_platforms,
     };
-    pub(crate) use drillshaft_env::{Platform, VersionNumber as _};
+    pub(crate) use op::{Platform, VersionNumber as _};
 }

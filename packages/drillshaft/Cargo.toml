@@ -5,4 +5,4 @@ edition = "2024"
 
 [dependencies]
 cu = { workspace = true, features = ["print", "prompt", "fs"] }
-drillshaft-env = { path = "../drillshaft-env" }
+op.workspace = true

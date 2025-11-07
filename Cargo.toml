@@ -2,18 +2,23 @@
 resolver = "2"
 members = [
     "packages/drillshaft",
-    "packages/drillshaft-build", "packages/drillshaft-env",
-    "packages/drillshaft-registry"
+    "packages/drillshaft-build",
+    "packages/drillshaft-op",
+    "packages/drillshaft-registry",
 ]
 
 [workspace.dependencies.cu]
 package = "pistonite-cu"
-version = "0.5.5"
+version = "0.6.0"
 
 [workspace.dependencies.pm]
 package = "pistonite-pm"
-version = "0.1.3"
+version = "0.1.4"
 default-features = false
+
+[workspace.dependencies.op]
+package = "drillshaft-op"
+path = "./packages/drillshaft-op"
 
 [workspace.dependencies]
 enum-map = "2.7.3"

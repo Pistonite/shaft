@@ -1,13 +1,6 @@
-mod platform;
-pub use platform::*;
-mod version;
-pub use version::*;
-pub mod installer;
 
-use std::{
-    collections::BTreeMap,
-    path::{Path, PathBuf},
-};
+use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
 
 use cu::pre::*;
 

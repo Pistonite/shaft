@@ -96,5 +96,7 @@ pub fn full_init() -> cu::Result<()> {
         "env check failed - did you forget to restart the shell/terminal?"
     )?;
 
+    op::home::init(home_path);
+
     Ok(())
 }
