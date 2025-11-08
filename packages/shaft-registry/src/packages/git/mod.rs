@@ -25,7 +25,7 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
             // portable git
             let expected = op::home::bin("git.exe");
             cu::check!(ctx.check_bin_location("git", &expected),
-                "current 'git' is not installed with drillshaft; please uninstall it or use the 'system-git' package")?;
+                "current 'git' is not installed with shaft; please uninstall it or use the 'system-git' package")?;
         }
     }
 
@@ -51,6 +51,14 @@ pub async fn download(ctx: &Context) -> cu::Result<()> {
             return Ok(())
         }
     }
+}
+
+pub fn install(ctx: &Context) -> cu::Result<()> {
+    todo!()
+}
+
+pub fn uninstall(ctx: &Context) -> cu::Result<()> {
+    todo!()
 }
 
 pub mod version;

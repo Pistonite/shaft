@@ -170,46 +170,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "drillshaft"
-version = "0.1.0"
-dependencies = [
- "drillshaft-op",
- "pistonite-cu",
-]
-
-[[package]]
-name = "drillshaft-build"
-version = "0.0.0"
-dependencies = [
- "itertools",
- "pistonite-cu",
- "pistonite-pm",
-]
-
-[[package]]
-name = "drillshaft-op"
-version = "0.0.0"
-dependencies = [
- "enumset",
- "pistonite-cu",
- "reqwest",
- "serde",
- "winreg",
-]
-
-[[package]]
-name = "drillshaft-registry"
-version = "0.0.0"
-dependencies = [
- "drillshaft-build",
- "drillshaft-op",
- "enum-map",
- "enumset",
- "phf",
- "pistonite-cu",
-]
-
-[[package]]
 name = "dunce"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1300,6 +1260,46 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "shaft-build"
+version = "0.0.0"
+dependencies = [
+ "itertools",
+ "pistonite-cu",
+ "pistonite-pm",
+]
+
+[[package]]
+name = "shaft-cli"
+version = "0.1.0"
+dependencies = [
+ "pistonite-cu",
+ "shaft-op",
+]
+
+[[package]]
+name = "shaft-op"
+version = "0.0.0"
+dependencies = [
+ "enumset",
+ "pistonite-cu",
+ "reqwest",
+ "serde",
+ "winreg",
+]
+
+[[package]]
+name = "shaft-registry"
+version = "0.0.0"
+dependencies = [
+ "enum-map",
+ "enumset",
+ "phf",
+ "pistonite-cu",
+ "shaft-build",
+ "shaft-op",
 ]
 
 [[package]]

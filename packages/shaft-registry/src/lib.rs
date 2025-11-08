@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::{path::{Path, PathBuf}, sync::Arc};
 
 use cu::pre::*;
 use op::Platform;
@@ -38,7 +38,7 @@ pub struct Package {
     // optional functions
     binary_dependencies_fn: fn(&Context) -> EnumSet<BinId>,
     config_dependencies_fn: fn(&Context) -> EnumSet<PkgId>,
-    download_fn: fn(&Context) -> cu::BoxedFuture<cu::Result<()>>,
+    download_fn: fn(Arc<Context>) -> cu::BoxedFuture<cu::Result<()>>,
     build_fn: fn(&Context) -> cu::Result<()>,
     configure_fn: fn(&Context) -> cu::Result<()>,
     clean_fn: fn(&Context) -> cu::Result<()>,
@@ -64,7 +64,7 @@ impl Package {
     /// Download the package. This is async and could be executed in parallel
     /// for multiple packages
     #[inline(always)]
-    pub async fn download(&self, ctx: &Context) -> cu::Result<()> {
+    pub async fn download(&self, ctx: Arc<Context>) -> cu::Result<()> {
         (self.download_fn)(ctx).await
     }
 

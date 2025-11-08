@@ -1,10 +1,10 @@
 [workspace]
 resolver = "2"
 members = [
-    "packages/drillshaft",
-    "packages/drillshaft-build",
-    "packages/drillshaft-op",
-    "packages/drillshaft-registry",
+    "packages/shaft-build",
+    "packages/shaft-cli",
+    "packages/shaft-op",
+    "packages/shaft-registry",
 ]
 
 [workspace.dependencies.cu]
@@ -17,9 +17,10 @@ version = "0.1.4"
 default-features = false
 
 [workspace.dependencies.op]
-package = "drillshaft-op"
-path = "./packages/drillshaft-op"
+package = "shaft-op"
+path = "./packages/shaft-op"
 
 [workspace.dependencies]
 enum-map = "2.7.3"
 enumset = "1.1.10"
+itertools = "0.14.0"

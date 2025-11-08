@@ -1,8 +1,14 @@
 [package]
-name = "drillshaft"
+name = "shaft-cli"
 version = "0.1.0"
 edition = "2024"
+publish = false
 
 [dependencies]
 cu = { workspace = true, features = ["print", "prompt", "fs"] }
 op.workspace = true
+
+[[bin]]
+name = "shaft"
+path = "src/main.rs"
+

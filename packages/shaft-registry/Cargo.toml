@@ -1,7 +1,8 @@
 [package]
-name = "drillshaft-registry"
+name = "shaft-registry"
 version = "0.0.0"
 edition = "2024"
+publish = false
 
 [dependencies]
 cu = { workspace = true, features = ["print", "process"] }
@@ -12,4 +13,4 @@ phf = { version = "0.13.1", features = ["macros"] }
 
 [build-dependencies]
 cu = { workspace = true }
-drillshaft-build = { path = "../drillshaft-build" }
+shaft-build = { path = "../shaft-build" }

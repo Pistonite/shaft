@@ -169,7 +169,7 @@ impl RegistryGenerator {
             if metadata.has_download {
                 writeln!(
                     out,
-                    "        download_fn: || Box::pin(_pkg_{snake_name}::download()),"
+                    "        download_fn: |ctx| Box::pin(async move {{ _pkg_{snake_name}::download(ctx.as_ref()).await }}),"
                 )?;
             } else {
                 writeln!(out, "        download_fn: _stub::ok_future,")?;

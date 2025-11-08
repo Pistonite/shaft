@@ -1,4 +1,4 @@
-//! Operations for the DRILLSHAFT_HOME directory
+//! Operations for the SHAFT_HOME directory
 //!
 //! The directory is structured as:
 //! - `bin/`: Binaries installed and managed by the package manager (including symlinks and wrapper
@@ -13,12 +13,12 @@ use std::sync::OnceLock;
 
 static HOME_PATH: OnceLock<PathBuf> = OnceLock::new();
 
-/// Initialize the DRILLSHAFT_HOME directory path.
+/// Initialize the SHAFT_HOME directory path.
 ///
 /// Will fail silently and print a warning if it's already set
 pub fn init(path: PathBuf) {
     if HOME_PATH.set(path).is_err() {
-        cu::warn!("DRILLSHAFT_HOME is already initialized at '{}'", HOME_PATH.get().unwrap().display())
+        cu::warn!("SHAFT_HOME is already initialized at '{}'", HOME_PATH.get().unwrap().display())
     }
 }
 
