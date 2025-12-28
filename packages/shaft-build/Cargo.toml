@@ -5,6 +5,6 @@ edition = "2024"
 publish = false
 
 [dependencies]
-cu = { workspace = true, features = ["fs", "json"] }
+cu = { workspace = true, features = ["fs", "json", "derive"] }
 pm = { workspace = true, features = ["full"] }
 itertools.workspace = true

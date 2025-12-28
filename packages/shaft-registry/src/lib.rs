@@ -1,19 +1,42 @@
 use std::{path::{Path, PathBuf}, sync::Arc};
 
 use cu::pre::*;
-use op::Platform;
 use enumset::EnumSet;
 
 macro_rules! metadata_binaries {
     ($($l:literal),*) => {};
 }
 pub(crate) use metadata_binaries;
-macro_rules! metadata_platforms {
-    ($($l:literal),*) => {};
+
+macro_rules! check_bin_in_path {
+    ($l:literal) => {
+        if cu::which($l).is_err() {
+            return Ok(Verified::NotInstalled);
+        }
+    };
 }
-pub(crate) use metadata_platforms;
+pub(crate) use check_bin_in_path;
+
+macro_rules! check_installed_with_pacman {
+    ($l:literal) => {
+        if !op::installer::pacman::is_installed($l)? {
+            cu::bail!(concat!("current '",$l,"' is not installed with pacman; please uninstall it"))
+        }
+    };
+    ($l:literal, $system:literal) => {
+        if !op::installer::pacman::is_installed($l)? {
+            cu::bail!(concat!("current '",$l,"' is not installed with pacman; please uninstall it or use the '",$system,"' package"))
+        }
+    };
+}
+pub(crate) use check_installed_with_pacman;
 
 pub struct Package {
+    /// If the package is enabled (supported) on the current platform
+    ///
+    /// For easy generation, the package metadata may be generated and stubbed on
+    /// unsupported platforms
+    pub enabled: bool,
     /// Name of the package in kebab case.
     ///
     /// The casing is ensured by build script for packages declared in packages/
@@ -21,9 +44,10 @@ pub struct Package {
 
     /// Binaries provided by this package. Declared by `metadata_binaries!` macro
     pub binaries: EnumSet<BinId>,
-    /// Platforms supported by this package. Declared by `metadata_platforms!` macro.
-    /// By default, all platforms are supported
-    pub platforms: EnumSet<Platform>,
+    /// Linux package manager flavors supported by this package.
+    /// By default, all flavors are supported (for example,
+    /// downloading a binary)
+    pub linux_flavors: EnumSet<op::LinuxFlavor>,
 
     /// Short description. The first line of the doc comment
     pub short_desc: &'static str,
@@ -48,6 +72,22 @@ impl Package {
     pub fn id(&self) -> PkgId {
         PkgId::from_str(self.name).unwrap()
     }
+    pub const fn stub(name: &'static str) -> Self {
+        Self { enabled: false, name, binaries: enumset::enum_set!{}, 
+            linux_flavors: enumset::enum_set!{}, 
+            short_desc: "", 
+            long_desc: "", 
+            verify_fn: _stub::unsupported_platform, 
+            install_fn: _stub::unsupported_platform, 
+            uninstall_fn: _stub::unsupported_platform, 
+            binary_dependencies_fn: _stub::empty_bin_dependencies, 
+            config_dependencies_fn: _stub::empty_pkg_dependencies, 
+            download_fn: _stub::ok_future,
+            build_fn: _stub::ok,
+            configure_fn: _stub::ok,
+            clean_fn: _stub::ok,
+        }
+    }
 
     /// Get the binaries the package depend on
     #[inline(always)]
@@ -58,6 +98,12 @@ impl Package {
     /// Verify the package is installed and up-to-date
     #[inline(always)]
     pub fn verify(&self, ctx: &Context) -> cu::Result<Verified> {
+        #[cfg(target_os = "linux")]
+        {
+            if !self.linux_flavors.contains(op::linux_flavor()) {
+                cu::bail!("current package manager flavor is not supported.");
+            }
+        }
         (self.verify_fn)(ctx)
     }
 
@@ -116,7 +162,6 @@ pub enum Verified {
 pub struct Context {
     /// The id of the package being operated on
     pub pkg: PkgId,
-    pub platform: Platform,
 }
 impl Context {
     pub fn package_name(&self) -> &'static str {
@@ -133,19 +178,18 @@ impl Context {
         cu::ensure!(expected== actual, "expected location: '{}', actual location: '{}'", expected.display(), actual.display());
         Ok(())
     }
-    pub const fn is_windows(&self) -> bool {
-        matches!(self.platform, Platform::Windows)
-    }
 }
 
 #[path = "./packages.gen.rs"]
 #[rustfmt::skip]
 mod _gen;
 pub use _gen::{BinId, PkgId};
+#[path = "./package_stub.rs"]
+pub mod _stub;
 
 pub(crate) mod pre {
     pub(crate) use crate::{
-        BinId, Context, Package, PkgId, Verified, metadata_binaries, metadata_platforms,
+        BinId, Context, Package, PkgId, Verified, metadata_binaries, check_bin_in_path, check_installed_with_pacman
     };
-    pub(crate) use op::{Platform, VersionNumber as _};
+    pub(crate) use op::{VersionNumber as _};
 }

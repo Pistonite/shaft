@@ -1,6 +1,7 @@
 use std::path::Path;
 
 fn main() -> cu::Result<()> {
-    let crate_path = std::env::var("CARGO_MANIFEST_DIR")?;
-    shaft_build::build_registry(Path::new(&crate_path))
+    let crate_path = cu::env_var("CARGO_MANIFEST_DIR")?;
+    shaft_build::run_build(Path::new(&crate_path));
+    Ok(())
 }

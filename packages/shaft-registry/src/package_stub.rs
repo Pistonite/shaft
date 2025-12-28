@@ -16,3 +16,7 @@ pub fn ok_future(_: Arc<crate::Context>) -> cu::BoxedFuture<cu::Result<()>> {
 pub fn ok(_: &crate::Context) -> cu::Result<()> {
     Ok(())
 }
+
+pub fn unsupported_platform<T>(_: &crate::Context) -> cu::Result<T> {
+    cu::bail!("this package is not supported on the current platform/flavor");
+}

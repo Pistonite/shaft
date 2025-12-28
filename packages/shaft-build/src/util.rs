@@ -1,0 +1,218 @@
+use std::collections::BTreeMap;
+
+use cu::pre::*;
+
+pub fn generate_casings_from_kebab<T: AsRef<str>>(kebab_values: &[T]) -> (Vec<String>, Vec<String>) {
+    let mut pascal = Vec::with_capacity(kebab_values.len());
+    let mut snake = Vec::with_capacity(kebab_values.len());
+    for name in kebab_values {
+        let n = name.as_ref();
+        pascal.push(kebab_to_pascal(n));
+        snake.push(kebab_to_snake(n));
+    }
+    (pascal, snake)
+}
+
+pub fn is_kebab(s: &str) -> bool {
+    s.chars()
+        .all(|c| c.is_ascii_lowercase() || matches!(c, '0'..='9') || c == '-')
+}
+
+pub fn kebab_to_pascal(kebab: &str) -> String {
+    let mut pascal = String::with_capacity(kebab.len());
+    for part in kebab.split('-') {
+        let Some(c) = part.chars().next() else {
+            continue;
+        };
+        pascal.push(c.to_ascii_uppercase());
+        pascal.push_str(&part[c.len_utf8()..]);
+    }
+    pascal
+}
+
+pub fn kebab_to_snake(kebab: &str) -> String {
+    kebab.replace('-', "_")
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Display)]
+pub enum Platform {
+    /// Unconditional (no suffix)
+    #[display("* (any)")]
+    Any,
+    /// *_win, target_os = "windows"
+    #[display("_win")]
+    Windows,
+    /// *_win-x64, target_os = "windows", target_arch = "x86_64"
+    #[display("_win-x64")]
+    WindowsX64,
+    /// *_win-arm target_os = "windows", target_arch = "aarch64"
+    #[display("_win-arm")]
+    WindowsArm64,
+    /// *_linux, target_os = "linux", linux_flavor = all
+    #[display("_linux")]
+    Linux,
+    /// *_linux-pacman, target_os = "linux", linux_flavor = pacman
+    #[display("_linux-pacman")]
+    LinuxPacman,
+    /// *_linux-apt, target_os = "linux", linux_flavor = apt
+    #[display("_linux-apt")]
+    LinuxApt,
+    /// *_mac, target_os = "macos", target_arch = "aarch64"
+    #[display("_mac")]
+    Macos,
+}
+impl Platform {
+    pub fn cfg_attr(self) -> String {
+        let Some(inner) = self.inner_cfg() else {
+            return "".to_string();
+        };
+        format!("#[cfg({inner})]")
+    }
+    pub fn cfg_attr_inverted<I: Iterator<Item=Self>>(set: I) -> Option<String> {
+        let mut not_in_set = Self::Any.leaves().iter().map(|p|(*p,true)).collect::<BTreeMap<_, _>>();
+        for platform in set {
+            for leaf in platform.leaves() {
+                not_in_set.insert(*leaf, false);
+            }
+        }
+        Self::combine_leaves(&mut not_in_set);
+        let mut parts = vec![];
+        for (platform, not_in) in not_in_set {
+            if !not_in {
+                continue;
+            }
+            let Some(part) = platform.inner_cfg() else {
+                // if "any" is not in set, it will be unconditional
+                return Some("".to_string());
+            };
+            parts.push(part);
+        }
+        if parts.is_empty() {
+            return None; // everything is covered in set
+        }
+        Some(format!("#[cfg(any({}))]", parts.join(",")))
+    }
+    fn inner_cfg(self) -> Option<&'static str> {
+        match self {
+            Platform::Any => None,
+            Platform::Windows => Some("target_os=\"windows\""),
+            Platform::WindowsX64 => Some("all(target_os=\"windows\",target_arch=\"x86_64\")"),
+            Platform::WindowsArm64 => Some("all(target_os=\"windows\",target_arch=\"aarch64\")"),
+            Platform::Linux |
+            Platform::LinuxPacman |
+            Platform::LinuxApt => Some("target_os=\"linux\""),
+            Platform::Macos => Some("all(target_os=\"macos\",target_arch=\"aarch64\")"),
+        }
+    }
+    pub fn leaves(self) -> &'static [Self] {
+        match self {
+            Platform::Any => &[Self::WindowsX64, Self::WindowsArm64, Self::LinuxPacman, Self::LinuxApt, Self::Macos],
+            Platform::Windows => &[Self::WindowsX64, Self::WindowsArm64],
+            Platform::WindowsX64 => &[Self::WindowsX64],
+            Platform::WindowsArm64 => &[Self::WindowsArm64],
+            Platform::Linux => &[Self::LinuxPacman, Self::LinuxApt],
+            Platform::LinuxPacman => &[Self::LinuxPacman],
+            Platform::LinuxApt => &[Self::LinuxApt],
+            Platform::Macos => &[Self::Macos]
+        }
+    }
+    pub fn combine_leaves<T: Default + PartialEq>(tree: &mut BTreeMap<Self, T>) {
+        for p in Self::Any.leaves() {
+            tree.entry(*p).or_default();
+        }
+        let mut should_try_any = true;
+        let linux = tree.get(&Self::LinuxPacman);
+        if tree.get(&Self::LinuxApt) == linux {
+            tree.remove(&Self::LinuxApt);
+            let linux = tree.remove(&Self::LinuxPacman).expect("combine_leaves linux");
+            tree.insert(Self::Linux, linux);
+        } else {
+            should_try_any = false;
+        }
+        let windows = tree.get(&Self::WindowsX64);
+        if tree.get(&Self::WindowsArm64) == windows {
+            tree.remove(&Self::WindowsArm64);
+            let windows = tree.remove(&Self::WindowsX64).expect("combine_leaves windows");
+            tree.insert(Self::Windows, windows);
+        } else {
+            should_try_any = false;
+        }
+
+        if should_try_any {
+            let the_any = tree.get(&Self::Linux);
+            if tree.get(&Self::Windows) == the_any && tree.get(&Self::Macos) == the_any {
+                let the_any = tree.remove(&Self::Linux).expect("combine_leaves any");
+                tree.clear();
+                tree.insert(Self::Any, the_any);
+            }
+        }
+    }
+    pub fn find_conflict<I: Iterator<Item=Self>>(self, mut current: I) -> Option<Platform> {
+        match self {
+            Self::Any => current.next(),
+            Self::Windows => {
+                current.find(|p|matches!(p,Self::Any|Self::Windows|Self::WindowsArm64|Self::WindowsX64))
+            }
+            Self::WindowsX64 => {
+                current.find(|p|matches!(p,Self::Any|Self::Windows|Self::WindowsX64))
+            }
+            Self::WindowsArm64 => {
+                current.find(|p|matches!(p,Self::Any|Self::Windows|Self::WindowsArm64))
+            }
+            Self::Linux => {
+                current.find(|p|matches!(p,Self::Any|Self::Linux|Self::LinuxPacman|Self::LinuxApt))
+            }
+            Self::LinuxPacman => {
+                current.find(|p|matches!(p,Self::Any|Self::Linux|Self::LinuxPacman))
+            }
+            Self::LinuxApt => {
+                current.find(|p|matches!(p,Self::Any|Self::Linux|Self::LinuxApt))
+            }
+            Self::Macos => {
+                current.find(|p|matches!(p,Self::Any|Self::Macos))
+            }
+        }
+    }
+    pub fn linux_flavors(self) -> &'static str {
+        match self {
+            Self::Linux => "op::LinuxFlavor::all()",
+            Self::LinuxPacman => "enum_set!{ op::LinuxFlavor::Pacman }",
+            Self::LinuxApt => "enum_set!{ op::LinuxFlavor::Apt }",
+            _ => "op::LinuxFlavor::none()"
+        }
+    }
+    pub fn linux_flavor(self) -> &'static str {
+        match self {
+            Self::LinuxPacman => "op::LinuxFlavor::Pacman",
+            Self::LinuxApt => "op::LinuxFlavor::Apt",
+            _ => ""
+        }
+    }
+    pub fn module_str(self) -> &'static str {
+        match self {
+            Platform::Any => "",
+            Platform::Windows => "__win",
+            Platform::WindowsX64 => "__win_x64",
+            Platform::WindowsArm64 => "__win_arm",
+            Platform::Linux => "__linux",
+            Platform::LinuxPacman => "__linux_pacman",
+            Platform::LinuxApt => "__linux_apt",
+            Platform::Macos => "__macos"
+        }
+    }
+}
+impl cu::Parse for Platform {
+    type Output = Self;
+    fn parse_borrowed(x: &str) -> cu::Result<Self::Output> {
+        match x {
+            "win" => Ok(Self::Windows),
+            "win-x64" => Ok(Self::WindowsX64),
+            "win-arm" => Ok(Self::WindowsArm64),
+            "linux" => Ok(Self::Linux),
+            "linux-pacman" => Ok(Self::LinuxPacman),
+            "linux-apt" => Ok(Self::LinuxApt),
+            "mac" => Ok(Self::Macos),
+            _ => cu::bail!("unknown platform identifier '{x}'")
+        }
+    }
+}

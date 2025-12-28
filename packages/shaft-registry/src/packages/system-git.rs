@@ -8,11 +8,8 @@ use crate::pre::*;
 metadata_binaries!("git");
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
-    if cu::which("git").is_ok() {
-        Ok(Verified::UpToDate)
-    } else {
-        Ok(Verified::NotInstalled)
-    }
+    check_bin_in_path!("git");
+    Ok(Verified::UpToDate)
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
