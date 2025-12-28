@@ -3,6 +3,8 @@ use std::path::PathBuf;
 use cu::pre::*;
 use op::EnvChangeReboot;
 
+mod check_home;
+
 pub fn full_init() -> cu::Result<()> {
     op::init_platform()?;
 

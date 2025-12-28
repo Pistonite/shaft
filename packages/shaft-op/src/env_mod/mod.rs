@@ -4,10 +4,38 @@ use std::path::{Path, PathBuf};
 
 use cu::pre::*;
 
+use crate::home;
+
 #[cfg(windows)]
-pub fn get_current_user_env() -> cu::Result<()> {}
+pub mod windows;
+
+
+pub fn add_assert<I: IntoIterator<Item=(String,String)>>(iter: I) -> cu::Result<()> 
+{
+    let mut envs = load_env_json()?;
+    envs.extend(iter);
+    cu::fs::write_json_pretty(home::env_json(), &envs)?;
+    Ok(())
+}
+
 #[cfg(windows)]
-pub fn set_current_user_env() -> cu::Result<()> {}
+pub fn set_current_user_env(key: &str, value: &str) -> cu::Result<()> {}
+
+pub fn require_reinvocation() -> cu::Result<()> {
+    todo!()
+}
+
+fn load_env_json() -> cu::Result<BTreeMap<String, String>> {
+    match cu::fs::read_string(home::env_json()) {
+        Ok(content) => {
+            let map: BTreeMap<String, String> = cu::check!(json::parse(&content), "failed to parse env mod json, please manually check for corruption in the file")?;
+            Ok(map)
+        }
+        Err(_) => {
+            Ok(Default::default())
+        }
+    }
+}
 
 pub struct EnvChangeReboot {
     path: PathBuf,

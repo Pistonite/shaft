@@ -5,8 +5,9 @@ edition = "2024"
 publish = false
 
 [dependencies]
-cu = { workspace = true, features = ["print", "prompt", "fs"] }
+cu = { workspace = true, features = ["cli", "print", "prompt", "fs", "derive", "coroutine-heavy", "json"] }
 op.workspace = true
+serde = "1"
 
 [[bin]]
 name = "shaft"

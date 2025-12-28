@@ -1,0 +1,10 @@
+[package]
+name = "win-pathedit"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[[bin]]
+path = "src/main.rs"
+name = "vipath"

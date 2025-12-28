@@ -3,8 +3,8 @@ pub use platform::*;
 mod version;
 pub use version::*;
 pub mod installer;
-mod env;
-pub use env::*;
+/// Env modification checks
+pub mod env_mod;
 mod download;
 pub use download::*;
 mod main_thread;

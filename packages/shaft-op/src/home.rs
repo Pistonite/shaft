@@ -17,13 +17,18 @@ static HOME_PATH: OnceLock<PathBuf> = OnceLock::new();
 ///
 /// Will fail silently and print a warning if it's already set
 pub fn init(path: PathBuf) {
+    cu::trace!("initializing home path: {}", path.display());
     if HOME_PATH.set(path).is_err() {
         cu::warn!("SHAFT_HOME is already initialized at '{}'", HOME_PATH.get().unwrap().display())
     }
 }
 
 fn home() -> &'static Path {
-    HOME_PATH.get().unwrap()
+    HOME_PATH.get().expect("home not initialized; please debug with -vv")
+}
+
+pub fn env_json() -> PathBuf {
+    home().join("environment.json")
 }
 
 /// Get the `bin` directory
