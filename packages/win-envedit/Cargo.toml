@@ -1,0 +1,8 @@
+[package]
+name = "win-envedit"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cu = { workspace = true }
+winreg = "0.55.0"

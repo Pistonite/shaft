@@ -4,7 +4,7 @@ members = [
     "packages/shaft-build",
     "packages/shaft-cli",
     "packages/shaft-op",
-    "packages/shaft-registry", "packages/win-pathedit",
+    "packages/shaft-registry", "packages/win-envedit", "packages/win-pathedit",
 ]
 
 [workspace.dependencies.cu]
