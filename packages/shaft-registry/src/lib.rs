@@ -1,6 +1,5 @@
 use std::{path::{Path, PathBuf}, sync::Arc};
 
-use cu::pre::*;
 use enumset::EnumSet;
 
 macro_rules! metadata_binaries {
@@ -90,9 +89,22 @@ impl Package {
     }
 
     /// Get the binaries the package depend on
+    ///
+    /// For each binary dependency, a package that provides the binary
+    /// must be synced before syncing this package
     #[inline(always)]
     pub fn binary_dependencies(&self, ctx: &Context) -> EnumSet<BinId> {
         (self.binary_dependencies_fn)(ctx)
+    }
+
+    /// Get the config dependencies for this package
+    ///
+    /// For each config dependency:
+    /// - If it is installed, it must be synced before this package when syncing this package
+    /// - When the dependency is synced, it will cause this package to sync as well
+    #[inline(always)]
+    pub fn config_dependencies(&self, ctx: &Context) -> EnumSet<PkgId> {
+        (self.config_dependencies_fn)(ctx)
     }
 
     /// Verify the package is installed and up-to-date
@@ -126,12 +138,6 @@ impl Package {
     #[inline(always)]
     pub fn install(&self, ctx: &Context) -> cu::Result<()> {
         (self.install_fn)(ctx)
-    }
-
-    /// Get the packages that should be configured before this package
-    #[inline(always)]
-    pub fn config_dependencies(&self, ctx: &Context) -> EnumSet<PkgId> {
-        (self.config_dependencies_fn)(ctx)
     }
 
     /// Configure the package after installing
@@ -185,7 +191,7 @@ impl Context {
 mod _gen;
 pub use _gen::{BinId, PkgId};
 #[path = "./package_stub.rs"]
-pub mod _stub;
+pub(crate) mod _stub;
 
 pub(crate) mod pre {
     pub(crate) use crate::{

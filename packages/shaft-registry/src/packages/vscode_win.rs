@@ -1,2 +1,0 @@
-
-metadata_binaries!("code");

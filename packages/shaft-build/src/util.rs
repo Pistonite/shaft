@@ -19,7 +19,12 @@ pub fn is_kebab(s: &str) -> bool {
 }
 
 pub fn kebab_to_pascal(kebab: &str) -> String {
-    let mut pascal = String::with_capacity(kebab.len());
+    let mut pascal = String::with_capacity(kebab.len()+1);
+    let first = kebab.chars().next();
+    // add underscore, since non alphabetic can't start an identifier
+    if first.is_some_and(|c| !c.is_alphabetic()) {
+        pascal.push('_');
+    }
     for part in kebab.split('-') {
         let Some(c) = part.chars().next() else {
             continue;

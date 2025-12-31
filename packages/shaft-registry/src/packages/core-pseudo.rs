@@ -36,6 +36,6 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
 }
 
 pub fn uninstall(_: &Context) -> cu::Result<()> {
-    cu::hint!("core-pseudo is a pseudo package to check requirements of itself, and cannot be uninstalled.");
+    cu::hint!("core-pseudo is a pseudo package to check requirements of the tool itself, and cannot be uninstalled.");
     cu::bail!("cannot uninstall core-pseudo");
 }

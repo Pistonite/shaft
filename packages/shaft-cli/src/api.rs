@@ -32,7 +32,7 @@ impl CliApi {
             self.flags.merge(command.as_ref());
         }
     }
-    pub async fn run(self) -> cu::Result<()> {
+    pub fn run(self) -> cu::Result<()> {
         let run_version = self.version || matches!(&self.command, Some(CliCommand::Version(_)));
         if run_version {
             cu::disable_print_time();
@@ -58,17 +58,44 @@ impl CliApi {
             return Ok(())
         };
 
-        match command {
-            CliCommand::Version(_) => {},
-            CliCommand::Upgrade(cmd) => cmd.run().await?,
-            CliCommand::Sync(_) => todo!(),
-            CliCommand::Remove(_) => todo!(),
-            CliCommand::Config(_) => todo!(),
-            CliCommand::Clean(_) => todo!(),
-            CliCommand::Resume(_) => todo!(),
+        let previous = op::resume::extract_previously_interrupted_json_command();
+        if matches!(&command, CliCommand::Resume(_)) {
+            if self.abort_previous {
+                if previous.is_some() {
+                    cu::info!("aborted previous command; nothing to resume");
+                } else {
+                    cu::warn!("no previous command to abort");
+                }
+            } else {
+                if let Some((cmd_args, cmd_str)) = previous {
+                    let previous_command = 
+                    cu::check!(json::parse::<CliCommand>(&cmd_str), "previous command file is corrupted")?;
+                    cu::info!("resuming: {cmd_args}");
+                    previous_command.run()?;
+                } else {
+                    cu::warn!("no previous command to resume");
+                }
+            }
+            return Ok(());
+        }
+        if let Some((cmd_args, cmd_str)) = previous {
+            match json::parse::<CliCommand>(&cmd_str) {
+                Err(e) => {
+                    cu::error!("failed to parse previous command: {e:?}");
+                    cu::warn!("ignoring corrupted previous command file");
+                }
+                Ok(previous_command) => {
+                    cu::warn!("found previously interrupted command:\n  {cmd_args}");
+                    cu::hint!("the command can be resumed.\n- Y = execute previous command, then execute current command\n- N = only execute current command, discard previous command");
+                    if cu::yesno!("resume previous command?")? {
+                        cu::info!("resuming: {cmd_args}");
+                        previous_command.run()?;
+                    }
+                }
+            }
         }
 
-        Ok(())
+        command.run()
     }
 }
 
@@ -102,6 +129,33 @@ impl AsRef<cu::cli::Flags> for CliCommand {
         }
     }
 }
+impl CliCommand {
+    pub fn run(self) -> cu::Result<()> {
+        if !matches!(self, CliCommand::Version(_) | CliCommand::Resume(_)) {
+            match json::stringify_pretty(&self) {
+                Err(e) => {
+                    cu::error!("failed to stringify command: {e:?}");
+                }
+                Ok(s) => {
+                    op::resume::save_command_json(&s);
+                }
+            }
+        }
+        match self {
+            CliCommand::Version(_) => {},
+            CliCommand::Resume(_) => {}
+            CliCommand::Upgrade(cmd) => cmd.run()?,
+            CliCommand::Sync(_) => todo!(),
+            CliCommand::Remove(_) => todo!(),
+            CliCommand::Config(_) => todo!(),
+            CliCommand::Clean(_) => {
+                // testing
+                op::resume::mark_interrupted();
+            }
+        }
+        Ok(())
+    }
+}
 
 #[derive(clap::Parser, Debug, AsRef, Serialize, Deserialize)]
 pub struct CliCommandUpgrade {
@@ -115,8 +169,8 @@ pub struct CliCommandUpgrade {
 }
 
 impl CliCommandUpgrade {
-    async fn run(&self) -> cu::Result<()> {
-        crate::init::upgrade_binary(self.path.as_ref().map(Path::new)).await
+    fn run(&self) -> cu::Result<()> {
+        crate::init::upgrade_binary(self.path.as_ref().map(Path::new))
     }
 }
 
@@ -128,6 +182,12 @@ pub struct CliCommandSync {
     #[as_ref]
     #[serde(skip)]
     pub flags: cu::cli::Flags,
+}
+impl CliCommandSync {
+    fn run(&self) -> cu::Result<()> {
+        let pkgs = crate::graph::parse_pkgs(&self.packages)?;
+        let installed = crate::graph::InstallCache::load()?;
+    }
 }
 
 #[derive(clap::Parser, Debug, AsRef, Serialize, Deserialize)]

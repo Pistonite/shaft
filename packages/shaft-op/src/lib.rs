@@ -14,4 +14,5 @@ pub mod util;
 pub mod home;
 pub mod sysinfo;
 pub mod shell_profile;
+pub mod resume;
 

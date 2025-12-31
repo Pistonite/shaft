@@ -53,7 +53,7 @@ fn check_binary_location(home_binary: &Path) -> cu::Result<()> {
     Ok(())
 }
 
-pub async fn upgrade_binary(path: Option<&Path>) -> cu::Result<()> {
+pub fn upgrade_binary(path: Option<&Path>) -> cu::Result<()> {
     let temp_dir = op::home::temp_dir("core-self-upgrade");
     cu::fs::make_dir(&temp_dir)?;
     let new_binary = match path {
@@ -65,8 +65,8 @@ pub async fn upgrade_binary(path: Option<&Path>) -> cu::Result<()> {
                     .current_dir(path)
                     .add(cu::args!["install", "shaft-cli", "--path", "."])
                     .preset(cu::pio::cargo())
-                    .co_spawn().await?;
-                cu::check!(child.co_wait_nz().await, "failed to build new binary")?;
+                    .spawn()?;
+                cu::check!(child.wait_nz(), "failed to build new binary")?;
             }
             cu::info!("installing to home temporary location...");
             {
@@ -74,8 +74,8 @@ pub async fn upgrade_binary(path: Option<&Path>) -> cu::Result<()> {
                     .current_dir(path)
                     .add(cu::args!["install", "shaft-cli", "--path", ".", "--root", &temp_dir])
                     .preset(cu::pio::cargo())
-                    .co_spawn().await?;
-                cu::check!(child.co_wait_nz().await, "failed to build new binary")?;
+                    .spawn()?;
+                cu::check!(child.wait_nz(), "failed to build new binary")?;
             }
 
             if cfg!(windows) {

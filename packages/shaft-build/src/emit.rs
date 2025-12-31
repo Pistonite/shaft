@@ -255,6 +255,14 @@ fn generate_id_enum(
     }
     writeln!(out, "        }}\n    }}\n}}")?;
 
+    writeln!(out, r"
+impl std::fmt::Display for {prefix}Id {{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {{
+        self.to_str().fmt(f)
+    }}
+}}
+    ")?;
+
     Ok(())
 }
 
