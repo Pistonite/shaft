@@ -1,4 +1,7 @@
-use std::{path::{Path, PathBuf}, sync::Arc};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use enumset::EnumSet;
 
@@ -19,12 +22,22 @@ pub(crate) use check_bin_in_path;
 macro_rules! check_installed_with_pacman {
     ($l:literal) => {
         if !op::installer::pacman::is_installed($l)? {
-            cu::bail!(concat!("current '",$l,"' is not installed with pacman; please uninstall it"))
+            cu::bail!(concat!(
+                "current '",
+                $l,
+                "' is not installed with pacman; please uninstall it"
+            ))
         }
     };
     ($l:literal, $system:literal) => {
         if !op::installer::pacman::is_installed($l)? {
-            cu::bail!(concat!("current '",$l,"' is not installed with pacman; please uninstall it or use the '",$system,"' package"))
+            cu::bail!(concat!(
+                "current '",
+                $l,
+                "' is not installed with pacman; please uninstall it or use the '",
+                $system,
+                "' package"
+            ))
         }
     };
 }
@@ -42,7 +55,7 @@ pub struct Package {
     pub name: &'static str,
 
     /// Binaries provided by this package. Declared by `metadata_binaries!` macro
-    pub binaries: EnumSet<BinId>,
+    pub binaries_fn: fn() -> EnumSet<BinId>,
     /// Linux package manager flavors supported by this package.
     /// By default, all flavors are supported (for example,
     /// downloading a binary)
@@ -59,9 +72,9 @@ pub struct Package {
     uninstall_fn: fn(&Context) -> cu::Result<()>,
 
     // optional functions
-    binary_dependencies_fn: fn(&Context) -> EnumSet<BinId>,
-    config_dependencies_fn: fn(&Context) -> EnumSet<PkgId>,
-    download_fn: fn(Arc<Context>) -> cu::BoxedFuture<cu::Result<()>>,
+    binary_dependencies_fn: fn() -> EnumSet<BinId>,
+    config_dependencies_fn: fn() -> EnumSet<PkgId>,
+    download_fn: fn(&Context) -> cu::Result<()>,
     build_fn: fn(&Context) -> cu::Result<()>,
     configure_fn: fn(&Context) -> cu::Result<()>,
     clean_fn: fn(&Context) -> cu::Result<()>,
@@ -72,29 +85,41 @@ impl Package {
         PkgId::from_str(self.name).unwrap()
     }
     pub const fn stub(name: &'static str) -> Self {
-        Self { enabled: false, name, binaries: enumset::enum_set!{}, 
-            linux_flavors: enumset::enum_set!{}, 
-            short_desc: "", 
-            long_desc: "", 
-            verify_fn: _stub::unsupported_platform, 
-            install_fn: _stub::unsupported_platform, 
-            uninstall_fn: _stub::unsupported_platform, 
-            binary_dependencies_fn: _stub::empty_bin_dependencies, 
-            config_dependencies_fn: _stub::empty_pkg_dependencies, 
-            download_fn: _stub::ok_future,
+        Self {
+            enabled: false,
+            name,
+            binaries_fn: _stub::empty_bin_set,
+            linux_flavors: enumset::enum_set! {},
+            short_desc: "",
+            long_desc: "",
+            verify_fn: _stub::unsupported_platform,
+            install_fn: _stub::unsupported_platform,
+            uninstall_fn: _stub::unsupported_platform,
+            binary_dependencies_fn: _stub::empty_bin_set,
+            config_dependencies_fn: _stub::empty_pkg_set,
+            download_fn: _stub::ok,
             build_fn: _stub::ok,
             configure_fn: _stub::ok,
             clean_fn: _stub::ok,
         }
     }
 
+    /// Get the binaries this package provides
+    #[inline(always)]
+    pub fn binaries(&self) -> EnumSet<BinId> {
+        (self.binaries_fn)()
+    }
+
     /// Get the binaries the package depend on
     ///
     /// For each binary dependency, a package that provides the binary
     /// must be synced before syncing this package
+    ///
+    /// The function must not be expensive, as it may be called multiple times when building the
+    /// graph
     #[inline(always)]
-    pub fn binary_dependencies(&self, ctx: &Context) -> EnumSet<BinId> {
-        (self.binary_dependencies_fn)(ctx)
+    pub fn binary_dependencies(&self) -> EnumSet<BinId> {
+        (self.binary_dependencies_fn)()
     }
 
     /// Get the config dependencies for this package
@@ -102,9 +127,12 @@ impl Package {
     /// For each config dependency:
     /// - If it is installed, it must be synced before this package when syncing this package
     /// - When the dependency is synced, it will cause this package to sync as well
+    ///
+    /// The function must not be expensive, as it may be called multiple times when building the
+    /// graph
     #[inline(always)]
-    pub fn config_dependencies(&self, ctx: &Context) -> EnumSet<PkgId> {
-        (self.config_dependencies_fn)(ctx)
+    pub fn config_dependencies(&self) -> EnumSet<PkgId> {
+        (self.config_dependencies_fn)()
     }
 
     /// Verify the package is installed and up-to-date
@@ -122,8 +150,8 @@ impl Package {
     /// Download the package. This is async and could be executed in parallel
     /// for multiple packages
     #[inline(always)]
-    pub async fn download(&self, ctx: Arc<Context>) -> cu::Result<()> {
-        (self.download_fn)(ctx).await
+    pub fn download(&self, ctx: &Context) -> cu::Result<()> {
+        (self.download_fn)(ctx)
     }
 
     /// Build the package - The expensive part of the install.
@@ -181,7 +209,12 @@ impl Context {
     }
     pub fn check_bin_location(&self, binary: &str, expected: &Path) -> cu::Result<()> {
         let actual = cu::which(binary)?;
-        cu::ensure!(expected== actual, "expected location: '{}', actual location: '{}'", expected.display(), actual.display());
+        cu::ensure!(
+            expected == actual,
+            "expected location: '{}', actual location: '{}'",
+            expected.display(),
+            actual.display()
+        );
         Ok(())
     }
 }
@@ -195,7 +228,7 @@ pub(crate) mod _stub;
 
 pub(crate) mod pre {
     pub(crate) use crate::{
-        BinId, Context, Package, PkgId, Verified, metadata_binaries, check_bin_in_path, check_installed_with_pacman
+        BinId, Context, Package, PkgId, Verified, check_bin_in_path, check_installed_with_pacman,
+        metadata_binaries,
     };
-    pub(crate) use op::{VersionNumber as _};
 }

@@ -38,14 +38,17 @@ impl CliApi {
             cu::disable_print_time();
             println!("{}", clap::crate_version!());
             if !cu::log_enabled(cu::lv::D) {
-                return Ok(())
+                return Ok(());
             }
         }
         cu::trace!("args: {self:#?}");
         cu::check!(op::init_platform(), "failed to init platform")?;
         cu::check!(crate::init::check_init_home(), "failed to init home")?;
         cu::check!(op::env_mod::init_env(), "failed to init environment")?;
-        cu::check!(crate::init::check_init_binary(), "failed to init binary")?;
+        #[cfg(not(debug_assertions))]
+        {
+            cu::check!(crate::init::check_init_binary(), "failed to init binary")?;
+        }
 
         if run_version {
             cu::info!("self-check OK");
@@ -55,7 +58,7 @@ impl CliApi {
         let Some(command) = self.command else {
             cu::disable_print_time();
             cu::cli::print_help::<Self>(false);
-            return Ok(())
+            return Ok(());
         };
 
         let previous = op::resume::extract_previously_interrupted_json_command();
@@ -68,8 +71,10 @@ impl CliApi {
                 }
             } else {
                 if let Some((cmd_args, cmd_str)) = previous {
-                    let previous_command = 
-                    cu::check!(json::parse::<CliCommand>(&cmd_str), "previous command file is corrupted")?;
+                    let previous_command = cu::check!(
+                        json::parse::<CliCommand>(&cmd_str),
+                        "previous command file is corrupted"
+                    )?;
                     cu::info!("resuming: {cmd_args}");
                     previous_command.run()?;
                 } else {
@@ -86,7 +91,9 @@ impl CliApi {
                 }
                 Ok(previous_command) => {
                     cu::warn!("found previously interrupted command:\n  {cmd_args}");
-                    cu::hint!("the command can be resumed.\n- Y = execute previous command, then execute current command\n- N = only execute current command, discard previous command");
+                    cu::hint!(
+                        "the command can be resumed.\n- Y = execute previous command, then execute current command\n- N = only execute current command, discard previous command"
+                    );
                     if cu::yesno!("resume previous command?")? {
                         cu::info!("resuming: {cmd_args}");
                         previous_command.run()?;
@@ -112,9 +119,9 @@ pub enum CliCommand {
     /// Clean temporary files for this tool and/or package(s)
     Clean(CliCommandClean),
     /// Resume previous operation, if one was interrupted
-    Resume(#[serde(skip)]cu::cli::Flags),
+    Resume(#[serde(skip)] cu::cli::Flags),
     /// Print the version, -v to run self-check
-    Version(#[serde(skip)]cu::cli::Flags),
+    Version(#[serde(skip)] cu::cli::Flags),
 }
 impl AsRef<cu::cli::Flags> for CliCommand {
     fn as_ref(&self) -> &cu::cli::Flags {
@@ -142,10 +149,10 @@ impl CliCommand {
             }
         }
         match self {
-            CliCommand::Version(_) => {},
+            CliCommand::Version(_) => {}
             CliCommand::Resume(_) => {}
             CliCommand::Upgrade(cmd) => cmd.run()?,
-            CliCommand::Sync(_) => todo!(),
+            CliCommand::Sync(cmd) => cmd.run()?,
             CliCommand::Remove(_) => todo!(),
             CliCommand::Config(_) => todo!(),
             CliCommand::Clean(_) => {
@@ -187,6 +194,9 @@ impl CliCommandSync {
     fn run(&self) -> cu::Result<()> {
         let pkgs = crate::graph::parse_pkgs(&self.packages)?;
         let installed = crate::graph::InstallCache::load()?;
+        let graph = crate::graph::build_sync_graph(pkgs, &installed)?;
+        cu::info!("{graph:?}");
+        Ok(())
     }
 }
 

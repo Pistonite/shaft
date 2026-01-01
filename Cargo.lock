@@ -1155,9 +1155,9 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
 name = "pistonite-cu"
-version = "0.6.5"
+version = "0.6.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f0e009a34fd04c210e8365d4c8307b30a8e1708759fadf3c78b455524068c74"
+checksum = "f72a81252983dfdf3d4fbf17618f1069ae03da004aa77370ac8bab397d0aa2b3"
 dependencies = [
  "anyhow",
  "clap",
@@ -1185,9 +1185,9 @@ dependencies = [
 
 [[package]]
 name = "pistonite-cu-proc-macros"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ebf848453f22ca1e3112ecccaadbe34fb0a671407e1230fb33f0bbfaeee347c"
+checksum = "06d10b1eca25993dd7f0a2fa119d1ad59482d4591d201b800d37a2f8f7d71631"
 dependencies = [
  "pistonite-pm",
 ]
@@ -1225,6 +1225,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9695f8df41bb4f3d222c95a67532365f569318332d03d5f3f67f37b20e6ebdf0"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "procname-checker"
+version = "0.0.0"
+dependencies = [
+ "pistonite-cu",
+ "sysinfo",
 ]
 
 [[package]]

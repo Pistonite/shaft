@@ -7,8 +7,8 @@ metadata_binaries!("vi", "vim", "nvim");
 
 static VERSION: &str = "0.11.5";
 
-pub fn binary_dependencies(_: &Context) -> EnumSet<BinId> {
-    enumset::enum_set!(BinId::Git)
+pub fn binary_dependencies() -> EnumSet<BinId> {
+    enumset::enum_set!(BinId::_7z)
 }
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {

@@ -1,0 +1,9 @@
+[package]
+name = "procname-checker"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+cu = { workspace = true, features = ["cli", "print", "process"] }
+sysinfo = "0.37.2"

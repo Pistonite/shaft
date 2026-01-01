@@ -15,42 +15,72 @@ pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleF
     // /foo-bar/mod_platform.rs
 
     let top_path_str = top_path.as_utf8()?;
-    let file_name = cu::check!(top_path.file_name(), "unable to determine file name for module file structure: '{top_path_str}'")?;
+    let file_name = cu::check!(
+        top_path.file_name(),
+        "unable to determine file name for module file structure: '{top_path_str}'"
+    )?;
     // unwrap: checked path is utf-8 above
     let file_name = file_name.to_str().unwrap();
 
     if let Some(file_name_stripped) = file_name.strip_suffix(".rs") {
         let mut parts = file_name_stripped.split("_");
-        let package_name = cu::check!(parts.next(), "unable to determine package name from file: '{top_path_str}'")?;
-        cu::ensure!(!package_name.is_empty(), "package name cannot be empty: in file: '{top_path_str}'");
-        cu::ensure!(util::is_kebab(package_name), "package name must be kebab-case: in file: '{top_path_str}'");
+        let package_name = cu::check!(
+            parts.next(),
+            "unable to determine package name from file: '{top_path_str}'"
+        )?;
+        cu::ensure!(
+            !package_name.is_empty(),
+            "package name cannot be empty: in file: '{top_path_str}'"
+        );
+        cu::ensure!(
+            util::is_kebab(package_name),
+            "package name must be kebab-case: in file: '{top_path_str}'"
+        );
         let platform = match parts.next() {
             None => Platform::Any,
-            Some(x) => cu::check!(cu::parse::<Platform>(x), "unable to determine package platform: in file: '{top_path_str}'")?
+            Some(x) => cu::check!(
+                cu::parse::<Platform>(x),
+                "unable to determine package platform: in file: '{top_path_str}'"
+            )?,
         };
-        cu::ensure!(parts.next().is_none(), "package file should contains at most one '_': in file: '{top_path_str}'");
+        cu::ensure!(
+            parts.next().is_none(),
+            "package file should contains at most one '_': in file: '{top_path_str}'"
+        );
         let files = std::iter::once((platform, top_path.to_path_buf())).collect();
         let structure = ModuleFileStructure {
             package_name: package_name.to_string(),
-            files
+            files,
         };
         return Ok(Some(structure));
     }
 
     if !top_path.is_dir() {
-        cu::warn!("ignoring unknown file in packages dir: '{}'", top_path.display());
+        cu::warn!(
+            "ignoring unknown file in packages dir: '{}'",
+            top_path.display()
+        );
         return Ok(None);
     }
-    
+
     let package_name = file_name;
-    cu::ensure!(!package_name.is_empty(), "package name cannot be empty: in path: '{top_path_str}'");
-    cu::ensure!(util::is_kebab(package_name), "package name must be kebab-case: in path: '{top_path_str}'");
+    cu::ensure!(
+        !package_name.is_empty(),
+        "package name cannot be empty: in path: '{top_path_str}'"
+    );
+    cu::ensure!(
+        util::is_kebab(package_name),
+        "package name must be kebab-case: in path: '{top_path_str}'"
+    );
     let mut structure = ModuleFileStructure::new(package_name.to_string());
     for entry in cu::fs::read_dir(top_path)? {
         let entry = entry?;
         let path = entry.path();
         let path_str = path.as_utf8()?;
-        let file_name = cu::check!(path.file_name(), "unable to determine file name for module file structure: '{path_str}'")?;
+        let file_name = cu::check!(
+            path.file_name(),
+            "unable to determine file name for module file structure: '{path_str}'"
+        )?;
         // unwrap: checked path is utf-8 above
         let file_name = file_name.to_str().unwrap();
         if file_name == "mod.rs" {
@@ -63,7 +93,10 @@ pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleF
         let Some(platform) = file_name_stripped.strip_prefix("mod_") else {
             continue;
         };
-        let platform = cu::check!(cu::parse::<Platform>(platform), "unable to determine package platform: in file: '{path_str}'")?;
+        let platform = cu::check!(
+            cu::parse::<Platform>(platform),
+            "unable to determine package platform: in file: '{path_str}'"
+        )?;
         structure.add(platform, path)?;
     }
 
@@ -71,38 +104,42 @@ pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleF
         println!("cargo::warning=empty package file structure for package '{package_name}'");
         return Ok(None);
     }
-    
+
     Ok(Some(structure))
 }
 
 pub struct ModuleFileStructure {
     pub package_name: String,
-    pub files: BTreeMap<Platform, PathBuf>
+    pub files: BTreeMap<Platform, PathBuf>,
 }
 impl ModuleFileStructure {
     pub fn new(package_name: String) -> Self {
         Self {
             package_name,
-            files: Default::default()
+            files: Default::default(),
         }
     }
-    pub fn extend(&mut self, other: BTreeMap<Platform,PathBuf>) -> cu::Result<()> {
+    pub fn extend(&mut self, other: BTreeMap<Platform, PathBuf>) -> cu::Result<()> {
         for (platform, path) in other {
             self.add(platform, path)?;
         }
         Ok(())
     }
     pub fn add(&mut self, platform: Platform, path: PathBuf) -> cu::Result<()> {
-            if let Some(existing_platform) = platform.find_conflict(self.files.keys().copied()) {
-                let existing_path = self.files.get(&existing_platform).expect("should find existing platform");
-                cu::bail!("conflicting platform '{}' (file: '{}') and '{}' (file: '{}')", 
-                    existing_platform,
-                    existing_path.display(),
-                    platform,
-                    path.display()
-                );
-            }
-            self.files.insert(platform, path);
+        if let Some(existing_platform) = platform.find_conflict(self.files.keys().copied()) {
+            let existing_path = self
+                .files
+                .get(&existing_platform)
+                .expect("should find existing platform");
+            cu::bail!(
+                "conflicting platform '{}' (file: '{}') and '{}' (file: '{}')",
+                existing_platform,
+                existing_path.display(),
+                platform,
+                path.display()
+            );
+        }
+        self.files.insert(platform, path);
         Ok(())
     }
 }
@@ -115,18 +152,24 @@ impl ParsedModule {
         let mut platform_data = BTreeMap::default();
         for (platform, path) in &structure.files {
             let content = cu::fs::read_string(path)?;
-            let data = cu::check!(cu::parse::<ModuleData>(&content), "failed to parse file: '{}'", path.display())?;
+            let data = cu::check!(
+                cu::parse::<ModuleData>(&content),
+                "failed to parse file: '{}'",
+                path.display()
+            )?;
             platform_data.insert(*platform, data);
         }
-        Ok(Self{platform_data})
+        Ok(Self { platform_data })
     }
     pub fn collect_binaries(&self, out: &mut BTreeSet<String>) {
         for data in self.platform_data.values() {
             out.extend(data.kebab_binaries.iter().cloned());
-        } 
+        }
     }
 }
+#[derive(Default)]
 pub struct ModuleData {
+    /// doc paragraphs
     pub doc: Vec<String>,
     pub kebab_binaries: BTreeSet<String>,
     pub has_binary_dependencies: bool,

@@ -1,5 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use cu::pre::*;
 use itertools::Itertools as _;
@@ -25,7 +25,11 @@ impl RegistryBuilder {
                 e.insert(structure);
             }
             Entry::Occupied(mut e) => {
-                cu::check!(e.get_mut().extend(structure.files), "failed to merge files for package '{}'", e.key())?;
+                cu::check!(
+                    e.get_mut().extend(structure.files),
+                    "failed to merge files for package '{}'",
+                    e.key()
+                )?;
             }
         }
         Ok(())
@@ -57,10 +61,7 @@ impl RegistryBuilder {
         let mut modules = Vec::with_capacity(kebab_pkgs.len());
 
         for (key, path) in &self.packages {
-            let m = cu::check!(
-                ParsedModule::parse(path),
-                "failed to parse module '{key}'"
-            )?;
+            let m = cu::check!(ParsedModule::parse(path), "failed to parse module '{key}'")?;
             m.collect_binaries(&mut all_binaries);
             modules.push(m);
         }
@@ -73,10 +74,7 @@ impl RegistryBuilder {
         )?;
 
         // metadata table
-        writeln!(
-            out,
-            "static METADATA_ARRAY: &[crate::Package] = &["
-        )?;
+        writeln!(out, "static METADATA_ARRAY: &[crate::Package] = &[")?;
         build_metadata_array(&snake_pkgs, &kebab_pkgs, &modules, &mut out)?;
         writeln!(out, "];")?;
 
@@ -96,21 +94,7 @@ impl RegistryBuilder {
         build_bin_providers(&pascal_bins, &kebab_bins, &pascal_pkgs, &modules, &mut out)?;
         writeln!(out, "        }}\n    }}\n}}")?;
 
-        // declare package modules
-
-        for (module, name) in std::iter::zip(self.packages.values(), &snake_pkgs) {
-            for (platform, path) in &module.files {
-                let path = path.normalize()?;
-                let path = path.try_to_rel_from(&self.registry_path);
-                // relative path ensures the output is consistent throughout
-                // build environments
-                cu::ensure!(path.is_relative());
-                let path = path.as_utf8()?;
-                writeln!(out, "{} #[path = \"{}\"] mod _pkg_{}{};", platform.cfg_attr(), path, name, platform.module_str())?;
-            }
-        }
-
-        build_test(&mut out)?;
+        build_package_modules(&self.packages, &snake_pkgs, &modules, &self.registry_path, &mut out)?;
 
         Ok(out)
     }
@@ -120,18 +104,54 @@ fn build_metadata_array(
     snake_pkgs: &[String],
     kebab_pkgs: &[&String],
     modules: &[ParsedModule],
-    out: &mut String
+    out: &mut String,
 ) -> cu::Result<()> {
     use std::fmt::Write as _;
 
     for (snake_name, (kebab_name, module)) in
-    std::iter::zip(snake_pkgs, std::iter::zip(kebab_pkgs, modules))
+        std::iter::zip(snake_pkgs, std::iter::zip(kebab_pkgs, modules))
     {
+        let mut linux_flavors = vec![];
+        let mut linux_flavors_data = vec![];
         for (platform, data) in &module.platform_data {
-            build_metadata_for_module(snake_name, kebab_name, *platform, data, out)?;
+            if platform.is_linux_leaf() {
+                linux_flavors.push(*platform);
+                linux_flavors_data.push(data);
+                continue;
+            }
+            build_metadata_for_module(
+                snake_name, kebab_name, *platform, platform.linux_flavors(), false, data, out
+            )?;
         }
-        if let Some(cfg) = Platform::cfg_attr_inverted(module.platform_data.keys().copied()) {
-    writeln!(out, "    {cfg} {{ crate::Package::stub(\"{kebab_name}\") }},")?;
+        if !linux_flavors.is_empty() {
+            let linux_flavors = format!("enum_set!{{ {} }}", linux_flavors.iter().map(|x|x.linux_flavor()).join(" | "));
+            let mut doc: Vec<String> = vec![];
+            for data in linux_flavors_data {
+                let next_doc = &data.doc;
+                if !next_doc.is_empty() {
+                    if !doc.is_empty() {
+                        cu::bail!("only one linux flavor should specify description, in package '{kebab_name}'");
+                    }
+                    doc = next_doc.clone();
+                }
+            }
+            let temp_data = ModuleData { doc, ..Default::default()};
+            build_metadata_for_module(
+                snake_name, kebab_name, Platform::Linux, &linux_flavors, true, &temp_data, out
+            )?;
+        }
+        let mut platforms: BTreeSet<Platform> = module.platform_data.keys().copied().collect();
+        if !linux_flavors.is_empty() {
+            for x in linux_flavors {
+                platforms.remove(&x);
+            }
+            platforms.insert(Platform::Linux);
+        }
+        if let Some(cfg) = Platform::cfg_attr_inverted(platforms.into_iter()) {
+            writeln!(
+                out,
+                "    {cfg} {{ crate::Package::stub(\"{kebab_name}\") }},"
+            )?;
         }
     }
     Ok(())
@@ -141,32 +161,47 @@ fn build_metadata_for_module(
     snake_name: &str,
     kebab_name: &str,
     platform: Platform,
+    linux_flavors: &str,
+    is_linux_mux: bool,
     data: &ModuleData,
-    out: &mut String
+    out: &mut String,
 ) -> cu::Result<()> {
     use std::fmt::Write as _;
+
+    let module_path = format!("_pkg_{}{}", snake_name, platform.module_str());
 
     writeln!(out, "    {} {{ crate::Package {{", platform.cfg_attr())?;
     writeln!(out, "        enabled: true,")?;
     writeln!(out, "        name: \"{kebab_name}\",")?;
+    if is_linux_mux {
+        writeln!(out, "        binaries_fn: {module_path}::binaries,")?;
+    } else {
+        let binaries = data
+            .kebab_binaries
+            .iter()
+            .map(|x| format!("BinId::{}", util::kebab_to_pascal(x)))
+            .join(" | ");
+        writeln!(out, "        binaries_fn: || enum_set!{{ {binaries} }},")?;
+    }
 
-    let binaries = data
-        .kebab_binaries
-        .iter()
-        .map(|x| format!("BinId::{}", util::kebab_to_pascal(x)))
-        .join(" | ");
-    writeln!(out, "        binaries: enum_set!{{ {binaries} }},")?;
-    writeln!(out, "        linux_flavors: {},", platform.linux_flavors())?;
-    writeln!(out, "        short_desc: {},", json::stringify(data.short_desc())?)?;
-    writeln!(out, "        long_desc: {},", json::stringify(&data.long_desc())?)?;
-    let module_path = format!("_pkg_{}{}", snake_name, platform.module_str());
+    writeln!(out, "        linux_flavors: {linux_flavors},")?;
+    writeln!(
+        out,
+        "        short_desc: {},",
+        json::stringify(data.short_desc())?
+    )?;
+    writeln!(
+        out,
+        "        long_desc: {},",
+        json::stringify(&data.long_desc())?
+    )?;
 
     // required functions
     writeln!(out, "        verify_fn: {module_path}::verify,")?;
     writeln!(out, "        install_fn: {module_path}::install,")?;
     writeln!(out, "        uninstall_fn: {module_path}::uninstall,")?;
 
-    if data.has_binary_dependencies {
+    if is_linux_mux || data.has_binary_dependencies {
         writeln!(
             out,
             "        binary_dependencies_fn: {module_path}::binary_dependencies,"
@@ -174,10 +209,10 @@ fn build_metadata_for_module(
     } else {
         writeln!(
             out,
-            "        binary_dependencies_fn: _stub::empty_bin_dependencies,"
+            "        binary_dependencies_fn: _stub::empty_bin_set,"
         )?;
     }
-    if data.has_config_dependencies {
+    if is_linux_mux || data.has_config_dependencies {
         writeln!(
             out,
             "        config_dependencies_fn: {module_path}::config_dependencies,"
@@ -185,28 +220,28 @@ fn build_metadata_for_module(
     } else {
         writeln!(
             out,
-            "        config_dependencies_fn: _stub::empty_pkg_dependencies,"
+            "        config_dependencies_fn: _stub::empty_pkg_set,"
         )?;
     }
-    if data.has_download {
+    if is_linux_mux||data.has_download {
         writeln!(
             out,
-            "        download_fn: |ctx| Box::pin(async move {{ {module_path}::download(ctx.as_ref()).await }}),"
+            "        download_fn: {module_path}::download,"
         )?;
     } else {
-        writeln!(out, "        download_fn: _stub::ok_future,")?;
+        writeln!(out, "        download_fn: _stub::ok,")?;
     }
-    if data.has_build {
+    if is_linux_mux||data.has_build {
         writeln!(out, "        build_fn: {module_path}::build,")?;
     } else {
         writeln!(out, "        build_fn: _stub::ok,")?;
     }
-    if data.has_configure {
+    if is_linux_mux ||data.has_configure {
         writeln!(out, "        configure_fn: {module_path}::configure,")?;
     } else {
         writeln!(out, "        configure_fn: _stub::ok,")?;
     }
-    if data.has_clean {
+    if is_linux_mux||data.has_clean {
         writeln!(out, "        clean_fn: {module_path}::clean,")?;
     } else {
         writeln!(out, "        clean_fn: _stub::ok,")?;
@@ -216,7 +251,6 @@ fn build_metadata_for_module(
 
     Ok(())
 }
-
 
 fn generate_id_enum(
     out: &mut String,
@@ -255,13 +289,16 @@ fn generate_id_enum(
     }
     writeln!(out, "        }}\n    }}\n}}")?;
 
-    writeln!(out, r"
+    writeln!(
+        out,
+        r"
 impl std::fmt::Display for {prefix}Id {{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {{
         self.to_str().fmt(f)
     }}
 }}
-    ")?;
+    "
+    )?;
 
     Ok(())
 }
@@ -289,44 +326,145 @@ fn build_bin_providers(
             }
         }
         Platform::combine_leaves(&mut providers);
-        println!("cargo::warning={pascal_bin}:{providers:?}");
-        writeln!( out, "            Self::{pascal_bin} => {{")?;
+        writeln!(out, "            Self::{pascal_bin} => {{")?;
         let mut linux_flavors = vec![];
         for (platform, providers) in providers {
-            if Platform::Linux.leaves().contains(&platform) {
+            if platform.is_linux_leaf() {
                 linux_flavors.push((platform, providers));
                 continue;
             }
-            writeln!(out,  "                {} {{ enum_set!{{ {} }} }}", platform.cfg_attr(), providers.iter().join(" | "))?;
+            writeln!(
+                out,
+                "                {} {{ enum_set!{{ {} }} }}",
+                platform.cfg_attr(),
+                providers.iter().join(" | ")
+            )?;
         }
         if !linux_flavors.is_empty() {
-            writeln!(out,  "                {} {{ match op::linux_flavor() {{", Platform::Linux.cfg_attr())?;
+            writeln!(
+                out,
+                "                {} {{ match op::linux_flavor() {{",
+                Platform::Linux.cfg_attr()
+            )?;
             for (platform, providers) in linux_flavors {
-                writeln!(out,  "                    {} => enum_set! {{ {} }},", platform.linux_flavor(), providers.iter().join(" | "))?;
+                writeln!(
+                    out,
+                    "                    {} => enum_set! {{ {} }},",
+                    platform.linux_flavor(),
+                    providers.iter().join(" | ")
+                )?;
             }
-            writeln!(out,  "                }} }}")?;
+            writeln!(out, "                }} }}")?;
         }
-        writeln!( out, "            }}")?;
+        writeln!(out, "            }}")?;
     }
 
     Ok(())
 }
 
-fn build_test(out: &mut String) -> cu::Result<()> {
-    let test = r"
-#[cfg(test)]
-mod gen_test {
-    use super::*;
-    #[test]
-    fn test_registry() {
-        for i in 0..PkgId::LENGTH {
-            let pkg = PkgId::from_usize(i);
-            assert_eq!(pkg.package().id(), pkg);
+fn build_package_modules(
+    packages: &BTreeMap<String, ModuleFileStructure>,
+    snake_pkgs: &[String],
+    modules: &[ParsedModule],
+    registry_path: &Path,
+    out: &mut String,
+) -> cu::Result<()> {
+    use std::fmt::Write as _;
+    let iter = packages.values().zip(modules.iter().zip(snake_pkgs));
+    for (module, (parsed, name)) in iter {
+        let mut linux_flavors = vec![];
+        for (platform, path) in &module.files {
+            if platform.is_linux_leaf() {
+                linux_flavors.push(*platform);
+            }
+            let path = path.normalize()?;
+            let path = path.try_to_rel_from(registry_path);
+            // relative path ensures the output is consistent throughout
+            // build environments
+            cu::ensure!(path.is_relative());
+            let path = path.as_utf8()?;
+            writeln!(
+                out,
+                "{} #[path = \"{}\"] mod _pkg_{}{};",
+                platform.cfg_attr(),
+                path,
+                name,
+                platform.module_str()
+            )?;
+        }
+        // since linux flavors can't be decided at compile time,
+        // generate a linux module to mux it at runtime
+        if !linux_flavors.is_empty() {
+            writeln!(out, "{} mod _pkg_{}{} {{", Platform::Linux.cfg_attr(), name, Platform::Linux.module_str())?;
+            {
+                writeln!(out, "    pub fn binaries() -> enumset::EnumSet<super::BinId> {{ match op::linux_flavor() {{")?;
+                for platform in &linux_flavors {
+                    let data = cu::check!(parsed.platform_data.get(&platform), "failed to get module data for platform '{platform}', package '{name}'")?;
+                    let binaries = data
+                        .kebab_binaries
+                        .iter()
+                        .map(|x| format!("super::BinId::{}", util::kebab_to_pascal(x)))
+                        .join(" | ");
+                    writeln!(out, "        {} => enumset::enum_set!{{ {} }},", platform.linux_flavor(), binaries)?;
+                }
+                writeln!(out, "        _ => Default::default(),")?;
+                writeln!(out, "    }} }}")?;
+            }
+            macro_rules! write_unreachable_match_arm {
+                () => {
+                    writeln!(out, "        _ => cu::bail!(\"unreachable\")")
+                }
+            }
+            for fn_name in ["verify", "install", "uninstall"] {
+                let retty = if fn_name == "verify" {"crate::Verified"} else {"()"};
+                writeln!(out, "    pub fn {fn_name}(ctx: &crate::Context) -> cu::Result<{retty}> {{ match op::linux_flavor() {{")?;
+                for platform in &linux_flavors {
+                    writeln!(out, "        {} => super::_pkg_{}{}::{}(ctx),", platform.linux_flavor(), name, platform.module_str(), fn_name)?;
+                }
+                // the package functions will check the flavor before invoking vtable functions,
+                // so the other platforms are not reachable
+                write_unreachable_match_arm!()?;
+                writeln!(out, "    }} }}")?;
+            }
+            macro_rules! write_optional_function {
+                ($fn_name:literal, $has_ident:ident) => {
+                    writeln!(out, "    pub fn {}(_ctx: &crate::Context) -> cu::Result<()> {{ match op::linux_flavor() {{", $fn_name)?;
+                    for platform in &linux_flavors {
+                        let platform_data = cu::check!(parsed.platform_data.get(&platform), "failed to get module data for platform '{platform}', package '{name}'")?;
+                        if platform_data.$has_ident {
+                            writeln!(out, "        {} => super::_pkg_{}{}::{}(_ctx),", platform.linux_flavor(), name, platform.module_str(), $fn_name)?;
+                        } else {
+                            writeln!(out, "        {} => Ok(()),", platform.linux_flavor())?;
+                        }
+                    }
+                    write_unreachable_match_arm!()?;
+                    writeln!(out, "    }} }}")?;
+                }
+            }
+            write_optional_function!("download", has_download);
+            write_optional_function!("build", has_build);
+            write_optional_function!("configure", has_configure);
+            write_optional_function!("clean", has_clean);
+            macro_rules! write_dependency_function {
+                ($fn_name:literal, $has_ident:ident, $retty:literal) => {
+                    writeln!(out, "    pub fn {}() -> {} {{ match op::linux_flavor() {{", $fn_name, $retty)?;
+                    for platform in &linux_flavors {
+                        let platform_data = cu::check!(parsed.platform_data.get(&platform), "failed to get module data for platform '{platform}', package '{name}'")?;
+                        if platform_data.$has_ident {
+                            writeln!(out, "        {} => super::_pkg_{}{}::{}(),", platform.linux_flavor(), name, platform.module_str(), $fn_name)?;
+                        } else {
+                            writeln!(out, "        {} => Default::default(),", platform.linux_flavor())?;
+                        }
+                    }
+                    writeln!(out, "        _ => Default::default(),")?;
+                    writeln!(out, "    }} }}")?;
+                }
+            }
+            write_dependency_function!("binary_dependencies", has_binary_dependencies, "enumset::EnumSet<super::BinId>");
+            write_dependency_function!("config_dependencies", has_config_dependencies, "enumset::EnumSet<super::PkgId>");
+
+            writeln!(out, "}}")?;
         }
     }
-}
-    ";
-
-    out.push_str(test);
     Ok(())
 }

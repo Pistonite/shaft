@@ -1,5 +1,5 @@
-use enumset::{EnumSet, EnumSetType};
 use cu::pre::*;
+use enumset::{EnumSet, EnumSetType};
 
 /// Linux package manager flavor
 #[derive(EnumSetType, Display, DebugCustom)]
@@ -25,7 +25,7 @@ impl LinuxFlavor {
     }
     /// Get a set for none of the flavors
     pub const fn none() -> EnumSet<Self> {
-        enumset::enum_set! { }
+        enumset::enum_set! {}
     }
 }
 
@@ -68,6 +68,7 @@ pub fn init_platform() -> cu::Result<()> {
             cu::bail!("unsupported platform: pacman not available; please fix your system");
         }
         CURRENT_FLAVOR.set(LinuxFlavor::Pacman);
+        cu::debug!("found pacman - arch linux");
         return Ok(());
     }
 

@@ -1,50 +1,53 @@
-pub trait VersionNumber {
-    fn as_str(&self) -> &str;
-    fn to_parts(&self) -> Vec<&str> {
-        self.as_str().split('.').collect()
-    }
-    fn is_version_same_or_higher_than(&self, other: &str) -> bool {
-        if self.as_str() == other {
-            return true;
-        }
-        let self_parts = self.to_parts();
-        let other_parts = other.to_parts();
+use std::cmp::Ordering;
 
+#[derive(PartialEq)]
+pub struct Version<'a>(pub &'a str);
+impl<'a> PartialOrd for Version<'a> {
+    #[inline(always)]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.partial_cmp(&other.0)
+    }
+}
+impl<'a> PartialEq<&str> for Version<'a> {
+    #[inline(always)]
+    fn eq(&self, other: &&str) -> bool {
+        self.0 == *other
+    }
+}
+impl<'a> PartialOrd<&str> for Version<'a> {
+    fn partial_cmp(&self, other: &&str) -> Option<Ordering> {
+        if self.0 == *other {
+            return Some(Ordering::Equal);
+        }
+        let self_parts = self.0.split('.').collect::<Vec<_>>();
+        let other_parts = other.split('.').collect::<Vec<_>>();
         for (s, o) in std::iter::zip(&self_parts, &other_parts) {
             match (cu::parse::<u64>(s), cu::parse::<u64>(o)) {
                 (Ok(s), Ok(o)) => {
                     // both are version numbers
                     match s.cmp(&o) {
-                        std::cmp::Ordering::Less => return false,
-                        std::cmp::Ordering::Greater => return true,
-                        std::cmp::Ordering::Equal => {}
+                        Ordering::Less => return Some(Ordering::Less),
+                        Ordering::Greater => return Some(Ordering::Greater),
+                        Ordering::Equal => {}
                     }
                 }
                 // not comparable
-                _ => return false,
+                _ => return None,
             }
         }
 
-        if self_parts.len() > other_parts.len() {
-            // self is longer, probably a higher version
-            return true;
-        }
-
-        // equal
-        return true;
+        self.0.len().partial_cmp(&other.len())
     }
 }
-
-impl VersionNumber for str {
+impl<'a> PartialEq<String> for Version<'a> {
     #[inline(always)]
-    fn as_str(&self) -> &str {
-        self
+    fn eq(&self, other: &String) -> bool {
+        self.0 == other
     }
 }
-
-impl VersionNumber for String {
+impl<'a> PartialOrd<String> for Version<'a> {
     #[inline(always)]
-    fn as_str(&self) -> &str {
-        self.as_str()
+    fn partial_cmp(&self, other: &String) -> Option<Ordering> {
+        self.partial_cmp(&other.as_str())
     }
 }

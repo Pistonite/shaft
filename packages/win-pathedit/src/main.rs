@@ -1,4 +1,7 @@
-use std::{collections::BTreeSet, path::{Path, PathBuf}};
+use std::{
+    collections::BTreeSet,
+    path::{Path, PathBuf},
+};
 
 use cu::pre::*;
 
@@ -9,7 +12,7 @@ struct Cli {
     check: bool,
     #[clap(flatten)]
     #[as_ref]
-    flags: cu::cli::Flags
+    flags: cu::cli::Flags,
 }
 
 #[cu::cli]
@@ -32,9 +35,15 @@ fn main(cli: Cli) -> cu::Result<()> {
     }
 
     let content = cu::check!(parse_env(), "failed to parse PATH environment variables")?;
-    cu::check!(cu::fs::write(&path, content), "failed to write PATH to temporary file")?;
+    cu::check!(
+        cu::fs::write(&path, content),
+        "failed to write PATH to temporary file"
+    )?;
 
-    cu::check!(start_edit_and_wait(&path), "unable to open temporary file in editor")?;
+    cu::check!(
+        start_edit_and_wait(&path),
+        "unable to open temporary file in editor"
+    )?;
     cu::info!("applying changes...");
     cu::check!(apply_file(&path), "failed to apply temporary file")?;
     Ok(())
@@ -80,7 +89,11 @@ fn parse_path_file(content: &str) -> cu::Result<(String, String)> {
             "@SYSTEM" => is_system = true,
             "@USER" => is_system = false,
             _ => {
-                let paths = if is_system { &mut system_paths } else { &mut user_paths };
+                let paths = if is_system {
+                    &mut system_paths
+                } else {
+                    &mut user_paths
+                };
                 for p in line.split(';') {
                     let p = p.trim();
                     if !paths.contains(&p) {
@@ -98,7 +111,8 @@ fn parse_env() -> cu::Result<String> {
     let current_user_paths = win_envedit::get_user("PATH")?;
     cu::debug!("current system={current_system_paths}");
     cu::debug!("current user={current_user_paths}");
-    let out = format!(r#"
+    let out = format!(
+        r#"
 # Temporary file for editing PATH
 # Put one path per line, or multiple in the same line separated by ;
 # Lines starting with # will be ignored
@@ -162,12 +176,21 @@ fn start_edit_and_wait(path: &Path) -> cu::Result<()> {
 }
 fn start_edit_and_wait_vim(path: &Path, vim: &Path) -> cu::Result<()> {
     cu::info!("waiting for vim to exit...");
-    let _ = vim.command().arg(path).stdoe(cu::pio::inherit()).stdin_inherit().wait()?;
+    let _ = vim
+        .command()
+        .arg(path)
+        .stdoe(cu::pio::inherit())
+        .stdin_inherit()
+        .wait()?;
     Ok(())
 }
 fn start_edit_and_wait_code(path: &Path, code: &Path) -> cu::Result<()> {
     cu::info!("waiting for vscode to exit...");
-    let _ = code.command().add(cu::args!["--wait", path]).all_null().wait()?;
+    let _ = code
+        .command()
+        .add(cu::args!["--wait", path])
+        .all_null()
+        .wait()?;
     Ok(())
 }
 fn start_edit_notepad(path: &Path, notepad: &Path) -> cu::Result<()> {

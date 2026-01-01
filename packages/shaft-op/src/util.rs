@@ -1,10 +1,8 @@
 use std::path::Path;
-use std::task::{Poll, Context};
 use std::pin::Pin;
+use std::task::{Context, Poll};
 
-use sha2::{Sha256, Digest};
-
-
+use sha2::{Digest, Sha256};
 
 pub async fn co_sha256(path: &Path) -> cu::Result<String> {
     let mut reader = cu::fs::co_reader(path).await?;
@@ -32,7 +30,10 @@ impl tokio::io::AsyncWrite for AsyncSha256 {
         Poll::Ready(self.get_mut().0.flush())
     }
     #[inline(always)]
-    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), std::io::Error>> {
+    fn poll_shutdown(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Result<(), std::io::Error>> {
         self.poll_flush(cx)
     }
 }

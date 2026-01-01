@@ -1,36 +1,35 @@
+use cu::pre::*;
 use enum_map::EnumMap;
 use enumset::EnumSet;
-use registry::{BinId, Context, PkgId};
-use cu::pre::*;
+use registry::{BinId, PkgId};
 
 mod install_cache;
-use install_cache::InstallCache;
+pub use install_cache::InstallCache;
 
 pub fn parse_pkgs(idents: &[String]) -> cu::Result<EnumSet<PkgId>> {
     let mut pkgs = EnumSet::new();
-    for ident in idents  {
+    for ident in idents {
         let pkg = cu::check!(PkgId::from_str(ident), "cannot find package '{ident}'")?;
         pkgs.insert(pkg);
     }
     Ok(pkgs)
 }
 
-
-pub fn build_sync_graph(
-    pkgs: EnumSet<PkgId>, 
-    installed: &InstallCache
-) -> cu::Result<Vec<PkgId>> {
+pub fn build_sync_graph(pkgs: EnumSet<PkgId>, installed: &InstallCache) -> cu::Result<Vec<PkgId>> {
+    cu::debug!("building sync graph for {pkgs}");
     let mut sync_pkgs = EnumSet::new();
     let mut provider_selection = EnumMap::default();
     for pkg_id in pkgs {
-        cu::check!(collect_dependencies(pkg_id, installed, &mut sync_pkgs, &mut provider_selection), "failed to collect dependencies")?;
+        cu::check!(
+            collect_dependencies(pkg_id, installed, &mut sync_pkgs, &mut provider_selection),
+            "failed to collect dependencies"
+        )?;
     }
     loop {
         let len_before = sync_pkgs.len();
         for pkg_id in installed.pkgs {
-            let ctx = Context {pkg:pkg_id};
-            let cfg_deps = pkg_id.package().config_dependencies(&ctx);
-            // if 
+            let cfg_deps = pkg_id.package().config_dependencies();
+            // if
             for cfg_id in cfg_deps {
                 if sync_pkgs.contains(cfg_id) {
                     sync_pkgs.insert(pkg_id);
@@ -42,12 +41,14 @@ pub fn build_sync_graph(
             break;
         }
     }
-    // always sync core-pseudo
     sync_pkgs.insert(PkgId::CorePseudo);
 
     // check if newly installed will cause conflict
     let new_pkgs = sync_pkgs.difference(installed.pkgs);
-    cu::check!(installed.check_conflicts(new_pkgs), "there are conflicts in new package(s) to install")?;
+    cu::check!(
+        installed.check_conflicts(new_pkgs),
+        "there are conflicts in new package(s) to install"
+    )?;
 
     let graph = resolve_sync_order(sync_pkgs, &provider_selection)?;
     Ok(graph)
@@ -55,23 +56,27 @@ pub fn build_sync_graph(
 
 #[cu::error_ctx("failed to determine sync order")]
 pub fn resolve_sync_order(
-    pkgs: EnumSet<PkgId>, 
+    pkgs: EnumSet<PkgId>,
     bin_providers: &EnumMap<BinId, Option<PkgId>>,
 ) -> cu::Result<Vec<PkgId>> {
     let mut remaining = pkgs;
-    let mut out = Vec::with_capacity(pkgs.len());
+    let mut out = Vec::with_capacity(pkgs.len() + 1);
+    // always sync core-pseudo first
+    remaining.remove(PkgId::CorePseudo);
+    out.push(PkgId::CorePseudo);
     while !remaining.is_empty() {
         let mut next_to_add = EnumSet::new();
         'outer: for pkg_id in remaining {
             // check bin deps
-            let ctx = Context {pkg: pkg_id};
-            let bin_deps = pkg_id.package().binary_dependencies(&ctx);
+            let bin_deps = pkg_id.package().binary_dependencies();
             for bin_id in bin_deps {
                 let Some(provider) = bin_providers[bin_id] else {
                     cu::bail!("did not resolve provider for binary '{bin_id}'");
                 };
                 if provider == pkg_id {
-                    cu::bail!("package '{pkg_id}' depends on the binary '{bin_id}' which itself provides.");
+                    cu::bail!(
+                        "package '{pkg_id}' depends on the binary '{bin_id}' which itself provides."
+                    );
                 }
                 if remaining.contains(provider) {
                     // not all bin deps added
@@ -79,7 +84,7 @@ pub fn resolve_sync_order(
                 }
             }
             // check config deps
-            let cfg_deps = pkg_id.package().config_dependencies(&ctx);
+            let cfg_deps = pkg_id.package().config_dependencies();
             for cfg_id in cfg_deps {
                 if remaining.contains(cfg_id) {
                     // not all cfg deps added
@@ -89,8 +94,14 @@ pub fn resolve_sync_order(
             next_to_add.insert(pkg_id);
         }
         if next_to_add.is_empty() {
-            let pkgs_string = remaining.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ");
-            cu::bail!("the order of the remaining packages cannot be determined: [ {pkgs_string} ]");
+            let pkgs_string = remaining
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>()
+                .join(", ");
+            cu::bail!(
+                "the order of the remaining packages cannot be determined: [ {pkgs_string} ]"
+            );
         }
         out.extend(next_to_add);
         remaining.remove_all(next_to_add);
@@ -100,30 +111,26 @@ pub fn resolve_sync_order(
 
 #[cu::error_ctx("when collecting dependencies for package '{pkg}'")]
 pub fn collect_dependencies(
-    pkg: PkgId, 
+    pkg: PkgId,
     installed: &InstallCache,
     out_pkgs: &mut EnumSet<PkgId>,
-    provider_selection: &mut EnumMap<BinId, Option<PkgId>>
+    provider_selection: &mut EnumMap<BinId, Option<PkgId>>,
 ) -> cu::Result<()> {
     if !out_pkgs.insert(pkg) {
         // pkg is already added, meaning its dependencies
         // are all processed
         return Ok(());
     }
-    let context = Context {pkg};
-    let bin_deps = pkg.package().binary_dependencies(&context);
+    let bin_deps = pkg.package().binary_dependencies();
+    cu::debug!("bin_deps for '{pkg}': {bin_deps}");
     for bin_id in bin_deps {
         let provider = select_provider(provider_selection, bin_id, installed)?;
-        collect_dependencies(
-            provider, installed, out_pkgs, provider_selection
-        )?;
+        collect_dependencies(provider, installed, out_pkgs, provider_selection)?;
     }
-    let cfg_deps = pkg.package().config_dependencies(&context);
+    let cfg_deps = pkg.package().config_dependencies();
     for cfg_id in cfg_deps {
         if installed.pkgs.contains(cfg_id) {
-            collect_dependencies(
-                cfg_id, installed, out_pkgs, provider_selection
-            )?;
+            collect_dependencies(cfg_id, installed, out_pkgs, provider_selection)?;
         }
     }
 
@@ -134,7 +141,7 @@ pub fn collect_dependencies(
 pub fn select_provider(
     provider_selection: &mut EnumMap<BinId, Option<PkgId>>,
     bin_id: BinId,
-    installed: &InstallCache
+    installed: &InstallCache,
 ) -> cu::Result<PkgId> {
     if let Some(pkg_id) = provider_selection[bin_id] {
         return Ok(pkg_id);
@@ -147,7 +154,10 @@ pub fn select_provider(
     }
 
     let providers = bin_id.providers();
-    cu::ensure!(!providers.is_empty(), "no provider found for binary '{bin_id}'");
+    cu::ensure!(
+        !providers.is_empty(),
+        "no provider found for binary '{bin_id}'"
+    );
 
     // if there is only one provider for the binary, use that pkg
     if providers.len() == 1 {
@@ -163,7 +173,12 @@ pub fn select_provider(
     let pkg_id = loop {
         cu::hint!("please select a provider for binary '{bin_id}':");
         for (i, provider) in providers.iter().enumerate() {
-            cu::print!("{}  {}: {}", i+1, provider.to_str(), provider.package().short_desc);
+            cu::print!(
+                "{}  {}: {}",
+                i + 1,
+                provider.to_str(),
+                provider.package().short_desc
+            );
         }
         if let Some(e) = error {
             cu::error!("{e}");
@@ -177,7 +192,7 @@ pub fn select_provider(
             error = Some(format!("number too small: {answer}"));
             continue;
         }
-        let pkg_id = providers.iter().skip(answer-1).next();
+        let pkg_id = providers.iter().skip(answer - 1).next();
         let Some(pkg_id) = pkg_id else {
             error = Some(format!("number too large: {answer}"));
             continue;

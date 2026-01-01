@@ -1,4 +1,3 @@
-
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -8,12 +7,11 @@ use crate::home;
 
 #[cfg(windows)]
 pub mod windows {
-pub use win_envedit::*;
+    pub use win_envedit::*;
 }
 
 /// Add environment assert to ensure proper environment the next time the tool is invoked
-pub fn add_assert<I: IntoIterator<Item=(String,String)>>(iter: I) -> cu::Result<()> 
-{
+pub fn add_assert<I: IntoIterator<Item = (String, String)>>(iter: I) -> cu::Result<()> {
     let mut envs = load_env_json()?;
     envs.extend(iter);
     save_env_json(&envs);
@@ -24,13 +22,17 @@ pub fn add_assert<I: IntoIterator<Item=(String,String)>>(iter: I) -> cu::Result<
 pub fn require_reinvocation(resume: bool) -> cu::Result<()> {
     match (cfg!(windows), resume) {
         (true, true) => {
-            cu::bail!("environment has changed, please restart (all) terminal process, then run `shaft resume`.");
+            cu::bail!(
+                "environment has changed, please restart (all) terminal process, then run `shaft resume`."
+            );
         }
         (true, false) => {
             cu::bail!("environment has changed, please restart (all) terminal process.");
         }
         (false, true) => {
-            cu::bail!("environment has changed, please restart the shell, then run `shaft resume`.");
+            cu::bail!(
+                "environment has changed, please restart the shell, then run `shaft resume`."
+            );
         }
         (false, false) => {
             cu::bail!("environment has changed, please restart the shell.");
@@ -68,12 +70,13 @@ pub fn init_env() -> cu::Result<()> {
 fn load_env_json() -> cu::Result<BTreeMap<String, String>> {
     match cu::fs::read_string(home::env_json()) {
         Ok(content) => {
-            let map: BTreeMap<String, String> = cu::check!(json::parse(&content), "failed to parse env mod json, please manually check for corruption in the file")?;
+            let map: BTreeMap<String, String> = cu::check!(
+                json::parse(&content),
+                "failed to parse env mod json, please manually check for corruption in the file"
+            )?;
             Ok(map)
         }
-        Err(_) => {
-            Ok(Default::default())
-        }
+        Err(_) => Ok(Default::default()),
     }
 }
 

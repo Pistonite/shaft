@@ -1,11 +1,16 @@
-use std::{cell::UnsafeCell, mem::MaybeUninit, sync::{LazyLock, Mutex, atomic::AtomicBool}, thread::ThreadId};
+use std::{
+    cell::UnsafeCell,
+    mem::MaybeUninit,
+    sync::{LazyLock, Mutex, atomic::AtomicBool},
+    thread::ThreadId,
+};
 
-static MAIN_THREAD_ID: LazyLock<ThreadId> = LazyLock::new(|| {
-    std::thread::current().id()
-});
+static MAIN_THREAD_ID: LazyLock<ThreadId> = LazyLock::new(|| std::thread::current().id());
 pub fn ensure_main_thread() -> cu::Result<()> {
     if *MAIN_THREAD_ID != std::thread::current().id() {
-        cu::bail!("unexpected: this operation should only be called on the main thread - this is an internal bug");
+        cu::bail!(
+            "unexpected: this operation should only be called on the main thread - this is an internal bug"
+        );
     }
     Ok(())
 }

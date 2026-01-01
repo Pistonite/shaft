@@ -2,8 +2,8 @@ use std::path::Path;
 
 use cu::pre::*;
 
-mod parse;
 mod emit;
+mod parse;
 mod util;
 
 pub fn run_build(crate_path: &Path) {

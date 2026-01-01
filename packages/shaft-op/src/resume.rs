@@ -5,7 +5,9 @@ pub fn mark_interrupted() {
     let command = shell_words::join(std::env::args());
     if let Err(e) = cu::fs::write(path, &command) {
         cu::error!("{e:?}");
-        cu::warn!("failed to store interrupted file, cannot automatically resume the same command.");
+        cu::warn!(
+            "failed to store interrupted file, cannot automatically resume the same command."
+        );
     };
 }
 
@@ -14,7 +16,8 @@ pub fn extract_previously_interrupted_json_command() -> Option<(String, String)>
     if !path.exists() {
         return None;
     }
-    let previous_command_args = cu::fs::read_string(&path).unwrap_or("(unknown command)".to_string());
+    let previous_command_args =
+        cu::fs::read_string(&path).unwrap_or("(unknown command)".to_string());
     let command_file = home::home().join("previous_command.json");
     if !command_file.exists() {
         return None;

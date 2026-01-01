@@ -2,7 +2,9 @@ use std::collections::BTreeMap;
 
 use cu::pre::*;
 
-pub fn generate_casings_from_kebab<T: AsRef<str>>(kebab_values: &[T]) -> (Vec<String>, Vec<String>) {
+pub fn generate_casings_from_kebab<T: AsRef<str>>(
+    kebab_values: &[T],
+) -> (Vec<String>, Vec<String>) {
     let mut pascal = Vec::with_capacity(kebab_values.len());
     let mut snake = Vec::with_capacity(kebab_values.len());
     for name in kebab_values {
@@ -19,7 +21,7 @@ pub fn is_kebab(s: &str) -> bool {
 }
 
 pub fn kebab_to_pascal(kebab: &str) -> String {
-    let mut pascal = String::with_capacity(kebab.len()+1);
+    let mut pascal = String::with_capacity(kebab.len() + 1);
     let first = kebab.chars().next();
     // add underscore, since non alphabetic can't start an identifier
     if first.is_some_and(|c| !c.is_alphabetic()) {
@@ -73,8 +75,12 @@ impl Platform {
         };
         format!("#[cfg({inner})]")
     }
-    pub fn cfg_attr_inverted<I: Iterator<Item=Self>>(set: I) -> Option<String> {
-        let mut not_in_set = Self::Any.leaves().iter().map(|p|(*p,true)).collect::<BTreeMap<_, _>>();
+    pub fn cfg_attr_inverted<I: Iterator<Item = Self>>(set: I) -> Option<String> {
+        let mut not_in_set = Self::Any
+            .leaves()
+            .iter()
+            .map(|p| (*p, true))
+            .collect::<BTreeMap<_, _>>();
         for platform in set {
             for leaf in platform.leaves() {
                 not_in_set.insert(*leaf, false);
@@ -103,22 +109,28 @@ impl Platform {
             Platform::Windows => Some("target_os=\"windows\""),
             Platform::WindowsX64 => Some("all(target_os=\"windows\",target_arch=\"x86_64\")"),
             Platform::WindowsArm64 => Some("all(target_os=\"windows\",target_arch=\"aarch64\")"),
-            Platform::Linux |
-            Platform::LinuxPacman |
-            Platform::LinuxApt => Some("target_os=\"linux\""),
+            Platform::Linux | Platform::LinuxPacman | Platform::LinuxApt => {
+                Some("target_os=\"linux\"")
+            }
             Platform::Macos => Some("all(target_os=\"macos\",target_arch=\"aarch64\")"),
         }
     }
     pub fn leaves(self) -> &'static [Self] {
         match self {
-            Platform::Any => &[Self::WindowsX64, Self::WindowsArm64, Self::LinuxPacman, Self::LinuxApt, Self::Macos],
+            Platform::Any => &[
+                Self::WindowsX64,
+                Self::WindowsArm64,
+                Self::LinuxPacman,
+                Self::LinuxApt,
+                Self::Macos,
+            ],
             Platform::Windows => &[Self::WindowsX64, Self::WindowsArm64],
             Platform::WindowsX64 => &[Self::WindowsX64],
             Platform::WindowsArm64 => &[Self::WindowsArm64],
             Platform::Linux => &[Self::LinuxPacman, Self::LinuxApt],
             Platform::LinuxPacman => &[Self::LinuxPacman],
             Platform::LinuxApt => &[Self::LinuxApt],
-            Platform::Macos => &[Self::Macos]
+            Platform::Macos => &[Self::Macos],
         }
     }
     pub fn combine_leaves<T: Default + PartialEq>(tree: &mut BTreeMap<Self, T>) {
@@ -129,7 +141,9 @@ impl Platform {
         let linux = tree.get(&Self::LinuxPacman);
         if tree.get(&Self::LinuxApt) == linux {
             tree.remove(&Self::LinuxApt);
-            let linux = tree.remove(&Self::LinuxPacman).expect("combine_leaves linux");
+            let linux = tree
+                .remove(&Self::LinuxPacman)
+                .expect("combine_leaves linux");
             tree.insert(Self::Linux, linux);
         } else {
             should_try_any = false;
@@ -137,7 +151,9 @@ impl Platform {
         let windows = tree.get(&Self::WindowsX64);
         if tree.get(&Self::WindowsArm64) == windows {
             tree.remove(&Self::WindowsArm64);
-            let windows = tree.remove(&Self::WindowsX64).expect("combine_leaves windows");
+            let windows = tree
+                .remove(&Self::WindowsX64)
+                .expect("combine_leaves windows");
             tree.insert(Self::Windows, windows);
         } else {
             should_try_any = false;
@@ -152,30 +168,34 @@ impl Platform {
             }
         }
     }
-    pub fn find_conflict<I: Iterator<Item=Self>>(self, mut current: I) -> Option<Platform> {
+    pub fn find_conflict<I: Iterator<Item = Self>>(self, mut current: I) -> Option<Platform> {
         match self {
             Self::Any => current.next(),
-            Self::Windows => {
-                current.find(|p|matches!(p,Self::Any|Self::Windows|Self::WindowsArm64|Self::WindowsX64))
-            }
+            Self::Windows => current.find(|p| {
+                matches!(
+                    p,
+                    Self::Any | Self::Windows | Self::WindowsArm64 | Self::WindowsX64
+                )
+            }),
             Self::WindowsX64 => {
-                current.find(|p|matches!(p,Self::Any|Self::Windows|Self::WindowsX64))
+                current.find(|p| matches!(p, Self::Any | Self::Windows | Self::WindowsX64))
             }
             Self::WindowsArm64 => {
-                current.find(|p|matches!(p,Self::Any|Self::Windows|Self::WindowsArm64))
+                current.find(|p| matches!(p, Self::Any | Self::Windows | Self::WindowsArm64))
             }
-            Self::Linux => {
-                current.find(|p|matches!(p,Self::Any|Self::Linux|Self::LinuxPacman|Self::LinuxApt))
-            }
+            Self::Linux => current.find(|p| {
+                matches!(
+                    p,
+                    Self::Any | Self::Linux | Self::LinuxPacman | Self::LinuxApt
+                )
+            }),
             Self::LinuxPacman => {
-                current.find(|p|matches!(p,Self::Any|Self::Linux|Self::LinuxPacman))
+                current.find(|p| matches!(p, Self::Any | Self::Linux | Self::LinuxPacman))
             }
             Self::LinuxApt => {
-                current.find(|p|matches!(p,Self::Any|Self::Linux|Self::LinuxApt))
+                current.find(|p| matches!(p, Self::Any | Self::Linux | Self::LinuxApt))
             }
-            Self::Macos => {
-                current.find(|p|matches!(p,Self::Any|Self::Macos))
-            }
+            Self::Macos => current.find(|p| matches!(p, Self::Any | Self::Macos)),
         }
     }
     pub fn linux_flavors(self) -> &'static str {
@@ -183,15 +203,18 @@ impl Platform {
             Self::Linux => "op::LinuxFlavor::all()",
             Self::LinuxPacman => "enum_set!{ op::LinuxFlavor::Pacman }",
             Self::LinuxApt => "enum_set!{ op::LinuxFlavor::Apt }",
-            _ => "op::LinuxFlavor::none()"
+            _ => "op::LinuxFlavor::none()",
         }
     }
     pub fn linux_flavor(self) -> &'static str {
         match self {
             Self::LinuxPacman => "op::LinuxFlavor::Pacman",
             Self::LinuxApt => "op::LinuxFlavor::Apt",
-            _ => ""
+            _ => "",
         }
+    }
+    pub fn is_linux_leaf(self) -> bool {
+        Platform::Linux.leaves().contains(&self)
     }
     pub fn module_str(self) -> &'static str {
         match self {
@@ -202,7 +225,7 @@ impl Platform {
             Platform::Linux => "__linux",
             Platform::LinuxPacman => "__linux_pacman",
             Platform::LinuxApt => "__linux_apt",
-            Platform::Macos => "__macos"
+            Platform::Macos => "__macos",
         }
     }
 }
@@ -217,7 +240,7 @@ impl cu::Parse for Platform {
             "linux-pacman" => Ok(Self::LinuxPacman),
             "linux-apt" => Ok(Self::LinuxApt),
             "mac" => Ok(Self::Macos),
-            _ => cu::bail!("unknown platform identifier '{x}'")
+            _ => cu::bail!("unknown platform identifier '{x}'"),
         }
     }
 }

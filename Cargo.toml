@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "packages/procname-checker",
     "packages/shaft-build",
     "packages/shaft-cli",
     "packages/shaft-op",
@@ -12,7 +13,7 @@ members = [
 [workspace.dependencies.cu]
 package = "pistonite-cu"
 # path = "../cu/packages/copper"
-version = "0.6.5"
+version = "0.6.6"
 
 [workspace.dependencies.pm]
 package = "pistonite-pm"
