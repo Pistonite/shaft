@@ -6,7 +6,7 @@ use op::installer::pacman;
 
 use crate::pre::*;
 
-metadata_binaries!("git");
+register_binaries!("git");
 
 static GIT_WINDOWS_VERSION: &str = "2.51.2.windows.1";
 static GIT_MICROSOFT_VERSION: &str = "2.51.2.vfs";

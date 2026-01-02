@@ -178,6 +178,9 @@ pub struct ModuleData {
     pub has_build: bool,
     pub has_configure: bool,
     pub has_clean: bool,
+    pub has_config_location: bool,
+    pub has_backup_restore: bool,
+    pub has_pre_uninstall: bool,
 }
 impl ModuleData {
     pub fn short_desc(&self) -> &str {
@@ -204,7 +207,7 @@ impl cu::Parse for ModuleData {
         for item in file_syntax.items {
             match item {
                 syn::Item::Macro(item) => {
-                    if item.mac.path.is_ident("metadata_binaries") {
+                    if item.mac.path.is_ident("register_binaries") {
                         let body = item.mac.parse_body::<MacroBody>()?;
                         for lit in body.items {
                             binaries.insert(lit.value());
@@ -234,6 +237,10 @@ impl cu::Parse for ModuleData {
         let mut has_build = false;
         let mut has_configure = false;
         let mut has_clean = false;
+        let mut has_config_location = false;
+        let mut has_backup = false;
+        let mut has_restore = false;
+        let mut has_pre_uninstall = false;
         for ident in export_idents {
             match ident.as_str() {
                 "binary_dependencies" => has_binary_dependencies = true,
@@ -242,8 +249,17 @@ impl cu::Parse for ModuleData {
                 "build" => has_build = true,
                 "configure" => has_configure = true,
                 "clean" => has_clean = true,
+                "config_location" => has_config_location = true,
+                "backup" => has_backup = true,
+                "restore" => has_restore = true,
+                "pre_uninstall" => has_pre_uninstall = true,
                 _ => {}
             }
+        }
+        if has_backup != has_restore {
+            cu::bail!(
+                "a package must have both `backup` and `restore` functions, or have neither."
+            );
         }
 
         Ok(Self {
@@ -255,6 +271,9 @@ impl cu::Parse for ModuleData {
             has_build,
             has_configure,
             has_clean,
+            has_config_location,
+            has_backup_restore: has_backup,
+            has_pre_uninstall,
         })
     }
 }

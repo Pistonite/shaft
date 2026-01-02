@@ -15,3 +15,5 @@ pub mod resume;
 pub mod shell_profile;
 pub mod sysinfo;
 pub mod util;
+
+pub mod sudo;

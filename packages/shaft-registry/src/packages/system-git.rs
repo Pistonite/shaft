@@ -5,7 +5,7 @@ use cu::pre::*;
 
 use crate::pre::*;
 
-metadata_binaries!("git");
+register_binaries!("git");
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_bin_in_path!("git");

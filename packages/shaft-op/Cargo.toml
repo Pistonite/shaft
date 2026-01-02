@@ -4,7 +4,7 @@ version = "0.0.0"
 edition = "2024"
 
 [dependencies]
-cu = { workspace = true, features = ["print", "process", "json", "derive"] }
+cu = { workspace = true, features = ["process", "json", "derive", "prompt-password"] }
 enumset.workspace = true
 reqwest = { version = "0.12.24", features = ["gzip"] }
 serde = "1"

@@ -1,5 +1,5 @@
 use enumset::EnumSet;
-/// Implementation of `binary_dependencies` if not provided by package
+
 pub fn empty_bin_set() -> EnumSet<crate::BinId> {
     Default::default()
 }
@@ -9,6 +9,10 @@ pub fn empty_pkg_set() -> EnumSet<crate::PkgId> {
 /// Implementation of sync function if not provided by package
 pub fn ok(_: &crate::Context) -> cu::Result<()> {
     Ok(())
+}
+
+pub fn ok_none<T>(_: &crate::Context) -> cu::Result<Option<T>> {
+    Ok(None)
 }
 
 pub fn unsupported_platform<T>(_: &crate::Context) -> cu::Result<T> {

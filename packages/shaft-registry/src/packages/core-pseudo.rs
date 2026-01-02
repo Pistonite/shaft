@@ -3,7 +3,7 @@
 
 use crate::pre::*;
 
-metadata_binaries!("sudo", "cargo");
+register_binaries!("sudo", "cargo");
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     if let Err(e) = cu::which("sudo") {
@@ -35,7 +35,8 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     Ok(())
 }
 
-pub fn uninstall(_: &Context) -> cu::Result<()> {
+pub fn pre_uninstall(_: &Context) -> cu::Result<()> {
     cu::hint!("core-pseudo is a pseudo package to check requirements of the tool itself, and cannot be uninstalled.");
     cu::bail!("cannot uninstall core-pseudo");
 }
+pub use pre_uninstall as uninstall;

@@ -45,6 +45,8 @@ impl CliApi {
         cu::check!(op::init_platform(), "failed to init platform")?;
         cu::check!(crate::init::check_init_home(), "failed to init home")?;
         cu::check!(op::env_mod::init_env(), "failed to init environment")?;
+
+        // this is to make it easier to run the tool in development
         #[cfg(not(debug_assertions))]
         {
             cu::check!(crate::init::check_init_binary(), "failed to init binary")?;
@@ -153,11 +155,15 @@ impl CliCommand {
             CliCommand::Resume(_) => {}
             CliCommand::Upgrade(cmd) => cmd.run()?,
             CliCommand::Sync(cmd) => cmd.run()?,
-            CliCommand::Remove(_) => todo!(),
+            CliCommand::Remove(cmd) => cmd.run()?,
             CliCommand::Config(_) => todo!(),
             CliCommand::Clean(_) => {
                 // testing
-                op::resume::mark_interrupted();
+                let bar = cu::progress_unbounded("foo");
+                op::sudo::command("ls")?
+                    .stdin_null()
+                    .stdoe(cu::lv::P)
+                    .wait_nz()?;
             }
         }
         Ok(())
@@ -204,6 +210,11 @@ pub struct CliCommandRemove {
     #[as_ref]
     #[serde(skip)]
     pub flags: cu::cli::Flags,
+}
+impl CliCommandRemove {
+    fn run(&self) -> cu::Result<()> {
+        crate::cmds::remove(&self.packages)
+    }
 }
 
 #[derive(clap::Parser, Debug, AsRef, Serialize, Deserialize)]

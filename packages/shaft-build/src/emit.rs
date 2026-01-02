@@ -227,42 +227,34 @@ fn build_metadata_for_module(
     writeln!(out, "        install_fn: {module_path}::install,")?;
     writeln!(out, "        uninstall_fn: {module_path}::uninstall,")?;
 
-    if is_linux_mux || data.has_binary_dependencies {
-        writeln!(
-            out,
-            "        binary_dependencies_fn: {module_path}::binary_dependencies,"
-        )?;
-    } else {
-        writeln!(out, "        binary_dependencies_fn: _stub::empty_bin_set,")?;
+    macro_rules! write_optional_function {
+        ($has_ident:ident, $fn_name:literal, $stub_name:literal) => {
+            if is_linux_mux || data.$has_ident {
+                let fn_name = $fn_name;
+                writeln!(out, "        {fn_name}_fn: {module_path}::{fn_name},")?;
+            } else {
+                writeln!(out, "        {}_fn: _stub::{},", $fn_name, $stub_name)?;
+            }
+        };
     }
-    if is_linux_mux || data.has_config_dependencies {
-        writeln!(
-            out,
-            "        config_dependencies_fn: {module_path}::config_dependencies,"
-        )?;
-    } else {
-        writeln!(out, "        config_dependencies_fn: _stub::empty_pkg_set,")?;
-    }
-    if is_linux_mux || data.has_download {
-        writeln!(out, "        download_fn: {module_path}::download,")?;
-    } else {
-        writeln!(out, "        download_fn: _stub::ok,")?;
-    }
-    if is_linux_mux || data.has_build {
-        writeln!(out, "        build_fn: {module_path}::build,")?;
-    } else {
-        writeln!(out, "        build_fn: _stub::ok,")?;
-    }
-    if is_linux_mux || data.has_configure {
-        writeln!(out, "        configure_fn: {module_path}::configure,")?;
-    } else {
-        writeln!(out, "        configure_fn: _stub::ok,")?;
-    }
-    if is_linux_mux || data.has_clean {
-        writeln!(out, "        clean_fn: {module_path}::clean,")?;
-    } else {
-        writeln!(out, "        clean_fn: _stub::ok,")?;
-    }
+    write_optional_function!(
+        has_binary_dependencies,
+        "binary_dependencies",
+        "empty_bin_set"
+    );
+    write_optional_function!(
+        has_config_dependencies,
+        "config_dependencies",
+        "empty_pkg_set"
+    );
+    write_optional_function!(has_download, "download", "ok");
+    write_optional_function!(has_build, "build", "ok");
+    write_optional_function!(has_configure, "configure", "ok");
+    write_optional_function!(has_clean, "clean", "ok");
+    write_optional_function!(has_config_location, "config_location", "ok_none");
+    write_optional_function!(has_backup_restore, "backup", "ok");
+    write_optional_function!(has_backup_restore, "restore", "ok");
+    write_optional_function!(has_pre_uninstall, "pre_uninstall", "ok");
 
     writeln!(out, "    }} }},")?;
 
@@ -444,6 +436,31 @@ fn build_package_modules(
                 writeln!(out, "        _ => Default::default(),")?;
                 writeln!(out, "    }} }}")?;
             }
+            {
+                writeln!(
+                    out,
+                    "    pub fn config_location(_ctx: &crate::Context) -> cu::Result<Option<std::path::PathBuf>> {{ match op::linux_flavor() {{"
+                )?;
+                for platform in &linux_flavors {
+                    let data = cu::check!(
+                        parsed.platform_data.get(&platform),
+                        "failed to get module data for platform '{platform}', package '{name}'"
+                    )?;
+                    if data.has_config_location {
+                        writeln!(
+                            out,
+                            "        {} => super::_pkg_{}{}::config_location(_ctx),",
+                            platform.linux_flavor(),
+                            name,
+                            platform.module_str()
+                        )?;
+                    } else {
+                        writeln!(out, "        {} => Ok(None),", platform.linux_flavor())?;
+                    }
+                }
+                writeln!(out, "        _ => Ok(None),")?;
+                writeln!(out, "    }} }}")?;
+            }
             macro_rules! write_unreachable_match_arm {
                 () => {
                     writeln!(out, "        _ => cu::bail!(\"unreachable\")")
@@ -493,6 +510,9 @@ fn build_package_modules(
             write_optional_function!("build", has_build);
             write_optional_function!("configure", has_configure);
             write_optional_function!("clean", has_clean);
+            write_optional_function!("backup", has_backup_restore);
+            write_optional_function!("restore", has_backup_restore);
+            write_optional_function!("pre_uninstall", has_pre_uninstall);
             macro_rules! write_dependency_function {
                 ($fn_name:literal, $has_ident:ident, $retty:literal) => {
                     writeln!(

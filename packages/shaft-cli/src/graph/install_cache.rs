@@ -6,7 +6,7 @@ use registry::{BinId, PkgId};
 
 use cu::pre::*;
 
-#[derive(Default)]
+#[derive(Debug, Default, Clone)]
 pub struct InstallCache {
     /// Set of packages installed
     pub pkgs: EnumSet<PkgId>,
@@ -70,10 +70,30 @@ impl InstallCache {
         Ok(())
     }
 
-    pub fn add_to_installed(&mut self, pkg: PkgId) {
+    #[cu::error_ctx("failed to add '{pkg}' to install cache")]
+    pub fn add(&mut self, pkg: PkgId) -> cu::Result<()> {
+        // sanity check
+        cu::check!(
+            self.check_conflicts(pkg.into()),
+            "there are conflict(s) with existing packages"
+        )?;
         self.pkgs.insert(pkg);
         for bin in pkg.package().binaries() {
+            // this is ok because we checked for conflicts
             self.bins[bin] = Some(pkg);
+        }
+        Ok(())
+    }
+
+    pub fn remove(&mut self, pkg: PkgId) {
+        if !self.pkgs.remove(pkg) {
+            // was not installed, no-op
+            return;
+        }
+        for (_, pkg_id) in &mut self.bins {
+            if *pkg_id == Some(pkg) {
+                *pkg_id = None;
+            }
         }
     }
 }

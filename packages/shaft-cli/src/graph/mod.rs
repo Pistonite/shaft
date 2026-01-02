@@ -15,33 +15,66 @@ pub fn parse_pkgs(idents: &[String]) -> cu::Result<EnumSet<PkgId>> {
     Ok(pkgs)
 }
 
-pub fn build_sync_graph(pkgs: EnumSet<PkgId>, installed: &InstallCache) -> cu::Result<Vec<PkgId>> {
+pub fn build_remove_graph(
+    pkgs: EnumSet<PkgId>,
+    installed: &InstallCache,
+    provider_selection: &mut EnumMap<BinId, Option<PkgId>>,
+) -> cu::Result<Vec<PkgId>> {
+    cu::debug!("building remove graph for {pkgs}");
+    let mut remaining = pkgs;
+    let mut updated_installed = installed.clone();
+    let mut out = Vec::with_capacity(pkgs.len());
+    while !remaining.is_empty() {
+        let mut next_to_remove = EnumSet::new();
+        for pkg_id in remaining {
+            // make a copy of the current state of the install cache
+            // so we can temporarily remove the package
+            let mut temp_installed = updated_installed.clone();
+            // assume the package is removed
+            temp_installed.remove(pkg_id);
+            // build a sync graph for the remaining packages
+            let sync_graph = cu::check!(
+                build_sync_graph(temp_installed.pkgs, &temp_installed, provider_selection),
+                "failed to resolve sync graph when removing '{pkg_id}'"
+            )?;
+            // if the new sync graph contains the package to remove,
+            // it's not ready to be removed yet
+            if sync_graph.contains(&pkg_id) {
+                continue;
+            }
+            next_to_remove.insert(pkg_id);
+            updated_installed.remove(pkg_id);
+            out.push(pkg_id);
+        }
+        if next_to_remove.is_empty() {
+            let pkgs_string = remaining
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>()
+                .join(", ");
+            cu::bail!(
+                "cannot remove the following packages because other packages depend on them: [ {pkgs_string} ]"
+            );
+        }
+        remaining.remove_all(next_to_remove);
+    }
+    Ok(out)
+}
+
+pub fn build_sync_graph(
+    pkgs: EnumSet<PkgId>,
+    installed: &InstallCache,
+    provider_selection: &mut EnumMap<BinId, Option<PkgId>>,
+) -> cu::Result<Vec<PkgId>> {
     cu::debug!("building sync graph for {pkgs}");
     let mut sync_pkgs = EnumSet::new();
-    let mut provider_selection = EnumMap::default();
     for pkg_id in pkgs {
         cu::check!(
-            collect_dependencies(pkg_id, installed, &mut sync_pkgs, &mut provider_selection),
+            collect_dependencies(pkg_id, installed, &mut sync_pkgs, provider_selection),
             "failed to collect dependencies"
         )?;
     }
-    loop {
-        let len_before = sync_pkgs.len();
-        for pkg_id in installed.pkgs {
-            let cfg_deps = pkg_id.package().config_dependencies();
-            // if
-            for cfg_id in cfg_deps {
-                if sync_pkgs.contains(cfg_id) {
-                    sync_pkgs.insert(pkg_id);
-                    break;
-                }
-            }
-        }
-        if sync_pkgs.len() == len_before {
-            break;
-        }
-    }
-    sync_pkgs.insert(PkgId::CorePseudo);
+    let sync_pkgs = resolve_config_pkgs(sync_pkgs, EnumSet::new(), &installed);
 
     // check if newly installed will cause conflict
     let new_pkgs = sync_pkgs.difference(installed.pkgs);
@@ -52,6 +85,35 @@ pub fn build_sync_graph(pkgs: EnumSet<PkgId>, installed: &InstallCache) -> cu::R
 
     let graph = resolve_sync_order(sync_pkgs, &provider_selection)?;
     Ok(graph)
+}
+
+/// Resolve packages that should be added to sync_pkgs for config
+///
+/// `sync_pkgs` are packages that will be synced. `seed_pkgs` are packages that changed,
+/// but will not be synced.
+///
+/// Return a superset of `sync_pkgs`. Only packages in `installed.pkgs` may be added
+pub fn resolve_config_pkgs(
+    mut sync_pkgs: EnumSet<PkgId>,
+    seed_pkgs: EnumSet<PkgId>,
+    installed: &InstallCache,
+) -> EnumSet<PkgId> {
+    loop {
+        let len_before = sync_pkgs.len();
+        for pkg_id in installed.pkgs {
+            let cfg_deps = pkg_id.package().config_dependencies();
+            for cfg_id in cfg_deps {
+                if seed_pkgs.contains(cfg_id) || sync_pkgs.contains(cfg_id) {
+                    sync_pkgs.insert(pkg_id);
+                    break;
+                }
+            }
+        }
+        if sync_pkgs.len() == len_before {
+            break;
+        }
+    }
+    sync_pkgs
 }
 
 #[cu::error_ctx("failed to determine sync order")]

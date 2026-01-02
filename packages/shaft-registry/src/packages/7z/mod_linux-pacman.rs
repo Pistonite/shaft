@@ -2,7 +2,7 @@ use crate::pre::*;
 
 mod version;
 
-metadata_binaries!("7z");
+register_binaries!("7z");
 
 static VERSION: &str = "25.01";
 

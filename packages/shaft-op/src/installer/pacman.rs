@@ -1,15 +1,18 @@
 use std::collections::BTreeSet;
+use std::time::{Duration, Instant};
 
 use cu::pre::*;
 
 pub(crate) struct Pacman {
     installed_packages: BTreeSet<String>,
+    db_synced_time: Option<Instant>,
 }
 
 crate::main_thread! {
     const fn pacman() -> Pacman {
         Pacman {
             installed_packages: BTreeSet::new(),
+            db_synced_time: None
         }
     }
 }
@@ -25,7 +28,8 @@ pub fn is_installed(package_name: &str) -> cu::Result<bool> {
             .command()
             .arg("-Qq")
             .stdout(cu::pio::string())
-            .stdie_null()
+            .stderr(cu::lv::E)
+            .stdin_null()
             .spawn()?;
         child.wait_nz()?;
         let stdout = stdout.join()??;
@@ -40,24 +44,33 @@ pub fn is_installed(package_name: &str) -> cu::Result<bool> {
 pub fn install(package_name: &str) -> cu::Result<()> {
     cu::info!("installing '{package_name}' with pacman...");
     let mut state = pacman::instance()?;
-    cu::which("sudo")?
-        .command()
-        .name("pacman")
-        .args(["pacman", "-Syy", "--noconfirm"])
+    sync_database()?;
+    crate::sudo::command("pacman")?
+        .add(cu::args!["-S", package_name, "--noconfirm"])
         .stdout(cu::lv::I)
         .stderr(cu::lv::E)
-        .stdin_inherit()
-        .wait_nz()?;
-    cu::which("sudo")?
-        .command()
-        .name("pacman")
-        .add(cu::args!["pacman", "-S", package_name, "--noconfirm"])
-        .stdout(cu::lv::I)
-        .stderr(cu::lv::E)
-        .stdin_inherit()
+        .stdin_null()
         .wait_nz()?;
     state.installed_packages.clear();
     cu::info!("installed '{package_name}' with pacman");
+    Ok(())
+}
+
+#[cu::error_ctx("failed to sync pacman database")]
+fn sync_database() -> cu::Result<()> {
+    let mut state = pacman::instance()?;
+    if state
+        .db_synced_time
+        .is_none_or(|x| x.elapsed() > Duration::from_mins(10))
+    {
+        let (child, _, _) = crate::sudo::command("pacman")?
+            .args(["-Syy", "--noconfirm"])
+            .stdoe(cu::pio::spinner("sync pacman database"))
+            .stdin_null()
+            .spawn()?;
+        child.wait_nz()?;
+        state.db_synced_time = Some(Instant::now());
+    }
     Ok(())
 }
 
@@ -65,13 +78,11 @@ pub fn install(package_name: &str) -> cu::Result<()> {
 pub fn uninstall(package_name: &str) -> cu::Result<()> {
     cu::info!("uninstalling '{package_name}' with pacman...");
     let mut state = pacman::instance()?;
-    cu::which("sudo")?
-        .command()
-        .name("pacman")
-        .add(cu::args!["pacman", "-R", package_name, "--noconfirm"])
+    crate::sudo::command("pacman")?
+        .add(cu::args!["-R", package_name, "--noconfirm"])
         .stdout(cu::lv::I)
         .stderr(cu::lv::E)
-        .stdin_inherit()
+        .stdin_null()
         .wait_nz()?;
     state.installed_packages.clear();
     cu::info!("uninstalled '{package_name}' with pacman");

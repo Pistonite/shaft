@@ -8,7 +8,7 @@ use crate::pre::*;
 
 pub mod version;
 
-metadata_binaries!("git");
+register_binaries!("git");
 
 static GIT_VERSION: &str = "2.51.2";
 

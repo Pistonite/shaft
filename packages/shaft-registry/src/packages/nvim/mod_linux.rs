@@ -4,7 +4,7 @@ use op::Version;
 
 use crate::pre::*;
 
-metadata_binaries!("vi", "vim", "nvim");
+register_binaries!("vi", "vim", "nvim");
 
 static VERSION: &str = "0.11.5";
 
