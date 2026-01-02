@@ -1,12 +1,7 @@
 mod package;
 pub use package::*;
 
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
-};
-
-use enumset::EnumSet;
+use std::path::{Path, PathBuf};
 
 /// Stub macro for build script to generate binaries provided by a package
 macro_rules! register_binaries {

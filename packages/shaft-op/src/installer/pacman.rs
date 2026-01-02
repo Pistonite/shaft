@@ -7,7 +7,6 @@ pub(crate) struct Pacman {
     installed_packages: BTreeSet<String>,
     db_synced_time: Option<Instant>,
 }
-
 crate::main_thread! {
     const fn pacman() -> Pacman {
         Pacman {
@@ -20,19 +19,9 @@ crate::main_thread! {
 /// Check if a package is installed with pacman
 pub fn is_installed(package_name: &str) -> cu::Result<bool> {
     let mut state = pacman::instance()?;
-    let not_loaded = state.installed_packages.is_empty();
-
-    if not_loaded {
+    if state.installed_packages.is_empty() {
         cu::debug!("pacman: querying installed packages");
-        let (child, stdout) = cu::which("pacman")?
-            .command()
-            .arg("-Qq")
-            .stdout(cu::pio::string())
-            .stderr(cu::lv::E)
-            .stdin_null()
-            .spawn()?;
-        child.wait_nz()?;
-        let stdout = stdout.join()??;
+        let stdout = crate::command_output!("pacman", ["-Qq"]);
         state
             .installed_packages
             .extend(stdout.lines().map(|x| x.trim().to_string()));
@@ -43,11 +32,11 @@ pub fn is_installed(package_name: &str) -> cu::Result<bool> {
 #[cu::error_ctx("failed to install '{package_name}' with pacman")]
 pub fn install(package_name: &str) -> cu::Result<()> {
     cu::info!("installing '{package_name}' with pacman...");
-    let mut state = pacman::instance()?;
     sync_database()?;
+    let mut state = pacman::instance()?;
     crate::sudo::command("pacman")?
         .add(cu::args!["-S", package_name, "--noconfirm"])
-        .stdout(cu::lv::I)
+        .stdout(cu::lv::P)
         .stderr(cu::lv::E)
         .stdin_null()
         .wait_nz()?;
@@ -80,7 +69,7 @@ pub fn uninstall(package_name: &str) -> cu::Result<()> {
     let mut state = pacman::instance()?;
     crate::sudo::command("pacman")?
         .add(cu::args!["-R", package_name, "--noconfirm"])
-        .stdout(cu::lv::I)
+        .stdout(cu::lv::P)
         .stderr(cu::lv::E)
         .stdin_null()
         .wait_nz()?;

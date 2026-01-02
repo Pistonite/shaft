@@ -1,4 +1,5 @@
 mod platform;
+
 pub use platform::*;
 mod version;
 pub use version::*;
@@ -17,3 +18,24 @@ pub mod sysinfo;
 pub mod util;
 
 pub mod sudo;
+
+#[macro_export]
+macro_rules! command_output {
+    ($bin:expr) => {{
+        let (child, stdout) = cu::which($bin)?.command()
+            .stdout(cu::pio::string())
+            .stdie_null()
+            .spawn()?;
+        child.wait_nz()?;
+        stdout.join()??
+    }};
+    ($bin:expr, [$($args:expr),* $(,)?]) => {{
+        let (child, stdout) = cu::which($bin)?.command()
+            .add(cu::args![$($args),*])
+            .stdout(cu::pio::string())
+            .stdie_null()
+            .spawn()?;
+        child.wait_nz()?;
+        stdout.join()??
+    }}
+}

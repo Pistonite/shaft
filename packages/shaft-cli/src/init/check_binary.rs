@@ -2,6 +2,7 @@ use std::path::Path;
 
 use cu::pre::*;
 
+#[allow(unused)]
 pub fn check_init_binary() -> cu::Result<()> {
     let current_exe = cu::fs::current_exe()?;
     let home_binary = op::home::shaft_binary();
@@ -67,64 +68,5 @@ fn check_binary_location(home_binary: &Path) -> cu::Result<()> {
             home_binary.display()
         );
     }
-    Ok(())
-}
-
-pub fn upgrade_binary(path: Option<&Path>) -> cu::Result<()> {
-    let temp_dir = op::home::temp_dir("core-self-upgrade");
-    cu::fs::make_dir(&temp_dir)?;
-    let new_binary = match path {
-        Some(path) => {
-            let cargo = cu::check!(
-                cu::which("cargo"),
-                "cannot find `cargo` - cargo is required to upgrade from local path."
-            )?;
-            cu::info!("installing to cargo default location...");
-            {
-                let (child, _progress, _progress2) = cargo
-                    .command()
-                    .current_dir(path)
-                    .add(cu::args!["install", "shaft-cli", "--path", "."])
-                    .preset(cu::pio::cargo())
-                    .spawn()?;
-                cu::check!(child.wait_nz(), "failed to build new binary")?;
-            }
-            cu::info!("installing to home temporary location...");
-            {
-                let (child, _progress, _progress2) = cargo
-                    .command()
-                    .current_dir(path)
-                    .add(cu::args![
-                        "install",
-                        "shaft-cli",
-                        "--path",
-                        ".",
-                        "--root",
-                        &temp_dir
-                    ])
-                    .preset(cu::pio::cargo())
-                    .spawn()?;
-                cu::check!(child.wait_nz(), "failed to build new binary")?;
-            }
-
-            if cfg!(windows) {
-                temp_dir.join("bin\\shaft.exe")
-            } else {
-                temp_dir.join("bin/shaft")
-            }
-        }
-        None => {
-            // TODO: cargo-binstall and fallback to cargo install --git
-            // ...
-            todo!()
-        }
-    };
-    cu::ensure!(new_binary.exists(), "failed to locate new binary");
-    cu::check!(
-        copy_new_binary(&new_binary),
-        "failed to copy new binary to home"
-    )?;
-    cu::info!("upgrade successful - please run `shaft -vV` to run self-check and confirm");
-    let _ = op::home::clean_temp_dir("core-self-upgrade");
     Ok(())
 }

@@ -19,8 +19,8 @@ impl<'a> PartialOrd<&str> for Version<'a> {
         if self.0 == *other {
             return Some(Ordering::Equal);
         }
-        let self_parts = self.0.split('.').collect::<Vec<_>>();
-        let other_parts = other.split('.').collect::<Vec<_>>();
+        let self_parts = self.0.trim().split('.').collect::<Vec<_>>();
+        let other_parts = other.trim().split('.').collect::<Vec<_>>();
         for (s, o) in std::iter::zip(&self_parts, &other_parts) {
             match (cu::parse::<u64>(s), cu::parse::<u64>(o)) {
                 (Ok(s), Ok(o)) => {

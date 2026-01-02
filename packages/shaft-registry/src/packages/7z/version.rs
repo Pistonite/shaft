@@ -4,13 +4,7 @@ use op::Version;
 use crate::pre::*;
 
 pub fn check(expected_version: &str) -> cu::Result<Verified> {
-    let (child, stdout) = cu::which("7z")?.command()
-    .stdout(cu::pio::string())
-        .stdie_null()
-        .spawn()?;
-    child.wait_nz()?;
-    let stdout = stdout.join()??;
-    for line in stdout.lines() {
+    for line in op::command_output!("7z").lines() {
         let Some(rest) = line.strip_prefix("7-Zip ") else {
             continue;
         };

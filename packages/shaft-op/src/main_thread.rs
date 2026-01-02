@@ -65,7 +65,7 @@ macro_rules! main_thread {
         mod $xxx {
             #[allow(unused)]
             use super::*;
-            static mut ALIVE: bool = false;
+            static ALIVE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
             pub(crate) struct Guard(std::ptr::NonNull<$type>);
             impl std::ops::Deref for Guard {
                 type Target = $type;
@@ -83,43 +83,29 @@ macro_rules! main_thread {
                 }
             }
             // invariant: object always on main thread
-            #[allow(unused)]
-            pub(crate) struct WeakGuard(std::ptr::NonNull<$type>);
             $crate::main_thread!(__impl__ $constness $type, $init);
-            impl Guard {
-                // Release the reference, but keep the promise
-                // that we are on the main thread
-                #[allow(unused)]
-                pub fn into_weak(self) -> WeakGuard {
-                    // SAFETY: only callable from main thread
-                    unsafe { ALIVE = false };
-                    WeakGuard(self.0)
-                }
-            }
             impl Drop for Guard {
                 fn drop(&mut self) {
-                    // SAFETY: only callable from main thread
-                    unsafe { ALIVE = false };
-                }
-            }
-            impl WeakGuard {
-                // Acquire the reference if no other reference exists
-                #[allow(unused)]
-                pub fn into_strong(self) -> cu::Result<Guard> {
-                    // SAFETY: only callable from main thread
-                    cu::ensure!(!unsafe{ALIVE}, concat!("another guard of ", stringify!($X), " is alive"));
-                    // SAFETY: only callable from main thread
-                    unsafe { ALIVE = true };
-                    Ok(Guard(self.0))
+                    // relaxed is fine because we check it's only used on the main thread
+                    ALIVE.store(false, std::sync::atomic::Ordering::Relaxed);
                 }
             }
             /// Get instance - will error if not on the main thread or another Guard is alive
             pub fn instance() -> cu::Result<Guard> {
                 use cu::Context as _;
                 crate::ensure_main_thread().context(concat!(stringify!($xxx), " instance can only be accessed on the main thread"))?;
+                // relaxed is fine because we check it's only used on the main thread
+                cu::ensure!(
+                    ALIVE.compare_exchange(
+                        false, true,
+                        std::sync::atomic::Ordering::Relaxed,
+                        std::sync::atomic::Ordering::Relaxed,
+                    ).is_ok(),
+                    concat!("another guard of ", stringify!($xxx), " is alive")
+                );
                 // SAFETY: ensured on main thread
                 let result = unsafe { Guard::new_main_thread() };
-                result.context(concat!("failed to initialize main thread component: ", stringify!($xxx)))
+                result.context(concat!("failed to initialize main thread singleton: ", stringify!($xxx)))
             }
         }
         $crate::main_thread!($($rest)*);

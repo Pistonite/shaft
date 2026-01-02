@@ -42,6 +42,7 @@ impl CliApi {
             }
         }
         cu::trace!("args: {self:#?}");
+        op::ensure_main_thread()?; // record the main thread ID
         cu::check!(op::init_platform(), "failed to init platform")?;
         cu::check!(crate::init::check_init_home(), "failed to init home")?;
         cu::check!(op::env_mod::init_env(), "failed to init environment")?;
@@ -183,7 +184,7 @@ pub struct CliCommandUpgrade {
 
 impl CliCommandUpgrade {
     fn run(&self) -> cu::Result<()> {
-        crate::init::upgrade_binary(self.path.as_ref().map(Path::new))
+        crate::cmds::upgrade(self.path.as_ref().map(Path::new))
     }
 }
 
