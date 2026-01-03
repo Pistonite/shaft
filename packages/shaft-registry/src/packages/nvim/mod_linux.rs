@@ -1,6 +1,5 @@
 use cu::pre::*;
 use enumset::EnumSet;
-use op::Version;
 
 use crate::pre::*;
 
@@ -13,7 +12,8 @@ pub fn binary_dependencies() -> EnumSet<BinId> {
 }
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
-    let bin_dir = op::home::bin_dir();
+    // TODO: context
+    let bin_dir = corelib::hmgr::paths::bin_root();
     let binary = match cu::which("nvim") {
         Err(_) => return Ok(Verified::NotInstalled),
         Ok(path) => {

@@ -4,15 +4,13 @@ members = [
     "packages/procname-checker",
     "packages/shaft-build",
     "packages/shaft-cli",
-    "packages/shaft-op",
+    "packages/shaft-corelib",
     "packages/shaft-registry",
-    "packages/win-envedit",
-    "packages/win-pathedit",
 ]
 
 [workspace.dependencies.cu]
 package = "pistonite-cu"
-path = "../cu/packages/copper"
+# path = "../cu/packages/copper"
 version = "0.6.8"
 
 [workspace.dependencies.pm]
@@ -21,9 +19,9 @@ package = "pistonite-pm"
 version = "0.2.2"
 default-features = false
 
-[workspace.dependencies.op]
-package = "shaft-op"
-path = "./packages/shaft-op"
+[workspace.dependencies.corelib]
+package = "shaft-corelib"
+path = "./packages/shaft-corelib"
 
 [workspace.dependencies]
 enum-map = "2.7.3"

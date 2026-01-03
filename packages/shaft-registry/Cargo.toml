@@ -8,7 +8,7 @@ publish = false
 cu = { workspace = true, features = ["print", "process"] }
 enum-map.workspace = true
 enumset.workspace = true
-op.workspace = true
+corelib.workspace = true
 phf = { version = "0.13.1", features = ["macros"] }
 
 [build-dependencies]

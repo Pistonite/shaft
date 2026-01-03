@@ -1,11 +1,12 @@
 use std::path::Path;
 
+use corelib::hmgr;
 use cu::pre::*;
 
 #[allow(unused)]
 pub fn check_init_binary() -> cu::Result<()> {
     let current_exe = cu::fs::current_exe()?;
-    let home_binary = op::home::shaft_binary();
+    let home_binary = hmgr::paths::shaft_binary();
 
     if home_binary != current_exe {
         cu::warn!("current binary is not located in home");
@@ -30,7 +31,7 @@ pub fn check_init_binary() -> cu::Result<()> {
         );
         cu::rethrow!(e, "binary location check failed");
     }
-    let home_binary_old = op::home::shaft_binary_old();
+    let home_binary_old = hmgr::paths::shaft_binary_old();
     let _ = cu::fs::remove(&home_binary_old);
 
     Ok(())
@@ -38,8 +39,8 @@ pub fn check_init_binary() -> cu::Result<()> {
 
 pub fn copy_new_binary(new_binary: &Path) -> cu::Result<()> {
     // rename old binary
-    let home_binary = op::home::shaft_binary();
-    let home_binary_old = op::home::shaft_binary_old();
+    let home_binary = hmgr::paths::shaft_binary();
+    let home_binary_old = hmgr::paths::shaft_binary_old();
     cu::check!(
         cu::fs::remove(&home_binary_old),
         "failed to remove old old binary"

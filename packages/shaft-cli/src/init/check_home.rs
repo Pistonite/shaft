@@ -2,13 +2,13 @@ use std::path::{Path, PathBuf};
 
 use cu::pre::*;
 
-use op::shell_profile::ShellProfile;
+use corelib::hmgr::{self, ShellProfile};
 
 pub fn check_init_home() -> cu::Result<()> {
     let home_path_str = cu::env_var("SHAFT_HOME")?;
     let home_path = Path::new(&home_path_str).normalize()?;
     if !home_path_str.is_empty() && home_path.is_dir() {
-        op::home::init(home_path);
+        hmgr::paths::init_home_path(home_path);
         return Ok(());
     }
 
@@ -25,7 +25,7 @@ pub fn check_init_home() -> cu::Result<()> {
         )?;
         cu::info!("home directory created!");
         // re-normalize since it didn't exist before
-        op::home::init(home_path.normalize()?);
+        hmgr::paths::init_home_path(home_path.normalize()?);
         return Ok(());
     }
 
@@ -41,8 +41,16 @@ pub fn check_init_home() -> cu::Result<()> {
     }
 
     let default_home = if cfg!(windows) {
-        cu::hint!("there may be performance benefit to install dev tools on a Dev Drive.");
-        cu::hint!("read more at: https://learn.microsoft.com/en-us/windows/dev-drive/");
+        cu::hint!(
+            r"there may be performance benefit to install dev tools on a Dev Drive.
+read more at: https://learn.microsoft.com/en-us/windows/dev-drive/
+
+if the dev drive is setup as a virtual disk (.vhdx), restart the computer a few times to ensure 
+it can be reliably auto-mounted on system start. Sometimes auto-mount can fail for SATA drives,
+the workaround is put the .vhdx on the OS drive. You can use Event Viewer to inspect Kernel-IO errors
+to see why the auto-mount fails.
+        "
+        );
         let dev_drive = cu::prompt!("if you want to set up SHAFT_HOME on a Windows Dev Drive, enter the drive letter; otherwise press ENTER")?.to_ascii_uppercase();
         let default_home = if dev_drive.is_empty() {
             match std::env::home_dir() {
@@ -105,7 +113,7 @@ pub fn check_init_home() -> cu::Result<()> {
     cu::info!("home directory created!");
 
     let home = home.normalize()?;
-    op::home::init(home.clone());
+    hmgr::paths::init_home_path(home.clone());
 
     let shell_profile = ShellProfile::default();
     cu::check!(shell_profile.save(), "failed to create init scripts")?;
@@ -161,13 +169,13 @@ pub fn check_init_home() -> cu::Result<()> {
             Some(new_path)
         }
         if add_to_system {
-            op::env_mod::windows::set_system("SHAFT_HOME", home_str)?;
+            hmgr::windows::set_system("SHAFT_HOME", home_str)?;
             let path = op::env_mod::windows::get_system("PATH")?;
             if let Some(path) = prepend_path(&path) {
                 op::env_mod::windows::set_system("PATH", &path)?;
             }
         } else {
-            op::env_mod::windows::set_user("SHAFT_HOME", home_str)?;
+            hmgr::windows::set_user("SHAFT_HOME", home_str)?;
             let path = op::env_mod::windows::get_user("PATH")?;
             if let Some(path) = prepend_path(&path) {
                 op::env_mod::windows::set_user("PATH", &path)?;
@@ -175,8 +183,8 @@ pub fn check_init_home() -> cu::Result<()> {
         }
         cu::info!("SHAFT_HOME and PATH environment variable set");
     }
-    op::env_mod::add_assert([("SHAFT_HOME".to_string(), home_str.to_string())])?;
-    op::env_mod::require_reinvocation(false)
+    hmgr::add_env_assert([("SHAFT_HOME".to_string(), home_str.to_string())])?;
+    hmgr::require_envchange_reinvocation(false)
 }
 
 fn prompt_user_input_for_home(default_home: &Path) -> cu::Result<PathBuf> {

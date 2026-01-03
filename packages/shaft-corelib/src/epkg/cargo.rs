@@ -2,8 +2,22 @@ use std::collections::BTreeMap;
 
 use cu::pre::*;
 
+use crate::internal;
+
+internal::main_thread_singleton! {
+    const cargo = Cargo::new();
+}
+
 pub(crate) struct Cargo {
     installed_packages: BTreeMap<String, CargoInstalledInfo>,
+}
+
+impl Cargo {
+    pub const fn new() -> Self {
+        Cargo {
+            installed_packages: BTreeMap::new(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -13,13 +27,7 @@ pub struct CargoInstalledInfo {
     /// Optional source if not installed from default source
     pub source: Option<String>,
 }
-crate::main_thread! {
-    const fn cargo() -> Cargo {
-        Cargo {
-            installed_packages: BTreeMap::new(),
-        }
-    }
-}
+
 /// If a package is installed with cargo, get the info
 pub fn installed_info(package_name: &str) -> cu::Result<Option<CargoInstalledInfo>> {
     let mut state = cargo::instance()?;
@@ -59,6 +67,7 @@ pub fn installed_info(package_name: &str) -> cu::Result<Option<CargoInstalledInf
     Ok(state.installed_packages.get(package_name).cloned())
 }
 
+/// Install a package using `cargo install --git --rev`
 #[cu::error_ctx("failed to install '{package}' with cargo")]
 pub fn install_git_commit(package: &str, git: &str, rev: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;
@@ -77,6 +86,7 @@ pub fn install_git_commit(package: &str, git: &str, rev: &str) -> cu::Result<()>
     Ok(())
 }
 
+/// Install a package using `cargo install`
 #[cu::error_ctx("failed to install '{package}' with cargo")]
 pub fn install(package: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;
@@ -93,6 +103,7 @@ pub fn install(package: &str) -> cu::Result<()> {
     Ok(())
 }
 
+/// Install a package using `cargo binstall` (with fallback)
 #[cu::error_ctx("failed to install '{package}' with cargo-binstall")]
 pub fn binstall(package: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;
@@ -102,9 +113,9 @@ pub fn binstall(package: &str) -> cu::Result<()> {
         .add(cu::args![
             package,
             "--strategies",
-            "crate-meta-data",
+            "crate-meta-data,compile",
             "--no-confirm",
-            "--force"
+            "--locked",
         ])
         .stdout(cu::lv::P)
         .stderr(cu::lv::E)
@@ -115,6 +126,7 @@ pub fn binstall(package: &str) -> cu::Result<()> {
     Ok(())
 }
 
+/// Install a package using `cargo binstall --git` (with fallback)
 #[cu::error_ctx("failed to install '{package}' with cargo-binstall")]
 pub fn binstall_git(package: &str, git: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;
@@ -124,9 +136,9 @@ pub fn binstall_git(package: &str, git: &str) -> cu::Result<()> {
         .add(cu::args![
             package,
             "--strategies",
-            "crate-meta-data",
+            "crate-meta-data,compile",
             "--no-confirm",
-            "--force",
+            "--locked",
             "--git",
             git
         ])
@@ -139,6 +151,7 @@ pub fn binstall_git(package: &str, git: &str) -> cu::Result<()> {
     Ok(())
 }
 
+/// Uninstall a package using `cargo uninstall`
 #[cu::error_ctx("failed to uninstall '{package}' with cargo")]
 pub fn uninstall(package: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;

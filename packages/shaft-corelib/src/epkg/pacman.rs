@@ -3,15 +3,22 @@ use std::time::{Duration, Instant};
 
 use cu::pre::*;
 
+use crate::{internal, opfs};
+
+internal::main_thread_singleton! {
+    const pacman = Pacman::new();
+}
+
 pub(crate) struct Pacman {
     installed_packages: BTreeSet<String>,
     db_synced_time: Option<Instant>,
 }
-crate::main_thread! {
-    const fn pacman() -> Pacman {
+
+impl Pacman {
+    pub const fn new() -> Self {
         Pacman {
             installed_packages: BTreeSet::new(),
-            db_synced_time: None
+            db_synced_time: None,
         }
     }
 }
@@ -34,7 +41,7 @@ pub fn install(package_name: &str) -> cu::Result<()> {
     cu::info!("installing '{package_name}' with pacman...");
     sync_database()?;
     let mut state = pacman::instance()?;
-    crate::sudo::command("pacman")?
+    opfs::sudo("pacman")?
         .add(cu::args!["-S", package_name, "--noconfirm"])
         .stdout(cu::lv::P)
         .stderr(cu::lv::E)
@@ -52,7 +59,7 @@ fn sync_database() -> cu::Result<()> {
         .db_synced_time
         .is_none_or(|x| x.elapsed() > Duration::from_mins(10))
     {
-        let (child, _, _) = crate::sudo::command("pacman")?
+        let (child, _, _) = opfs::sudo("pacman")?
             .args(["-Syy", "--noconfirm"])
             .stdoe(cu::pio::spinner("sync pacman database"))
             .stdin_null()
@@ -67,7 +74,7 @@ fn sync_database() -> cu::Result<()> {
 pub fn uninstall(package_name: &str) -> cu::Result<()> {
     cu::info!("uninstalling '{package_name}' with pacman...");
     let mut state = pacman::instance()?;
-    crate::sudo::command("pacman")?
+    opfs::sudo("pacman")?
         .add(cu::args!["-R", package_name, "--noconfirm"])
         .stdout(cu::lv::P)
         .stderr(cu::lv::E)

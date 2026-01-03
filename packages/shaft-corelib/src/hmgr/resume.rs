@@ -1,7 +1,8 @@
-use crate::home;
+use crate::hmgr;
 
+/// Save a the current command to HOME/.interrupted
 pub fn mark_interrupted() {
-    let path = home::home().join(".interrupted");
+    let path = hmgr::paths::dot_interrupted();
     let command = shell_words::join(std::env::args());
     if let Err(e) = cu::fs::write(path, &command) {
         cu::error!("{e:?}");
@@ -11,14 +12,16 @@ pub fn mark_interrupted() {
     };
 }
 
+/// If a command was previously interrupted, read the raw command args and structured
+/// command data from HOME/previous_command.json
 pub fn extract_previously_interrupted_json_command() -> Option<(String, String)> {
-    let path = home::home().join(".interrupted");
+    let path = hmgr::paths::dot_interrupted();
     if !path.exists() {
         return None;
     }
     let previous_command_args =
         cu::fs::read_string(&path).unwrap_or("(unknown command)".to_string());
-    let command_file = home::home().join("previous_command.json");
+    let command_file = hmgr::paths::previous_command_json();
     if !command_file.exists() {
         return None;
     }
@@ -32,8 +35,9 @@ pub fn extract_previously_interrupted_json_command() -> Option<(String, String)>
     json.map(|json| (previous_command_args, json))
 }
 
+/// Save the serialized command data to HOME/previous_command.json
 pub fn save_command_json(content: &str) {
-    let command_file = home::home().join("previous_command.json");
+    let command_file = hmgr::paths::previous_command_json();
     if let Err(e) = cu::fs::write(command_file, content) {
         cu::error!("{e:?}");
         cu::warn!("failed to store command, cannot automatically resume if interrupted by command");

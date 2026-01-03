@@ -1,5 +1,6 @@
 use std::{path::PathBuf, time::Duration};
 
+use corelib::opfs;
 use enumset::EnumSet;
 
 use crate::{_stub, BinId, Context, PkgId, Verified};
@@ -22,7 +23,7 @@ pub struct Package {
     /// Linux package manager flavors supported by this package.
     /// By default, all flavors are supported (for example,
     /// downloading a binary)
-    pub(crate) linux_flavors: EnumSet<op::LinuxFlavor>,
+    pub(crate) linux_flavors: EnumSet<opfs::LinuxFlavor>,
 
     /// Short description. The first line of the doc comment
     pub short_desc: &'static str,
@@ -83,7 +84,7 @@ impl Package {
         }
         #[cfg(target_os = "linux")]
         {
-            if !self.linux_flavors.contains(op::linux_flavor()) {
+            if !self.linux_flavors.contains(opfs::linux_flavor()) {
                 return false;
             }
         }

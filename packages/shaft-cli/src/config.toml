@@ -1,0 +1,5 @@
+[windows]
+# if true, the "Personal" value in "User Shell Folders" registry subkey
+# for the current user will be checked in self-check and set to
+# $SHAFT_HOME\\windows-shell
+control-personal-shell-folder = true

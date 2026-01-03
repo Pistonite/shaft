@@ -1,8 +1,4 @@
-
 //! Git version control System
-
-use cu::pre::*;
-use op::installer::pacman;
 
 use crate::pre::*;
 
@@ -19,14 +15,14 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 }
 
 pub fn install(_: &Context) -> cu::Result<()> {
-    op::sysinfo::ensure_terminated("git")?;
-    pacman::install("git")?;
+    opfs::ensure_terminated("git")?;
+    epkg::pacman::install("git")?;
     Ok(())
 }
 
 pub fn uninstall(_: &Context) -> cu::Result<()> {
-    op::sysinfo::ensure_terminated("git")?;
-    pacman::uninstall("git")?;
+    opfs::ensure_terminated("git")?;
+    epkg::pacman::uninstall("git")?;
     Ok(())
 }
 

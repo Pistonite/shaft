@@ -1,10 +1,7 @@
-use cu::pre::*;
-use op::Version;
-
 use crate::pre::*;
 
 pub fn check(expected_version: &str) -> cu::Result<Verified> {
-    for line in op::command_output!("7z").lines() {
+    for line in command_output!("7z").lines() {
         let Some(rest) = line.strip_prefix("7-Zip ") else {
             continue;
         };

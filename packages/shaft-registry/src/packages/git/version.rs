@@ -1,8 +1,4 @@
-use cu::pre::*;
-use op::Version;
-
 use crate::pre::*;
-
 
 pub fn verify(min_version: &str) -> cu::Result<Verified> {
     let Ok(git) = cu::which("git") else {

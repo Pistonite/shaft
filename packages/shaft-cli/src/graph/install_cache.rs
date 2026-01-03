@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 
+use corelib::hmgr;
+use cu::pre::*;
 use enum_map::EnumMap;
 use enumset::EnumSet;
 use registry::{BinId, PkgId};
-
-use cu::pre::*;
 
 #[derive(Debug, Default, Clone)]
 pub struct InstallCache {
@@ -18,7 +18,7 @@ impl InstallCache {
     #[cu::error_ctx("failed to load install cache")]
     pub fn load() -> cu::Result<Self> {
         cu::trace!("loading install cache");
-        let path = op::home::home().join("install_cache.json");
+        let path = hmgr::paths::install_cache_json();
         if !path.exists() {
             cu::debug!("no install cache");
             return Ok(Default::default());
@@ -31,7 +31,7 @@ impl InstallCache {
 
     #[cu::error_ctx("failed to save install cache")]
     pub fn save(&self) -> cu::Result<()> {
-        let path = op::home::home().join("install_cache.json");
+        let path = hmgr::paths::install_cache_json();
         let install_cache = InstallCacheJson::from(self);
         cu::fs::write_json_pretty(path, &install_cache)?;
         Ok(())

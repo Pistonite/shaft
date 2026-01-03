@@ -1,17 +1,20 @@
-use std::{
-    ffi::OsStr,
-    mem::MaybeUninit,
-    ops::{Deref, DerefMut},
-    time::Duration,
-};
+use std::time::Duration;
 
 use cu::pre::*;
 use sysinfo::{Pid, System};
 
-crate::main_thread! {
-    fn system() -> cu::Result<System> {
-        Ok(System::new())
+use crate::internal;
+
+#[derive(Deref, DerefMut)]
+pub(crate) struct State(System);
+impl State {
+    pub fn new() -> cu::Result<Self> {
+        Ok(Self(System::new()))
     }
+}
+
+internal::main_thread_singleton! {
+    let system = State::new();
 }
 
 /// Ensure no process with the given exe file name is running. Wait for it to terminate
@@ -19,7 +22,11 @@ crate::main_thread! {
 ///
 /// Note that the process name passed in needs to be platform-specific,
 /// for example `git` on Linux and `git.exe` on Windows
-pub fn ensure_terminated(exe_name: &str) -> cu::Result<()> {
+#[inline(always)]
+pub fn ensure_terminated(exe_name: impl AsRef<str>) -> cu::Result<()> {
+    ensure_terminated_impl(exe_name.as_ref())
+}
+fn ensure_terminated_impl(exe_name: &str) -> cu::Result<()> {
     let mut s = system::instance()?;
     let Some(pid) = get_process_pid(&mut s, exe_name) else {
         return Ok(());

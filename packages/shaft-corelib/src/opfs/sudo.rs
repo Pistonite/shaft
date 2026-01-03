@@ -7,7 +7,7 @@ use cu::pre::*;
 ///
 /// On non-Windows, it will check and prompt for sudo password if needed.
 /// On Windows, currently a UAC prompt still shows every time a command is launched with sudo.exe
-pub fn command(arg0: &str) -> cu::Result<cu::Command<(), (), ()>> {
+pub fn sudo(arg0: &str) -> cu::Result<cu::Command<(), (), ()>> {
     #[cfg(not(windows))]
     {
         validate_credential()?;

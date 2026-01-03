@@ -12,11 +12,12 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     version::check(VERSION)
 }
 pub fn install(_: &Context) -> cu::Result<()> {
-    op::sysinfo::ensure_terminated("7z")?;
-    op::installer::pacman::install("7zip")?;
+    opfs::ensure_terminated("7z")?;
+    epkg::pacman::install("7zip")?;
     Ok(())
 }
 pub fn uninstall(_: &Context) -> cu::Result<()> {
-    op::installer::pacman::uninstall("7zip")?;
+    opfs::ensure_terminated("7z")?;
+    epkg::pacman::uninstall("7zip")?;
     Ok(())
 }

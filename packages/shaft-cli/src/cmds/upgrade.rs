@@ -1,11 +1,12 @@
 use std::path::{Path, PathBuf};
 
+use corelib::hmgr;
 use cu::pre::*;
 
 use crate::init;
 
 pub fn upgrade(path: Option<&Path>) -> cu::Result<()> {
-    let temp_dir = op::home::temp_dir("core-self-upgrade");
+    let temp_dir = hmgr::paths::temp_dir("core-self-upgrade");
     cu::fs::make_dir(&temp_dir)?;
     let new_binary = match path {
         Some(path) => install_from_path(path, &temp_dir)?,
@@ -17,7 +18,7 @@ pub fn upgrade(path: Option<&Path>) -> cu::Result<()> {
         "failed to copy new binary to home"
     )?;
     cu::info!("upgrade successful - please run `shaft -vV` to run self-check and confirm");
-    let _ = op::home::clean_temp_dir("core-self-upgrade");
+    let _ = hmgr::paths::clean_temp_dir("core-self-upgrade");
     Ok(())
 }
 

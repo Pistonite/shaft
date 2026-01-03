@@ -1,23 +1,18 @@
-mod platform;
+/// External package managers
+pub mod epkg;
+/// Home Manager. Manages contents in the SHAFT_HOME directory
+pub mod hmgr;
+/// Operating/File System
+pub mod opfs;
 
-pub use platform::*;
 mod version;
 pub use version::*;
 mod download;
-/// Env modification checks
-pub mod env_mod;
-pub mod installer;
 pub use download::*;
-mod main_thread;
-pub use main_thread::*;
 
-pub mod home;
-pub mod resume;
-pub mod shell_profile;
-pub mod sysinfo;
 pub mod util;
 
-pub mod sudo;
+pub(crate) mod internal;
 
 #[macro_export]
 macro_rules! command_output {
@@ -38,4 +33,25 @@ macro_rules! command_output {
         child.wait_nz()?;
         stdout.join()??
     }}
+}
+
+/// Append .exe to the input on windows
+#[macro_export]
+macro_rules! bin_name {
+    ($bin:literal) => {
+        if cfg!(windows) {
+            concat!($bin, ".exe")
+        } else {
+            $bin
+        }
+    };
+    ($bin:expr) => {
+        if cfg!(windows) {
+            let mut b = { $bin }.to_string();
+            b.push_str(".exe");
+            b
+        } else {
+            { $bin }.to_string()
+        }
+    };
 }

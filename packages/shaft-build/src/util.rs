@@ -200,16 +200,16 @@ impl Platform {
     }
     pub fn linux_flavors(self) -> &'static str {
         match self {
-            Self::Any | Self::Linux => "op::LinuxFlavor::all()",
-            Self::LinuxPacman => "enum_set!{ op::LinuxFlavor::Pacman }",
-            Self::LinuxApt => "enum_set!{ op::LinuxFlavor::Apt }",
-            _ => "op::LinuxFlavor::none()",
+            Self::Any | Self::Linux => "corelib::opfs::LinuxFlavor::all()",
+            Self::LinuxPacman => "enum_set!{ corelib::opfs::LinuxFlavor::Pacman }",
+            Self::LinuxApt => "enum_set!{ corelib::opfs::LinuxFlavor::Apt }",
+            _ => "corelib::opfs::LinuxFlavor::none()",
         }
     }
     pub fn linux_flavor(self) -> &'static str {
         match self {
-            Self::LinuxPacman => "op::LinuxFlavor::Pacman",
-            Self::LinuxApt => "op::LinuxFlavor::Apt",
+            Self::LinuxPacman => "corelib::opfs::LinuxFlavor::Pacman",
+            Self::LinuxApt => "corelib::opfs::LinuxFlavor::Apt",
             _ => "",
         }
     }

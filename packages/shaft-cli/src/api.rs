@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use corelib::{hmgr, opfs};
 use cu::pre::*;
 
 static LOGO: &'static str = r" ______ __  __ ______ ______ ______  
@@ -42,10 +43,9 @@ impl CliApi {
             }
         }
         cu::trace!("args: {self:#?}");
-        op::ensure_main_thread()?; // record the main thread ID
-        cu::check!(op::init_platform(), "failed to init platform")?;
+        cu::check!(opfs::init(), "failed to init platform")?;
         cu::check!(crate::init::check_init_home(), "failed to init home")?;
-        cu::check!(op::env_mod::init_env(), "failed to init environment")?;
+        cu::check!(hmgr::init_env(), "failed to init environment")?;
 
         // this is to make it easier to run the tool in development
         #[cfg(not(debug_assertions))]
@@ -64,7 +64,9 @@ impl CliApi {
             return Ok(());
         };
 
-        let previous = op::resume::extract_previously_interrupted_json_command();
+        let _lock = hmgr::lock()?;
+
+        let previous = hmgr::extract_previously_interrupted_json_command();
         if matches!(&command, CliCommand::Resume(_)) {
             if self.abort_previous {
                 if previous.is_some() {
@@ -147,7 +149,7 @@ impl CliCommand {
                     cu::error!("failed to stringify command: {e:?}");
                 }
                 Ok(s) => {
-                    op::resume::save_command_json(&s);
+                    hmgr::save_command_json(&s);
                 }
             }
         }
@@ -158,14 +160,7 @@ impl CliCommand {
             CliCommand::Sync(cmd) => cmd.run()?,
             CliCommand::Remove(cmd) => cmd.run()?,
             CliCommand::Config(_) => todo!(),
-            CliCommand::Clean(_) => {
-                // testing
-                let bar = cu::progress_unbounded("foo");
-                op::sudo::command("ls")?
-                    .stdin_null()
-                    .stdoe(cu::lv::P)
-                    .wait_nz()?;
-            }
+            CliCommand::Clean(_) => {}
         }
         Ok(())
     }

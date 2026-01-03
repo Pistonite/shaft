@@ -352,7 +352,7 @@ fn build_bin_providers(
         if !linux_flavors.is_empty() {
             writeln!(
                 out,
-                "                {} {{ match op::linux_flavor() {{",
+                "                {} {{ match corelib::opfs::linux_flavor() {{",
                 Platform::Linux.cfg_attr()
             )?;
             for (platform, providers) in linux_flavors {
@@ -414,7 +414,7 @@ fn build_package_modules(
             {
                 writeln!(
                     out,
-                    "    pub fn binaries() -> enumset::EnumSet<super::BinId> {{ match op::linux_flavor() {{"
+                    "    pub fn binaries() -> enumset::EnumSet<super::BinId> {{ match corelib::opfs::linux_flavor() {{"
                 )?;
                 for platform in &linux_flavors {
                     let data = cu::check!(
@@ -439,7 +439,7 @@ fn build_package_modules(
             {
                 writeln!(
                     out,
-                    "    pub fn config_location(_ctx: &crate::Context) -> cu::Result<Option<std::path::PathBuf>> {{ match op::linux_flavor() {{"
+                    "    pub fn config_location(_ctx: &crate::Context) -> cu::Result<Option<std::path::PathBuf>> {{ match corelib::opfs::linux_flavor() {{"
                 )?;
                 for platform in &linux_flavors {
                     let data = cu::check!(
@@ -474,7 +474,7 @@ fn build_package_modules(
                 };
                 writeln!(
                     out,
-                    "    pub fn {fn_name}(ctx: &crate::Context) -> cu::Result<{retty}> {{ match op::linux_flavor() {{"
+                    "    pub fn {fn_name}(ctx: &crate::Context) -> cu::Result<{retty}> {{ match corelib::opfs::linux_flavor() {{"
                 )?;
                 for platform in &linux_flavors {
                     writeln!(
@@ -493,7 +493,7 @@ fn build_package_modules(
             }
             macro_rules! write_optional_function {
                 ($fn_name:literal, $has_ident:ident) => {
-                    writeln!(out, "    pub fn {}(_ctx: &crate::Context) -> cu::Result<()> {{ match op::linux_flavor() {{", $fn_name)?;
+                    writeln!(out, "    pub fn {}(_ctx: &crate::Context) -> cu::Result<()> {{ match corelib::opfs::linux_flavor() {{", $fn_name)?;
                     for platform in &linux_flavors {
                         let platform_data = cu::check!(parsed.platform_data.get(&platform), "failed to get module data for platform '{platform}', package '{name}'")?;
                         if platform_data.$has_ident {
@@ -517,7 +517,7 @@ fn build_package_modules(
                 ($fn_name:literal, $has_ident:ident, $retty:literal) => {
                     writeln!(
                         out,
-                        "    pub fn {}() -> {} {{ match op::linux_flavor() {{",
+                        "    pub fn {}() -> {} {{ match corelib::opfs::linux_flavor() {{",
                         $fn_name, $retty
                     )?;
                     for platform in &linux_flavors {

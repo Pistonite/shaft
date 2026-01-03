@@ -52,7 +52,8 @@ impl From<LinuxFlavor> for u8 {
 /// the package manager
 #[cfg(target_os = "windows")]
 #[inline(always)]
-pub fn init_platform() -> cu::Result<()> {
+pub fn init() -> cu::Result<()> {
+    crate::internal::ensure_main_thread()?; // record main thread ID
     Ok(())
 }
 
@@ -60,8 +61,9 @@ pub fn init_platform() -> cu::Result<()> {
 /// the package manager
 #[cfg(target_os = "linux")]
 #[inline(always)]
-pub fn init_platform() -> cu::Result<()> {
+pub fn init() -> cu::Result<()> {
     use std::path::Path;
+    crate::internal::ensure_main_thread()?; // record main thread ID
 
     if Path::new("/etc/arch-release").exists() {
         if cu::which("pacman").is_err() {
@@ -91,7 +93,7 @@ pub fn init_platform() -> cu::Result<()> {
 /// the package manager
 #[cfg(target_os = "macos")]
 #[inline(always)]
-pub fn init_platform() -> cu::Result<()> {
+pub fn init() -> cu::Result<()> {
     Ok(())
 }
 

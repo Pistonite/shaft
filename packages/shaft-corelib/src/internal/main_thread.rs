@@ -1,9 +1,5 @@
-use std::{
-    cell::UnsafeCell,
-    mem::MaybeUninit,
-    sync::{LazyLock, Mutex, atomic::AtomicBool},
-    thread::ThreadId,
-};
+use std::sync::LazyLock;
+use std::thread::ThreadId;
 
 static MAIN_THREAD_ID: LazyLock<ThreadId> = LazyLock::new(|| std::thread::current().id());
 pub fn ensure_main_thread() -> cu::Result<()> {
@@ -19,7 +15,7 @@ pub fn ensure_main_thread() -> cu::Result<()> {
 // - object always on main thread
 // - ALIVE = true when object is alive
 // - no other reference exists
-macro_rules! main_thread {
+macro_rules! main_thread_singleton {
     () => {};
     (__impl__ __const__ $type:ty, $init:block) => {
         static mut INSTANCE: $type = $init;
@@ -83,7 +79,7 @@ macro_rules! main_thread {
                 }
             }
             // invariant: object always on main thread
-            $crate::main_thread!(__impl__ $constness $type, $init);
+            $crate::internal::main_thread_singleton!(__impl__ $constness $type, $init);
             impl Drop for Guard {
                 fn drop(&mut self) {
                     // relaxed is fine because we check it's only used on the main thread
@@ -93,7 +89,7 @@ macro_rules! main_thread {
             /// Get instance - will error if not on the main thread or another Guard is alive
             pub fn instance() -> cu::Result<Guard> {
                 use cu::Context as _;
-                crate::ensure_main_thread().context(concat!(stringify!($xxx), " instance can only be accessed on the main thread"))?;
+                crate::internal::ensure_main_thread().context(concat!(stringify!($xxx), " instance can only be accessed on the main thread"))?;
                 // relaxed is fine because we check it's only used on the main thread
                 cu::ensure!(
                     ALIVE.compare_exchange(
@@ -108,13 +104,13 @@ macro_rules! main_thread {
                 result.context(concat!("failed to initialize main thread singleton: ", stringify!($xxx)))
             }
         }
-        $crate::main_thread!($($rest)*);
+        $crate::internal::main_thread_singleton!($($rest)*);
     };
-    (const fn $xxx:ident() -> $type:ty $init:block  $($rest:tt)* ) => {
-        $crate::main_thread!(__impl__ mod __const__, $xxx, $type, $init, $($rest)*);
+    (const $xxx:ident = $type:ident :: $init_ident:ident (); $($rest:tt)* ) => {
+        $crate::internal::main_thread_singleton!(__impl__ mod __const__, $xxx, $type, { $type::$init_ident() }, $($rest)*);
     };
-    (fn $xxx:ident() -> cu::Result<$type:ty> $init:block $($rest:tt)* ) => {
-        $crate::main_thread!(__impl__ mod __non_const__, $xxx, $type, $init, $($rest)*);
-    }
+    (let $xxx:ident = $type:ident :: $init_ident:ident (); $($rest:tt)* ) => {
+        $crate::internal::main_thread_singleton!(__impl__ mod __non_const__, $xxx, $type, { $type::$init_ident() }, $($rest)*);
+    };
 }
-pub(crate) use main_thread;
+pub(crate) use main_thread_singleton;

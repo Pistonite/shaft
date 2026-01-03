@@ -494,6 +494,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs2"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9564fc758e15025b46aa6643b1b77d047d1a56a1aea6e01002ac0c7026876213"
+dependencies = [
+ "libc",
+ "winapi",
+]
+
+[[package]]
 name = "futures-channel"
 version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1156,6 +1166,8 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 [[package]]
 name = "pistonite-cu"
 version = "0.6.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9677c885544d200ac3533351856d94ddc3791745129dda953f5dbf021427e73e"
 dependencies = [
  "anyhow",
  "clap",
@@ -1173,7 +1185,6 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "serde_yaml_ng",
  "spin",
  "terminal_size",
  "tokio",
@@ -1186,17 +1197,10 @@ dependencies = [
 [[package]]
 name = "pistonite-cu-proc-macros"
 version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11a4d4328bb2eeb0a250ca56061e7ca32fff3485bcda1758fab781fd59a64f03"
 dependencies = [
- "pistonite-pm 0.2.2",
-]
-
-[[package]]
-name = "pistonite-pm"
-version = "0.2.2"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
+ "pistonite-pm",
 ]
 
 [[package]]
@@ -1528,19 +1532,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_yaml_ng"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b4db627b98b36d4203a7b458cf3573730f2bb591b28871d916dfa9efabfd41f"
-dependencies = [
- "indexmap",
- "itoa",
- "ryu",
- "serde",
- "unsafe-libyaml",
-]
-
-[[package]]
 name = "sha2"
 version = "0.10.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1557,7 +1548,7 @@ version = "0.0.0"
 dependencies = [
  "itertools",
  "pistonite-cu",
- "pistonite-pm 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pistonite-pm",
 ]
 
 [[package]]
@@ -1569,15 +1560,16 @@ dependencies = [
  "enumset",
  "pistonite-cu",
  "serde",
- "shaft-op",
+ "shaft-corelib",
  "shaft-registry",
 ]
 
 [[package]]
-name = "shaft-op"
+name = "shaft-corelib"
 version = "0.0.0"
 dependencies = [
  "enumset",
+ "fs2",
  "pistonite-cu",
  "reqwest",
  "serde",
@@ -1597,7 +1589,7 @@ dependencies = [
  "phf",
  "pistonite-cu",
  "shaft-build",
- "shaft-op",
+ "shaft-corelib",
 ]
 
 [[package]]
@@ -1975,12 +1967,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 
 [[package]]
-name = "unsafe-libyaml"
-version = "0.2.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
-
-[[package]]
 name = "untrusted"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2128,17 +2114,10 @@ dependencies = [
 [[package]]
 name = "win-envedit"
 version = "0.1.0"
+source = "git+https://github.com/Pistonite/shellutils?branch=main#92be2ced759fdd37de72cefd2281780ccda3fa86"
 dependencies = [
  "pistonite-cu",
  "winreg",
-]
-
-[[package]]
-name = "win-pathedit"
-version = "0.1.0"
-dependencies = [
- "pistonite-cu",
- "win-envedit",
 ]
 
 [[package]]
