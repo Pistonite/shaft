@@ -2,26 +2,26 @@
 resolver = "2"
 members = [
     "packages/procname-checker",
-    "packages/shaft-build",
-    "packages/shaft-cli",
-    "packages/shaft-corelib",
-    "packages/shaft-registry",
+    "packages/corelib",
+    "packages/registry-build",
+    "packages/cli",
+    "packages/registry",
 ]
 
 [workspace.dependencies.cu]
 package = "pistonite-cu"
+version = "0.6.9"
 # path = "../cu/packages/copper"
-version = "0.6.8"
 
 [workspace.dependencies.pm]
 package = "pistonite-pm"
-# path = "../cu/packages/promethium"
-version = "0.2.2"
+version = "0.2.3"
 default-features = false
+# path = "../cu/packages/promethium"
 
 [workspace.dependencies.corelib]
 package = "shaft-corelib"
-path = "./packages/shaft-corelib"
+path = "./packages/corelib"
 
 [workspace.dependencies]
 enum-map = "2.7.3"

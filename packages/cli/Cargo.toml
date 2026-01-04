@@ -1,0 +1,29 @@
+[package]
+name = "shaft-cli"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+cu = { workspace = true, features = [
+    "cli",
+    "prompt",
+    "fs",
+    "derive",
+    "json",
+    "toml",
+] }
+corelib.workspace = true
+serde = "1"
+clap = { version = "4", features = ["cargo"] }
+registry = { package = "shaft-registry", path = "../registry" }
+enumset.workspace = true
+enum-map.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.55.0"
+
+[[bin]]
+name = "shaft"
+path = "src/main.rs"
+

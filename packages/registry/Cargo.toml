@@ -1,0 +1,16 @@
+[package]
+name = "shaft-registry"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+cu = { workspace = true, features = ["print", "process"] }
+enum-map.workspace = true
+enumset.workspace = true
+corelib.workspace = true
+phf = { version = "0.13.1", features = ["macros"] }
+
+[build-dependencies]
+cu = { workspace = true }
+shaft-registry-build = { path = "../registry-build" }
