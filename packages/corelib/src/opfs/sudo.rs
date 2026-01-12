@@ -72,13 +72,13 @@ pub fn sudo_path(path: &Path, reason: &str) -> cu::Result<cu::Command<(), (), ()
 }
 
 fn sudo_path_name(path: &Path, name: &str, reason: &str) -> cu::Result<cu::Command<(), (), ()>> {
-    cu::warn!(
-        "[sudo] will spawn this executable: {}\n- reason: {}",
-        path.display(),
-        reason
-    );
     #[cfg(not(windows))]
     {
+        cu::warn!(
+            "[sudo] will spawn this executable: {}\n- reason: {}",
+            path.display(),
+            reason
+        );
         validate_credential()?;
     }
     #[cfg(windows)]
@@ -90,20 +90,22 @@ fn sudo_path_name(path: &Path, name: &str, reason: &str) -> cu::Result<cu::Comma
         // this also allows --non-interactive to fail here
         // note we use prompt! instead of yesno!, because we don't want -y to bypass
         // this automatically
-        let mut answer = cu::prompt!(
-            "[sudo] enter 'ok' to allow. A User Access Control (UAC) will show that runs 'sudo.exe'"
-        )?;
-        while answer != "ok" {
-            cu::error!("please enter 'ok'");
-            cu::warn!(
-                "[sudo] will spawn this executable: {}\n- reason: {}",
+        cu::prompt_validate!(
+            (
+                r#"[sudo] will spawn this executable: {}
+- reason: {}
+** enter 'ok' to allow. A User Access Control (UAC) window will show"#,
                 path.display(),
                 reason
-            );
-            answer = cu::prompt!(
-                "[sudo] enter 'ok' to allow. A User Access Control (UAC) will show that runs 'sudo.exe'"
-            )?;
-        }
+            ),
+            |answer| {
+                let valid = answer.trim() == "ok";
+                if !valid {
+                    cu::error!("please enter 'ok'");
+                }
+                Ok(valid)
+            }
+        )?;
     }
     let mut command = which_sudo()?.command();
     if !name.is_empty() {

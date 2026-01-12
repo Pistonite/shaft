@@ -116,7 +116,7 @@ pub fn resolve_config_pkgs(
     sync_pkgs
 }
 
-#[cu::error_ctx("failed to determine sync order")]
+#[cu::context("failed to determine sync order")]
 pub fn resolve_sync_order(
     pkgs: EnumSet<PkgId>,
     bin_providers: &EnumMap<BinId, Option<PkgId>>,
@@ -171,7 +171,7 @@ pub fn resolve_sync_order(
     Ok(out)
 }
 
-#[cu::error_ctx("when collecting dependencies for package '{pkg}'")]
+#[cu::context("when collecting dependencies for package '{pkg}'")]
 pub fn collect_dependencies(
     pkg: PkgId,
     installed: &InstallCache,
@@ -199,7 +199,7 @@ pub fn collect_dependencies(
     Ok(())
 }
 
-#[cu::error_ctx("failed to select provider for binary '{bin_id}'")]
+#[cu::context("failed to select provider for binary '{bin_id}'")]
 pub fn select_provider(
     provider_selection: &mut EnumMap<BinId, Option<PkgId>>,
     bin_id: BinId,
@@ -216,10 +216,9 @@ pub fn select_provider(
     }
 
     let providers = bin_id.providers();
-    cu::ensure!(
-        !providers.is_empty(),
-        "no provider found for binary '{bin_id}'"
-    );
+    if providers.is_empty() {
+        cu::bail!("no provider found for binary '{bin_id}'");
+    }
 
     // if there is only one provider for the binary, use that pkg
     if providers.len() == 1 {

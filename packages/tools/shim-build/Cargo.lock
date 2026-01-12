@@ -68,9 +68,9 @@ checksum = "92ecc6618181def0457392ccd0ee51198e065e016d1d527a7ac1b6dc7c1f09d2"
 
 [[package]]
 name = "libc"
-version = "0.2.179"
+version = "0.2.180"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5a2d376baa530d1238d133232d15e239abad80d05838b4b59354e5268af431f"
+checksum = "bcc35a38544a891a5f7c865aca548a982ccb3b8650a5b06d0fd33a10283c56fc"
 
 [[package]]
 name = "libredox"
@@ -102,12 +102,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
 
 [[package]]
-name = "oneshot"
-version = "0.1.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4ce411919553d3f9fa53a0880544cda985a112117a0444d5ff1e870a893d6ea"
-
-[[package]]
 name = "pathdiff"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -121,9 +115,9 @@ checksum = "3b3cff922bd51709b605d9ead9aa71031d81447142d828eb4a6eba76fe619f9b"
 
 [[package]]
 name = "pistonite-cu"
-version = "0.6.10"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1918953614ba03e92d8463baf4f10e00b12f247434ad18c77ed12a198ee0f05d"
+checksum = "579c7c3860618fae9a27708ff16af68cb557c75c02ba994c4e83c66c5abc4d60"
 dependencies = [
  "anyhow",
  "dunce",
@@ -131,7 +125,6 @@ dependencies = [
  "glob",
  "libc",
  "log",
- "oneshot",
  "pathdiff",
  "pistonite-cu-proc-macros",
  "serde",
@@ -143,18 +136,18 @@ dependencies = [
 
 [[package]]
 name = "pistonite-cu-proc-macros"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe84d8bb59b4856a6459249203fe258d1b71ca4b4844e7edc4ec01b0bb2fcf6c"
+checksum = "033d528a6f9fcfa427b6d4b24fa406661972231714755b03d226d53ddc433a82"
 dependencies = [
  "pistonite-pm",
 ]
 
 [[package]]
 name = "pistonite-pm"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58f570b55c6e7d97c0f5cfa77c2e3a069e579a35cd43daefdeae920da49ee4f0"
+checksum = "18eb7861f2e13825ff099905de5ea12c61116eec62110835c7a336b3a13bff69"
 dependencies = [
  "proc-macro2",
  "quote",

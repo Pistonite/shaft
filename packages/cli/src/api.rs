@@ -53,6 +53,10 @@ impl CliApi {
         }
         cu::trace!("args: {self:#?}");
         cu::check!(
+            corelib::check_requirements(),
+            "core requirements not satisfied"
+        )?;
+        cu::check!(
             opfs::init(clap::crate_version!()),
             "failed to init platform"
         )?;

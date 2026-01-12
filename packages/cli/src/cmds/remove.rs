@@ -9,10 +9,9 @@ pub fn remove(packages: &[String]) -> cu::Result<()> {
     let pkgs = graph::parse_pkgs(packages)?;
     let mut installed = InstallCache::load()?;
     let pkgs = rectify_pkgs_to_remove(pkgs, &installed);
-    cu::ensure!(
-        !pkgs.is_empty(),
-        "please specify packages to remove, see `shaft remove -h`"
-    );
+    if pkgs.is_empty() {
+        cu::bail!("please specify packages to remove, see `shaft remove -h`");
+    }
 
     let graph = graph::build_remove_graph(pkgs, &installed, &mut Default::default())?;
     match graph.len() {
@@ -93,6 +92,7 @@ fn do_remove_package(mut ctx: Context) -> cu::Result<Context> {
     package.clean(&ctx)?;
     cu::progress!(bar, "uninstalling");
     package.uninstall(&ctx)?;
+    ctx.items_mut()?.remove_package(pkg.to_str())?;
 
     cu::progress!(bar, "verifying");
     match package.verify(&ctx)? {

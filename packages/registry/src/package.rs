@@ -24,6 +24,7 @@ pub struct Package {
     /// Linux package manager flavors supported by this package.
     /// By default, all flavors are supported (for example,
     /// downloading a binary)
+    #[allow(unused)]
     pub(crate) linux_flavors: EnumSet<opfs::LinuxFlavor>,
 
     /// Short description. The first line of the doc comment

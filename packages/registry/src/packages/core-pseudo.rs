@@ -6,33 +6,12 @@ use crate::pre::*;
 register_binaries!("sudo", "cargo");
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
-    if let Err(e) = opfs::which_sudo() {
-        cu::error!("sudo not found: {e:?}");
-        if cfg!(windows) {
-            cu::hint!("sudo is required.");
-            cu::hint!("please refer to the following link to enable it on Windows");
-            cu::hint!("https://learn.microsoft.com/en-us/windows/advanced-settings/sudo");
-        } else {
-            cu::hint!("sudo is required; please install sudo with your system package manager.");
-        }
-        cu::bail!("requirement not satisfied: sudo not found");
-    }
-    cu::debug!("sudo is found");
-    if let Err(e) = cu::which("cargo") {
-        cu::error!("cargo not found: {e:?}");
-        cu::hint!("rust toolchain is required for sanctvm to work.");
-        cu::hint!("please refer to: https://rustup.rs");
-        if cfg!(windows) {
-            cu::hint!("note that MSVC build tools also need to be installed on Windows.");
-        }
-        cu::bail!("requirement not satisfied: cargo not found in PATH");
-    }
+    corelib::check_requirements()?;
     Ok(Verified::UpToDate)
 }
 
-pub fn install(ctx: &Context) -> cu::Result<()> {
-    verify(ctx)?;
-    Ok(())
+pub fn install(_: &Context) -> cu::Result<()> {
+    corelib::check_requirements()
 }
 
 pub fn pre_uninstall(_: &Context) -> cu::Result<()> {

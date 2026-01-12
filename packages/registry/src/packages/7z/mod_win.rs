@@ -17,13 +17,13 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
     }
     version::check(VERSION)
 }
-pub fn download(_: &Context) -> cu::Result<()> {
-    let sha256_checksum = if cfg!(target_arch = "aarch64") {
-        "6365c7c44e217b9c1009e065daf9f9aa37454e64315b4aaa263f7f8f060755dc"
-    } else {
-        "78afa2a1c773caf3cf7edf62f857d2a8a5da55fb0fff5da416074c0d28b2b55f"
-    };
-    hmgr::download_file("7z-installer.exe", download_url(), sha256_checksum)?;
+pub fn download(ctx: &Context) -> cu::Result<()> {
+    let sha256_checksum = 
+    is_arm!(
+"6365c7c44e217b9c1009e065daf9f9aa37454e64315b4aaa263f7f8f060755dc",
+else 
+"78afa2a1c773caf3cf7edf62f857d2a8a5da55fb0fff5da416074c0d28b2b55f");
+    hmgr::download_file("7z-installer.exe", download_url(), sha256_checksum, ctx.bar())?;
     Ok(())
 }
 pub fn install(ctx: &Context) -> cu::Result<()> {
@@ -45,10 +45,14 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     cu::fs::make_dir(hmgr::paths::bin_root())?;
     let exe_path = hmgr::paths::binary("7z.exe");
     let exefm_path = hmgr::paths::binary("7zfm.exe");
-    opfs::symlink_files(&[
-        (&exe_path, &install_dir.join("7z.exe")), 
-        (&exefm_path, &install_dir.join("7zFM.exe"))
-    ])?;
+    ctx.add_item(hmgr::Item::LinkBin(
+        exe_path.into_utf8()?, 
+        install_dir.join("7z.exe").into_utf8()?
+    ))?;
+    ctx.add_item(hmgr::Item::LinkBin(
+        exefm_path.into_utf8()?, 
+        install_dir.join("7zFM.exe").into_utf8()?
+    ))?;
     Ok(())
 }
 pub fn uninstall(ctx: &Context) -> cu::Result<()> {

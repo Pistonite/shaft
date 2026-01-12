@@ -98,7 +98,7 @@ macro_rules! main_thread_singleton {
                         std::sync::atomic::Ordering::Relaxed,
                     ).is_ok(),
                     concat!("another guard of ", stringify!($xxx), " is alive")
-                );
+                )?;
                 // SAFETY: ensured on main thread
                 let result = unsafe { Guard::new_main_thread() };
                 result.context(concat!("failed to initialize main thread singleton: ", stringify!($xxx)))

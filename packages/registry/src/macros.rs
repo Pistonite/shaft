@@ -20,8 +20,9 @@ macro_rules! check_bin_in_path_and_shaft {
             Ok(path) => {
                 if path != corelib::hmgr::paths::binary(corelib::bin_name!($bin)) {
                     cu::bail!(
-                        "found existing '{}' installed outside of shaft, please uninstall it first",
-                        $bin
+                        "found existing '{}' installed outside of shaft, please uninstall it first (at '{}')",
+                        $bin,
+                        path.display()
                     );
                 }
                 path

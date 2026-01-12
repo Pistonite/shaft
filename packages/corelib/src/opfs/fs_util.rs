@@ -1,5 +1,6 @@
-use std::io::Read;
+use std::os::windows::fs::MetadataExt;
 use std::path::Path;
+use std::{io::Read, sync::Arc};
 
 use cu::pre::*;
 use sha2::{Digest, Sha256};
@@ -64,6 +65,9 @@ fn build_link_powershell(out: &mut String, link_type: &str, from: &str, to: &str
 #[cfg(windows)]
 #[cu::context("failed to remove: '{}'", path.display())]
 pub fn safe_remove_link(path: &Path) -> cu::Result<()> {
+    if !path.exists() {
+        return Ok(());
+    }
     // remove with powershell
     cu::which("powershell")?
         .command()
@@ -82,16 +86,29 @@ pub fn safe_remove_link(path: &Path) -> cu::Result<()> {
 
 /// Get the SHA256 checksum of a file and return it as a string
 #[cu::context("failed to hash file: '{}'", path.display())]
-pub fn file_sha256(path: &Path) -> cu::Result<String> {
+pub fn file_sha256(path: &Path, bar: Option<Arc<cu::ProgressBar>>) -> cu::Result<String> {
     let mut hasher = Sha256::new();
     let mut reader = cu::fs::reader(&path)?;
+    let file_size = path.metadata()?.file_size();
     let mut buf = vec![0u8; 4096000].into_boxed_slice();
+    let mut current_size = 0;
     loop {
         let i = reader.read(&mut buf)?;
+        current_size += i as u64;
+        if let Some(bar) = &bar {
+            cu::progress!(
+                bar,
+                "hashing: {:.02}%",
+                current_size as f64 * 100.0 / file_size as f64
+            );
+        }
         if i == 0 {
             break;
         }
         hasher.update(&buf[..i]);
+    }
+    if let Some(bar) = &bar {
+        cu::progress!(bar, "hashing: done");
     }
     let result = hasher.finalize();
     let mut out = String::with_capacity(64);
@@ -141,11 +158,9 @@ fn quote_path_impl(path: &Path) -> cu::Result<String> {
         Ok(format!("\"{}\"", path.as_utf8()?))
     } else {
         let s = path.as_utf8()?;
-        cu::ensure!(
-            !s.contains('"'),
-            "quote (\") in path is not allowed: {}",
-            path.display()
-        );
+        if s.contains('"') {
+            cu::bail!("quote (\") in path is not allowed: {}", path.display());
+        }
         Ok(format!("\"{s}\""))
     }
 }

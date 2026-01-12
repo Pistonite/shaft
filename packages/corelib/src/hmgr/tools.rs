@@ -8,18 +8,9 @@ static TOOLS_TAR_GZ: &[u8] = include_bytes!("./tools.tar.gz");
 
 /// Ensure the tools directory is unpacked and up to date
 pub fn ensure_unpacked() -> cu::Result<()> {
-    let need_unpack = if cfg!(debug_assertions) {
-        use std::sync::atomic::{AtomicBool, Ordering};
-        static UNPACKED: AtomicBool = AtomicBool::new(false);
-        // always re-unpack once in debug mode
-        UNPACKED
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .is_ok()
-    } else {
-        let version = opfs::cli_version();
-        let version_path = hmgr::paths::tools_version();
-        cu::fs::read_string(version_path).is_ok_and(|x| x == version)
-    };
+    let version = opfs::cli_version();
+    let version_path = hmgr::paths::tools_version();
+    let need_unpack = cu::fs::read_string(version_path).is_ok_and(|x| x == version);
     if need_unpack {
         cu::check!(do_unpack(), "failed to unpack tools")?;
     }

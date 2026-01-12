@@ -69,6 +69,7 @@ fn do_sync_package(mut ctx: Context) -> cu::Result<Context> {
     cu::progress!(bar, "installing");
     package.install(&ctx)?;
     cu::progress!(bar, "configuring");
+    ctx.items_mut()?.remove_package(pkg.to_str())?;
     package.configure(&ctx)?;
     ctx.items_mut()?.rebuild_items(Some(&bar))?;
     cu::progress!(bar, "cleaning");

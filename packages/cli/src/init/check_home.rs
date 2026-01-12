@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 
+use corelib::ItemMgr;
 use cu::pre::*;
 
 use corelib::hmgr;
-use corelib::opfs;
 
 pub fn check_init_home() -> cu::Result<()> {
     let home_path_str = cu::env_var("SHAFT_HOME")?;
@@ -30,8 +30,8 @@ pub fn check_init_home() -> cu::Result<()> {
         return Ok(());
     }
 
-    cu::warn!("SHAFT_HOME not set!");
-    cu::warn!(
+    cu::error!("SHAFT_HOME not set!");
+    cu::hint!(
         "if this is the first time running the tool, please follow the prompts to initialize."
     );
     cu::warn!(
@@ -90,83 +90,64 @@ to see why the auto-mount fails.
         cu::bail!("setup cancelled");
     }
 
+    let bar = cu::progress("initializing home").spawn();
+    cu::progress!(bar, "creating home directory");
     cu::check!(
         cu::fs::make_dir_empty(&home),
         "failed to create home directory"
     )?;
     cu::info!("home directory created!");
 
+    // renormalize after creation, since it could be different
     let home = home.normalize()?;
     hmgr::paths::init_home_path(home.clone());
-
-    let shell_profile = ShellProfile::default();
-    cu::check!(shell_profile.save(), "failed to create init scripts")?;
-    cu::info!("init scripts created!");
-
     let home_str = home.as_utf8()?;
 
+    cu::progress!(bar, "initializing items");
+    let mut items = ItemMgr::load()?;
+    items.skip_reinvocation(true);
+    items.rebuild_items(Some(&bar))?;
+    bar.done();
+
     if cfg!(windows) {
-        // CurrentUserAllHosts is for all hosts that run powershell, (for example, different
-        // terminals, VS Code, etc...
-        cu::hint!(
-            r"please add the following to your powershell profile (`notepad $PROFILE.CurrentUserAllHosts`)
-
-# shaft init script
-. $env:SHAFT_HOME\init\init.pwsh
-
-"
-        );
+        hmgr::windows::set_user("SHAFT_HOME", home_str)?;
+        let control_shell_folder =
+            crate::init::check_environment::windows::check_user_shell_folder()?;
+        let mut added = false;
+        cu::info!("checking init script...");
+        let init_script = r#"# shaft init script
+. $env:SHAFT_HOME\items\init.ps1
+"#;
+        if control_shell_folder {
+            if cu::yesno!("add the init script to the powershell profile?")? {
+                let root = hmgr::paths::windows_shell_root();
+                let ps5 = root.join("WindowsPowerShell\\profile.ps1");
+                let content = cu::fs::read_string(&ps5).unwrap_or_default();
+                let content = format!("{init_script}\n{content}");
+                cu::fs::write(ps5, content)?;
+                let ps7 = root.join("PowerShell\\profile.ps1");
+                let content = cu::fs::read_string(&ps7).unwrap_or_default();
+                let content = format!("{init_script}\n{content}");
+                cu::fs::write(ps7, content)?;
+                added = true;
+            }
+        }
+        if !added {
+            cu::hint!("ATTENTION! please add the following to your powershell profile:");
+            println!("\n{}\n", init_script);
+            cu::hint!("you can open the profile by `notepad $PROFILE.CurrentUserAllHosts`");
+            cu::prompt!("please press ENTER to continue once it's added")?;
+        }
     } else {
-        cu::hint!(
-            r"please add the following to your (bash) profile
-
-# shaft init script
-. {}/init/init.bash
-",
-            home_str
+        let init_script = format!(
+            r#"# shaft init script
+. {home_str}/items/init.bash
+"#
         );
-    }
-    #[cfg(windows)]
-    {
-        fn prepend_path(path: &str) -> Option<String> {
-            let parts = path.split(',').collect::<Vec<_>>();
-            let home_part = "%SHAFT_HOME%";
-            let bin_part = "%SHAFT_HOME%\\bin";
-            let has_home = parts
-                .iter()
-                .any(|x| x.trim().to_ascii_uppercase() == home_part);
-            let has_bin = parts
-                .iter()
-                .any(|x| x.trim().to_ascii_uppercase() == "%SHAFT_HOME%\\BIN");
-            if has_home && has_bin {
-                return None;
-            }
-            let mut new_path = String::new();
-            if !has_home {
-                new_path.push_str(home_part);
-                new_path.push(';');
-            }
-            if !has_bin {
-                new_path.push_str(bin_part);
-                new_path.push(';');
-            }
-            new_path.push_str(path);
-            Some(new_path)
-        }
-        if add_to_system {
-            hmgr::windows::set_system("SHAFT_HOME", home_str)?;
-            let path = hmgr::windows::get_system("PATH")?;
-            if let Some(path) = prepend_path(&path) {
-                hmgr::windows::set_system("PATH", &path)?;
-            }
-        } else {
-            hmgr::windows::set_user("SHAFT_HOME", home_str)?;
-            let path = hmgr::windows::get_user("PATH")?;
-            if let Some(path) = prepend_path(&path) {
-                hmgr::windows::set_user("PATH", &path)?;
-            }
-        }
-        cu::info!("SHAFT_HOME and PATH environment variable set");
+        cu::hint!("ATTENTION! please add the following to your shell profile:");
+        println!("\n{}\n", init_script);
+        cu::hint!("you can replace `.bash` with the shell you use");
+        cu::prompt!("please press ENTER to continue once it's added")?;
     }
     hmgr::add_env_assert([("SHAFT_HOME".to_string(), home_str.to_string())])?;
     hmgr::require_envchange_reinvocation(false)

@@ -6,8 +6,10 @@ use cu::pre::*;
 
 use crate::{bin_name, hmgr, opfs};
 
+#[derive(Default)]
 pub struct ItemMgr {
     items: Vec<ItemEntry>,
+    skip_reinvocation: bool,
     dirty: bool,
     shim_dirty: bool,
     bash_dirty: bool,
@@ -18,14 +20,28 @@ impl ItemMgr {
     #[cu::context("failed to load installed items")]
     pub fn load() -> cu::Result<Self> {
         let config_path = hmgr::paths::items_config_json();
-        let items = json::read(cu::fs::reader(config_path)?)?;
+        let Ok(items) = cu::fs::read_string(config_path) else {
+            return Ok(Self {
+                items: vec![],
+                skip_reinvocation: false,
+                dirty: true,
+                shim_dirty: true,
+                bash_dirty: true,
+                pwsh_dirty: true,
+            });
+        };
+        let items = json::parse(&items)?;
         Ok(Self {
             items,
+            skip_reinvocation: false,
             dirty: false,
             shim_dirty: false,
             bash_dirty: false,
             pwsh_dirty: false,
         })
+    }
+    pub fn skip_reinvocation(&mut self, skip: bool) {
+        self.skip_reinvocation = skip;
     }
     pub fn add_item(&mut self, package: &str, item: Item) {
         let entry = ItemEntry {
@@ -100,6 +116,7 @@ impl ItemMgr {
         Ok(())
     }
 
+    #[cu::context("failed to build installed items")]
     pub fn rebuild_items(&mut self, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
         if !self.dirty {
             return Ok(());
@@ -126,6 +143,7 @@ impl ItemMgr {
     }
 
     #[cfg(windows)]
+    #[cu::context("failed to build user environment variables")]
     fn rebuild_user_env_vars(&mut self) -> cu::Result<()> {
         let envs = self.build_env_map()?;
         let mut reinvocation_needed = false;
@@ -148,19 +166,23 @@ impl ItemMgr {
             // it could change (user can add extra paths)
             // it's probably ok to just not assert
             hmgr::add_env_assert(envs)?;
-            hmgr::require_envchange_reinvocation(true)?;
+            if !self.skip_reinvocation {
+                hmgr::require_envchange_reinvocation(true)?;
+            }
         }
         Ok(())
     }
 
+    #[cu::context("failed to build binary links")]
     fn rebuild_links(&mut self) -> cu::Result<()> {
         let bin_root = hmgr::paths::bin_root();
+        cu::fs::make_dir(&bin_root)?;
         let mut link_paths = vec![];
         for entry in &self.items {
             let Item::LinkBin(from, to) = &entry.item else {
                 continue;
             };
-            let link_path = bin_root.join(bin_name!(from));
+            let link_path = bin_root.join(from);
             if link_path.exists() {
                 // assume existing file is from linking previously
                 continue;
@@ -176,6 +198,7 @@ impl ItemMgr {
         Ok(())
     }
 
+    #[cu::context("failed to build bash profile")]
     fn rebuild_bash(&mut self) -> cu::Result<()> {
         use std::fmt::Write as _;
         let mut out = include_str!("shell_profile/init_template.bash").to_string();
@@ -203,13 +226,16 @@ impl ItemMgr {
 
         if path_changed || reinvocation_needed {
             hmgr::add_env_assert(envs)?;
-            hmgr::require_envchange_reinvocation(true)?;
+            if !self.skip_reinvocation {
+                hmgr::require_envchange_reinvocation(true)?;
+            }
         }
         cu::fs::write(hmgr::paths::init_bash(), out)?;
         self.bash_dirty = false;
         Ok(())
     }
 
+    #[cu::context("failed to build powershell profile")]
     fn rebuild_pwsh(&mut self) -> cu::Result<()> {
         use std::fmt::Write as _;
         let mut out = include_str!("shell_profile/init_template.ps1").to_string();
@@ -220,16 +246,6 @@ impl ItemMgr {
             let _ = writeln!(out, "# == {} >>>>>\n{}", entry.package, script);
         }
         cu::fs::write(hmgr::paths::init_ps1(), &out)?;
-
-        let windows_shell_dir = hmgr::paths::windows_shell_root();
-        let mut ps5 = windows_shell_dir.join("WindowsPowerShell");
-        ps5.push("profile.ps1");
-        cu::fs::write(ps5, &out)?;
-
-        let mut ps7 = windows_shell_dir.join("PowerShell");
-        ps7.push("profile.ps1");
-        cu::fs::write(ps7, out)?;
-
         self.pwsh_dirty = false;
         Ok(())
     }
@@ -310,7 +326,10 @@ impl ItemMgr {
             // To be safe, we will expand %SHAFT_HOME% on windows
             let home = hmgr::paths::home().as_utf8()?;
             let home_bin = hmgr::paths::bin_root();
-            let _ = write!(out, "{};{}", home, home_bin.as_utf8()?);
+            let home_bin_str = home_bin.as_utf8()?;
+            let _ = write!(out, "{};{}", home, home_bin_str);
+            seen.insert(home);
+            seen.insert(home_bin_str);
             // add the new ones
             // latest added path go to the front
             for p in controlled_paths.iter().rev() {
@@ -344,6 +363,7 @@ impl ItemMgr {
         Ok((out, reinvocation_needed))
     }
 
+    #[cu::context("failed to build shims")]
     fn rebuild_shim(&mut self, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
         let mut shim_config = BTreeMap::<String, Vec<String>>::default();
         for entry in &self.items {
@@ -396,9 +416,10 @@ impl ItemMgr {
 
         // create new links
         let bin_root = hmgr::paths::bin_root();
+        cu::fs::make_dir(&bin_root)?;
         let mut link_paths = Vec::with_capacity(shim_config.len());
         for name in shim_config.keys() {
-            let target = bin_root.join(bin_name!(name));
+            let target = bin_root.join(name);
             link_paths.push(target);
         }
         let link_paths = link_paths

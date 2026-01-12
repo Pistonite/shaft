@@ -12,7 +12,7 @@ pub fn upgrade(path: Option<&Path>) -> cu::Result<()> {
         Some(path) => install_from_path(path, &temp_dir)?,
         None => install_from_release(&temp_dir)?,
     };
-    cu::ensure!(new_binary.exists(), "failed to locate new binary");
+    cu::ensure!(new_binary.exists(), "{}", new_binary.display())?;
     cu::check!(
         init::copy_new_binary(&new_binary),
         "failed to copy new binary to home"

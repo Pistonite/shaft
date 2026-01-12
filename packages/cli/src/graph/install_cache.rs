@@ -15,7 +15,7 @@ pub struct InstallCache {
 }
 
 impl InstallCache {
-    #[cu::error_ctx("failed to load install cache")]
+    #[cu::context("failed to load install cache")]
     pub fn load() -> cu::Result<Self> {
         cu::trace!("loading install cache");
         let path = hmgr::paths::install_cache_json();
@@ -29,7 +29,7 @@ impl InstallCache {
         Ok(install_cache.into())
     }
 
-    #[cu::error_ctx("failed to save install cache")]
+    #[cu::context("failed to save install cache")]
     pub fn save(&self) -> cu::Result<()> {
         let path = hmgr::paths::install_cache_json();
         let install_cache = InstallCacheJson::from(self);
@@ -70,7 +70,7 @@ impl InstallCache {
         Ok(())
     }
 
-    #[cu::error_ctx("failed to add '{pkg}' to install cache")]
+    #[cu::context("failed to add '{pkg}' to install cache")]
     pub fn add(&mut self, pkg: PkgId) -> cu::Result<()> {
         // sanity check
         cu::check!(
