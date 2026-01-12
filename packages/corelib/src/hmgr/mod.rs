@@ -1,6 +1,6 @@
 pub mod paths;
-mod shell_profile;
-pub use shell_profile::ShellProfile;
+// mod shell_profile;
+// pub use shell_profile::ShellProfile;
 mod resume;
 pub use resume::*;
 mod environment;
@@ -13,5 +13,6 @@ mod download;
 pub use download::*;
 mod tools;
 pub use tools::*;
-mod shim;
-pub use shim::ShimConfig;
+
+mod item;
+pub use item::{Item, ItemMgr};

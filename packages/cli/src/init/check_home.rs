@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use cu::pre::*;
 
-use corelib::hmgr::{self, ShellProfile};
+use corelib::hmgr;
 use corelib::opfs;
 
 pub fn check_init_home() -> cu::Result<()> {
@@ -89,30 +89,6 @@ to see why the auto-mount fails.
     if !cu::yesno!("create home directory at '{}'?", home.display())? {
         cu::bail!("setup cancelled");
     }
-
-    // we want to prompt this before creating the directory, so it's not too awkward
-    // if user cancels
-    #[cfg(windows)]
-    let add_to_system = loop {
-        cu::info!("adding SHAFT_HOME to environment variables...");
-        let mut answer = cu::prompt!(
-            "do you want to add it to the environment for the SYSTEM, or the current USER? [enter SYSTEM or USER]"
-        )?;
-        answer.make_ascii_uppercase();
-        match answer.as_str() {
-            "SYSTEM" => {
-                if !opfs::is_sudo() {
-                    cu::bailfyi!(
-                        "setting system environment variable requires sudo - please run `sudo shaft -vV`"
-                    );
-                }
-                break true;
-            }
-            "USER" => break false,
-            _ => {}
-        }
-        cu::error!("please enter SYSTEM or USER, Ctrl-C to abort");
-    };
 
     cu::check!(
         cu::fs::make_dir_empty(&home),

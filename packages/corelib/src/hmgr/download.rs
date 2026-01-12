@@ -39,7 +39,7 @@ pub fn download_file(
 ) -> cu::Result<PathBuf> {
     download_file_impl(identifier.as_ref(), url.as_ref(), sha256_checksum.as_ref())
 }
-#[cu::error_ctx("failed to download {} from {}", identifier.display(), url)]
+#[cu::context("failed to download {} from {}", identifier.display(), url)]
 fn download_file_impl(identifier: &Path, url: &str, sha256_checksum: &str) -> cu::Result<PathBuf> {
     cu::debug!(
         "looking for download: {} from {}",

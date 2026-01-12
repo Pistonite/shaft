@@ -1,4 +1,4 @@
-use corelib::{ShellProfile, hmgr::ShimConfig};
+use corelib::ItemMgr;
 use cu::pre::*;
 use enumset::EnumSet;
 use registry::{Context, PkgId, Verified};
@@ -26,20 +26,19 @@ pub fn sync_pkgs(pkgs: EnumSet<PkgId>, installed: &mut InstallCache) -> cu::Resu
         1 => cu::info!("syncing 1 package..."),
         x => cu::info!("syncing {x} packages..."),
     }
-    let shims = cu::check!(ShimConfig::load(), "failed to load shim config")?;
-    let mut ctx = Context::new(shims);
+    let items = ItemMgr::load()?;
+    let mut ctx = Context::new(items);
     for pkg in graph {
         ctx.pkg = pkg;
         ctx = cu::check!(do_sync_package(ctx), "failed to sync '{pkg}'")?;
+        ctx.set_bar(None);
         installed.add(pkg)?;
         installed.save()?;
     }
-    // TODO: shell config
-    ShellProfile {}.save()?;
     Ok(())
 }
 
-fn do_sync_package(ctx: Context) -> cu::Result<Context> {
+fn do_sync_package(mut ctx: Context) -> cu::Result<Context> {
     let pkg = ctx.pkg;
     let package = ctx.pkg.package();
     let needs_backup = match package.verify(&ctx)? {
@@ -54,35 +53,31 @@ fn do_sync_package(ctx: Context) -> cu::Result<Context> {
         }
         Verified::NotInstalled => false,
     };
-    let total = if needs_backup { 6 } else { 5 };
-    let bar = cu::progress_bar(total, format!("sync '{pkg}'"));
-    let mut i = 0;
+    let bar = cu::progress(format!("sync '{pkg}'")).spawn();
+    ctx.set_bar(Some(&bar));
     let mut backup_guard = if needs_backup {
-        cu::progress!(&bar, i, "backup");
-        i += 1;
+        cu::progress!(bar, "backup");
         Some(package.backup_guard(&ctx)?)
     } else {
         None
     };
 
-    cu::progress!(&bar, i, "downloading");
-    i += 1;
+    cu::progress!(bar, "downloading");
     package.download(&ctx)?;
-    cu::progress!(&bar, i, "building");
-    i += 1;
+    cu::progress!(bar, "building");
     package.build(&ctx)?;
-    cu::progress!(&bar, i, "installing");
-    i += 1;
+    cu::progress!(bar, "installing");
     package.install(&ctx)?;
-    cu::progress!(&bar, i, "configuring");
-    i += 1;
+    cu::progress!(bar, "configuring");
     package.configure(&ctx)?;
-    cu::progress!(&bar, i, "cleaning");
+    ctx.items_mut()?.rebuild_items(Some(&bar))?;
+    cu::progress!(bar, "cleaning");
     package.clean(&ctx)?;
 
+    cu::progress!(bar, "verifying");
     match package.verify(&ctx)? {
         Verified::UpToDate => {
-            cu::progress_done!(&bar, "synced '{pkg}'");
+            bar.done();
             if let Some(mut x) = backup_guard.take() {
                 x.clear();
             }

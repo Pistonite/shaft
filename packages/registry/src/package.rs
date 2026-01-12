@@ -140,7 +140,7 @@ impl Package {
     }
 
     #[inline(always)]
-    #[cu::error_ctx("failed to pre-uninstall package '{}'", ctx.pkg)]
+    #[cu::context("failed to pre-uninstall package '{}'", ctx.pkg)]
     pub fn pre_uninstall(&self, ctx: &Context) -> cu::Result<()> {
         if !self.enabled() {
             cu::bail!(
@@ -157,7 +157,7 @@ impl Package {
 
     /// Download the package, may use cache
     #[inline(always)]
-    #[cu::error_ctx("failed to download '{}'", ctx.pkg)]
+    #[cu::context("failed to download '{}'", ctx.pkg)]
     pub fn download(&self, ctx: &Context) -> cu::Result<()> {
         (self.download_fn)(ctx)
     }
@@ -166,14 +166,14 @@ impl Package {
     /// This should not have side effects besides modify the downloaded
     /// package itself. It's not executed in parallel.
     #[inline(always)]
-    #[cu::error_ctx("failed to build '{}'", ctx.pkg)]
+    #[cu::context("failed to build '{}'", ctx.pkg)]
     pub fn build(&self, ctx: &Context) -> cu::Result<()> {
         (self.build_fn)(ctx)
     }
 
     /// Install the package - after download and build
     #[inline(always)]
-    #[cu::error_ctx("failed to install '{}'", ctx.pkg)]
+    #[cu::context("failed to install '{}'", ctx.pkg)]
     pub fn install(&self, ctx: &Context) -> cu::Result<()> {
         (self.install_fn)(ctx)
     }
@@ -185,24 +185,19 @@ impl Package {
             "failed to configure '{}'",
             ctx.pkg
         )?;
-        cu::check!(
-            ctx.shims_mut()?.build(),
-            "failed to build shims after configuring '{}'",
-            ctx.pkg
-        )?;
         Ok(())
     }
 
     /// Clean up temporary files for the package. Does not uninstall it
     #[inline(always)]
-    #[cu::error_ctx("failed to clean '{}'", ctx.pkg)]
+    #[cu::context("failed to clean '{}'", ctx.pkg)]
     pub fn clean(&self, ctx: &Context) -> cu::Result<()> {
         (self.clean_fn)(ctx)
     }
 
     /// Uninstall the package
     #[inline(always)]
-    #[cu::error_ctx("failed to uninstall '{}'", ctx.pkg)]
+    #[cu::context("failed to uninstall '{}'", ctx.pkg)]
     pub fn uninstall(&self, ctx: &Context) -> cu::Result<()> {
         (self.uninstall_fn)(ctx)
     }
@@ -211,14 +206,14 @@ impl Package {
     ///
     /// Return `None` when the package does not have any config associated
     #[inline(always)]
-    #[cu::error_ctx("failed to get config location for '{}'", ctx.pkg)]
+    #[cu::context("failed to get config location for '{}'", ctx.pkg)]
     pub fn config_location(&self, ctx: &Context) -> cu::Result<Option<PathBuf>> {
         (self.config_location_fn)(ctx)
     }
 
     /// Backup the package content to prepare for remove or update
     #[inline(always)]
-    #[cu::error_ctx("failed to backup '{}'", ctx.pkg)]
+    #[cu::context("failed to backup '{}'", ctx.pkg)]
     pub fn backup(&self, ctx: &Context) -> cu::Result<()> {
         (self.backup_fn)(ctx)
     }
@@ -233,7 +228,7 @@ impl Package {
     }
 
     #[inline(always)]
-    #[cu::error_ctx("failed to restore '{}'", ctx.pkg)]
+    #[cu::context("failed to restore '{}'", ctx.pkg)]
     fn restore(&self, ctx: &Context) -> cu::Result<()> {
         (self.restore_fn)(ctx)
     }

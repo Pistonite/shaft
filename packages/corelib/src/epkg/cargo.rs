@@ -68,7 +68,7 @@ pub fn installed_info(package_name: &str) -> cu::Result<Option<CargoInstalledInf
 }
 
 /// Install a package using `cargo install --git --rev`
-#[cu::error_ctx("failed to install '{package}' with cargo")]
+#[cu::context("failed to install '{package}' with cargo")]
 pub fn install_git_commit(package: &str, git: &str, rev: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;
     cu::info!("installing '{package}' with cargo...");
@@ -77,7 +77,7 @@ pub fn install_git_commit(package: &str, git: &str, rev: &str) -> cu::Result<()>
         .add(cu::args![
             "install", package, "--git", git, "--rev", rev, "--locked"
         ])
-        .preset(cu::pio::cargo())
+        .preset(cu::pio::cargo(format!("cargo install '{package}'")))
         .spawn()?
         .0
         .wait_nz()?;
@@ -87,14 +87,14 @@ pub fn install_git_commit(package: &str, git: &str, rev: &str) -> cu::Result<()>
 }
 
 /// Install a package using `cargo install`
-#[cu::error_ctx("failed to install '{package}' with cargo")]
+#[cu::context("failed to install '{package}' with cargo")]
 pub fn install(package: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;
     cu::info!("installing '{package}' with cargo...");
     cu::which("cargo")?
         .command()
         .add(cu::args!["install", package, "--locked"])
-        .preset(cu::pio::cargo())
+        .preset(cu::pio::cargo(format!("cargo install '{package}'")))
         .spawn()?
         .0
         .wait_nz()?;
@@ -104,7 +104,7 @@ pub fn install(package: &str) -> cu::Result<()> {
 }
 
 /// Install a package using `cargo binstall` (with fallback)
-#[cu::error_ctx("failed to install '{package}' with cargo-binstall")]
+#[cu::context("failed to install '{package}' with cargo-binstall")]
 pub fn binstall(package: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;
     cu::info!("installing '{package}' with cargo-binstall...");
@@ -127,7 +127,7 @@ pub fn binstall(package: &str) -> cu::Result<()> {
 }
 
 /// Install a package using `cargo binstall --git` (with fallback)
-#[cu::error_ctx("failed to install '{package}' with cargo-binstall")]
+#[cu::context("failed to install '{package}' with cargo-binstall")]
 pub fn binstall_git(package: &str, git: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;
     cu::info!("installing '{package}' with cargo-binstall...");
@@ -152,7 +152,7 @@ pub fn binstall_git(package: &str, git: &str) -> cu::Result<()> {
 }
 
 /// Uninstall a package using `cargo uninstall`
-#[cu::error_ctx("failed to uninstall '{package}' with cargo")]
+#[cu::context("failed to uninstall '{package}' with cargo")]
 pub fn uninstall(package: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;
     cu::which("cargo")?

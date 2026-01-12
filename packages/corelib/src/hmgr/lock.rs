@@ -27,7 +27,7 @@ pub fn lock() -> cu::Result<HomeLock> {
         cu::hint!(
             "there may be another instance of the program running, if not, the program may have crashed earlier and you can manually delete the lock file"
         );
-        cu::bailfyi!("lock file exists");
+        cu::bail!("lock file exists");
     }
     let file = cu::check!(
         File::create(&path),

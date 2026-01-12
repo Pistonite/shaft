@@ -1,4 +1,4 @@
-use corelib::hmgr::ShimConfig;
+use corelib::ItemMgr;
 use cu::pre::*;
 use enumset::EnumSet;
 use registry::{Context, PkgId, Verified};
@@ -21,11 +21,11 @@ pub fn remove(packages: &[String]) -> cu::Result<()> {
         x => cu::info!("removing {x} packages..."),
     }
 
-    let shims = cu::check!(ShimConfig::load(), "failed to load shim config")?;
+    let items = ItemMgr::load()?;
 
     // check precondition for each package
     let mut to_uninstall = Vec::with_capacity(graph.len());
-    let mut ctx = Context::new(shims);
+    let mut ctx = Context::new(items);
     for pkg in &graph {
         let pkg = *pkg;
         ctx.pkg = pkg;
@@ -46,12 +46,17 @@ pub fn remove(packages: &[String]) -> cu::Result<()> {
     for pkg in to_uninstall {
         ctx.pkg = pkg;
         ctx = cu::check!(do_remove_package(ctx), "failed to remove '{pkg}'")?;
+        ctx.set_bar(None);
         installed.remove(pkg);
         installed.save()?;
     }
 
-    // rebuild shim executable if needed (if any package removed their shims)
-    ctx.shims_mut()?.build()?;
+    // rebuild items if needed (if any package removed their items)
+    {
+        let bar = cu::progress("rebuilding items").spawn();
+        ctx.items_mut()?.rebuild_items(Some(&bar))?;
+        bar.done();
+    }
 
     cu::info!("removed {len} packages, configuring...");
     let sync_pkgs = graph::resolve_config_pkgs(EnumSet::new(), uninstalled, &installed);
@@ -76,24 +81,25 @@ fn rectify_pkgs_to_remove(pkgs: EnumSet<PkgId>, installed: &InstallCache) -> Enu
     out
 }
 
-fn do_remove_package(ctx: Context) -> cu::Result<Context> {
+fn do_remove_package(mut ctx: Context) -> cu::Result<Context> {
     let pkg = ctx.pkg;
     let package = pkg.package();
-    let bar = cu::progress_bar(4, format!("remove '{pkg}'"));
+    let bar = cu::progress(format!("remove '{pkg}'")).spawn();
+    ctx.set_bar(Some(&bar));
 
-    cu::progress!(&bar, 0, "backup");
+    cu::progress!(bar, "backup");
     let mut backup_guard = package.backup_guard(&ctx)?;
-    cu::progress!(&bar, 1, "cleaning");
+    cu::progress!(bar, "cleaning");
     package.clean(&ctx)?;
-    cu::progress!(&bar, 2, "uninstalling");
+    cu::progress!(bar, "uninstalling");
     package.uninstall(&ctx)?;
 
-    cu::progress!(&bar, 3, "verifying");
+    cu::progress!(bar, "verifying");
     match package.verify(&ctx)? {
         Verified::NotInstalled => {
-            cu::progress_done!(&bar, "removed '{pkg}'");
             backup_guard.clear();
             drop(backup_guard);
+            bar.done();
             return Ok(ctx);
         }
         _ => {

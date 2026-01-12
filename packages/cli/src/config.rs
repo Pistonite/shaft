@@ -16,7 +16,7 @@ pub struct WindowsConfig {
     pub control_home: bool,
 }
 
-#[cu::error_ctx("failed to load config")]
+#[cu::context("failed to load config")]
 pub fn load_config() -> cu::Result<Config> {
     let path = hmgr::paths::config_toml();
     if !path.exists() {

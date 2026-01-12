@@ -1,7 +1,8 @@
 use std::cell::{RefCell, RefMut};
 use std::path::PathBuf;
+use std::sync::Arc;
 
-use corelib::hmgr::{self, ShimConfig};
+use corelib::hmgr::{self, Item, ItemMgr};
 use cu::pre::*;
 
 use crate::PkgId;
@@ -11,24 +12,38 @@ pub struct Context {
     /// The id of the package being operated on
     pub pkg: PkgId,
     /// Shim config
-    shims: RefCell<ShimConfig>,
+    items: RefCell<ItemMgr>,
+    bar: Option<Arc<cu::ProgressBar>>,
 }
 impl Context {
-    pub fn new(shims: ShimConfig) -> Self {
+    pub fn new(items: ItemMgr) -> Self {
         Self {
             pkg: PkgId::CorePseudo,
-            shims: RefCell::new(shims),
+            items: RefCell::new(items),
+            bar: None,
         }
     }
     pub fn pkg_name(&self) -> &'static str {
         self.pkg.to_str()
     }
-    pub fn shims_mut(&self) -> cu::Result<RefMut<'_, ShimConfig>> {
+    pub fn items_mut(&self) -> cu::Result<RefMut<'_, ItemMgr>> {
         cu::check!(
-            self.shims.try_borrow_mut(),
-            "unexpected: failed to borrow shims_mut"
+            self.items.try_borrow_mut(),
+            "unexpected: failed to borrow items_mut"
         )
     }
+    pub fn add_item(&self, item: Item) -> cu::Result<()> {
+        self.items_mut()?.add_item(self.pkg.to_str(), item);
+        Ok(())
+    }
+
+    pub fn set_bar(&mut self, bar: Option<&Arc<cu::ProgressBar>>) {
+        self.bar = bar.cloned();
+    }
+    pub fn bar(&self) -> Option<Arc<cu::ProgressBar>> {
+        self.bar.clone()
+    }
+
     pub fn temp_dir(&self) -> PathBuf {
         hmgr::paths::temp_dir(self.pkg_name())
     }

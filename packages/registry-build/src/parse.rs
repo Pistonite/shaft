@@ -28,14 +28,8 @@ pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleF
             parts.next(),
             "unable to determine package name from file: '{top_path_str}'"
         )?;
-        cu::ensure!(
-            !package_name.is_empty(),
-            "package name cannot be empty: in file: '{top_path_str}'"
-        );
-        cu::ensure!(
-            util::is_kebab(package_name),
-            "package name must be kebab-case: in file: '{top_path_str}'"
-        );
+        cu::ensure!(!package_name.is_empty(), "in file: '{top_path_str}'")?;
+        cu::ensure!(util::is_kebab(package_name), "in file: '{top_path_str}'")?;
         let platform = match parts.next() {
             None => Platform::Any,
             Some(x) => cu::check!(
@@ -43,10 +37,9 @@ pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleF
                 "unable to determine package platform: in file: '{top_path_str}'"
             )?,
         };
-        cu::ensure!(
-            parts.next().is_none(),
-            "package file should contains at most one '_': in file: '{top_path_str}'"
-        );
+        if parts.next().is_some() {
+            cu::bail!("package file should contains at most one '_': in file: '{top_path_str}'");
+        }
         let files = std::iter::once((platform, top_path.to_path_buf())).collect();
         let structure = ModuleFileStructure {
             package_name: package_name.to_string(),
@@ -64,14 +57,8 @@ pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleF
     }
 
     let package_name = file_name;
-    cu::ensure!(
-        !package_name.is_empty(),
-        "package name cannot be empty: in path: '{top_path_str}'"
-    );
-    cu::ensure!(
-        util::is_kebab(package_name),
-        "package name must be kebab-case: in path: '{top_path_str}'"
-    );
+    cu::ensure!(!package_name.is_empty(), "in path: '{top_path_str}'")?;
+    cu::ensure!(util::is_kebab(package_name), "in path: '{top_path_str}'")?;
     let mut structure = ModuleFileStructure::new(package_name.to_string());
     for entry in cu::fs::read_dir(top_path)? {
         let entry = entry?;

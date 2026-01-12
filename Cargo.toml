@@ -10,12 +10,12 @@ members = [
 
 [workspace.dependencies.cu]
 package = "pistonite-cu"
-version = "0.6.10"
+version = "0.7.0"
 # path = "../cu/packages/copper"
 
 [workspace.dependencies.pm]
 package = "pistonite-pm"
-version = "0.2.3"
+version = "0.2.4"
 default-features = false
 # path = "../cu/packages/promethium"
 

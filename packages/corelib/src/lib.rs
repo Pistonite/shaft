@@ -5,7 +5,7 @@ pub mod hmgr;
 /// Operating/File System
 pub mod opfs;
 
-pub use hmgr::{ShellProfile, Version};
+pub use hmgr::{ItemMgr, Version};
 
 pub(crate) mod internal;
 

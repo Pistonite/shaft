@@ -390,7 +390,7 @@ fn build_package_modules(
             let path = path.try_to_rel_from(registry_path);
             // relative path ensures the output is consistent throughout
             // build environments
-            cu::ensure!(path.is_relative());
+            cu::ensure!(path.is_relative(), "'{}'", path.display())?;
             let path = path.as_utf8()?;
             writeln!(
                 out,

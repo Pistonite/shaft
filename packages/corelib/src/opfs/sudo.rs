@@ -7,7 +7,7 @@ use cu::pre::*;
 /// Check if current process has elevated privilege
 #[cfg(windows)]
 pub fn is_sudo() -> bool {
-    use winapi::shared::minwindef::{BOOL, DWORD, LPVOID};
+    use winapi::shared::minwindef::{BOOL, DWORD, FALSE, LPVOID};
     use winapi::um::processthreadsapi::{GetCurrentProcess, OpenProcessToken};
     use winapi::um::securitybaseapi::GetTokenInformation;
     use winapi::um::winnt::{
@@ -18,9 +18,7 @@ pub fn is_sudo() -> bool {
     let mut token_handle = HANDLE::default();
     let process = unsafe { GetCurrentProcess() };
     let success: BOOL = unsafe { OpenProcessToken(process, TOKEN_QUERY, &mut token_handle) };
-    if success == 0
-    /* false */
-    {
+    if success == FALSE {
         return false;
     }
 
@@ -35,9 +33,7 @@ pub fn is_sudo() -> bool {
             &mut size,
         )
     };
-    if success == 0
-    /* false */
-    {
+    if success == FALSE {
         return false;
     }
     token_elevation.TokenIsElevated != 0
@@ -225,7 +221,6 @@ fn init_sudo_path() -> cu::Result<PathBuf> {
 }
 
 /// Get the path of sudo
-#[cu::error_ctx("failed to verify sudo.exe")]
 pub fn which_sudo() -> cu::Result<PathBuf> {
     match &*SUDO_PATH {
         Ok(x) => Ok(x.clone()),

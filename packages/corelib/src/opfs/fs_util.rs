@@ -9,7 +9,7 @@ use crate::opfs;
 /// Create a Windows symbolic link (requires sudo).
 /// `from` is where the link will be
 #[cfg(windows)]
-#[cu::error_ctx("failed to create symbolic links")]
+#[cu::context("failed to create symbolic links")]
 pub fn symlink_files(paths: &[(&Path, &Path)]) -> cu::Result<()> {
     let mut script = String::new();
     for (from, to) in paths {
@@ -19,7 +19,7 @@ pub fn symlink_files(paths: &[(&Path, &Path)]) -> cu::Result<()> {
 
         let from_str = from_abs.as_utf8()?;
         let to_str = to_abs.as_utf8()?;
-        build_symlink_script(&mut script, from_str, to_str);
+        build_link_powershell(&mut script, "SymbolicLink", from_str, to_str);
     }
     // use powershell since sudo is required
     opfs::sudo("powershell", "create symlinks")?
@@ -32,18 +32,60 @@ pub fn symlink_files(paths: &[(&Path, &Path)]) -> cu::Result<()> {
     Ok(())
 }
 
-fn build_symlink_script(out: &mut String, from: &str, to: &str) {
+/// Create hardlinks. `from` is where the link will be and `to` is the target of the link
+pub fn hardlink_files(paths: &[(&Path, &Path)]) -> cu::Result<()> {
+    let mut script = String::new();
+    for (from, to) in paths {
+        safe_remove_link(from)?;
+        let from_abs = from.normalize()?;
+        let to_abs = to.normalize()?;
+        let from_str = from_abs.as_utf8()?;
+        let to_str = to_abs.as_utf8()?;
+        build_link_powershell(&mut script, "HardLink", from_str, to_str);
+    }
+    cu::which("powershell")?
+        .command()
+        .args(["-NoLogo", "-NoProfile", "-c", &script])
+        .stdout(cu::lv::D)
+        .stderr(cu::lv::E)
+        .stdin_null()
+        .wait_nz()?;
+
+    Ok(())
+}
+
+#[cfg(windows)]
+fn build_link_powershell(out: &mut String, link_type: &str, from: &str, to: &str) {
     out.push_str(&format!(
-        "New-Item -ItemType SymbolicLink -Path \"{from}\" -Target \"{to}\";"
+        "New-Item -ItemType {link_type} -Path \"{from}\" -Target \"{to}\";"
     ))
 }
 
+#[cfg(windows)]
+#[cu::context("failed to remove: '{}'", path.display())]
+pub fn safe_remove_link(path: &Path) -> cu::Result<()> {
+    // remove with powershell
+    cu::which("powershell")?
+        .command()
+        .args([
+            "-NoLogo",
+            "-NoProfile",
+            "-c",
+            &format!("Remove-Item {}", quote_path(path)?),
+        ])
+        .stdout(cu::lv::D)
+        .stderr(cu::lv::E)
+        .stdin_null()
+        .wait_nz()?;
+    Ok(())
+}
+
 /// Get the SHA256 checksum of a file and return it as a string
-#[cu::error_ctx("failed to hash file: '{}'", path.display())]
+#[cu::context("failed to hash file: '{}'", path.display())]
 pub fn file_sha256(path: &Path) -> cu::Result<String> {
     let mut hasher = Sha256::new();
     let mut reader = cu::fs::reader(&path)?;
-    let mut buf = vec![0u8; 409600].into_boxed_slice();
+    let mut buf = vec![0u8; 4096000].into_boxed_slice();
     loop {
         let i = reader.read(&mut buf)?;
         if i == 0 {
@@ -69,7 +111,7 @@ pub fn un7z(archive_path: impl AsRef<Path>, out_dir: impl AsRef<Path>) -> cu::Re
     un7z_impl(archive_path.as_ref(), out_dir.as_ref())
 }
 
-#[cu::error_ctx("failed to extract zip: '{}'", archive_path.display())]
+#[cu::context("failed to extract zip: '{}'", archive_path.display())]
 fn un7z_impl(archive_path: &Path, out_dir: &Path) -> cu::Result<()> {
     let script = format!(
         "& {} x -y {} -o{}",

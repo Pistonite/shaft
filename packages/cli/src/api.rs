@@ -36,9 +36,9 @@ impl CliApi {
     pub fn run(self) -> cu::Result<()> {
         let run_version = self.version || matches!(&self.command, Some(CliCommand::Version(_)));
         if run_version {
-            cu::disable_print_time();
+            cu::lv::disable_print_time();
             println!("{}", clap::crate_version!());
-            if !cu::log_enabled(cu::lv::D) {
+            if !cu::lv::D.enabled() {
                 return Ok(());
             }
         }
@@ -75,7 +75,7 @@ impl CliApi {
         }
 
         let Some(command) = self.command else {
-            cu::disable_print_time();
+            cu::lv::disable_print_time();
             cu::cli::print_help::<Self>(false);
             return Ok(());
         };

@@ -29,17 +29,17 @@ fn install_from_path(path: &Path, temp_dir: &Path) -> cu::Result<PathBuf> {
     )?;
     cu::info!("installing to cargo default location...");
     {
-        let (child, _progress, _progress2) = cargo
+        let (child, _) = cargo
             .command()
             .current_dir(path)
             .add(cu::args!["install", "shaft-cli", "--path", "."])
-            .preset(cu::pio::cargo())
+            .preset(cu::pio::cargo("cargo build"))
             .spawn()?;
         cu::check!(child.wait_nz(), "failed to build new binary")?;
     }
     cu::info!("installing to home temporary location...");
     {
-        let (child, _progress, _progress2) = cargo
+        let (child, _) = cargo
             .command()
             .current_dir(path)
             .add(cu::args![
@@ -50,7 +50,7 @@ fn install_from_path(path: &Path, temp_dir: &Path) -> cu::Result<PathBuf> {
                 "--root",
                 &temp_dir
             ])
-            .preset(cu::pio::cargo())
+            .preset(cu::pio::cargo("cargo build"))
             .spawn()?;
         cu::check!(child.wait_nz(), "failed to build new binary")?;
     }

@@ -29,7 +29,7 @@ pub fn uninstall(_: &Context) -> cu::Result<()> {
     Ok(())
 }
 
-#[cu::error_ctx("failed to get windows terminal settings dir")]
+#[cu::context("failed to get windows terminal settings dir")]
 fn setting_dir() -> cu::Result<PathBuf> {
     let mut p = PathBuf::from(cu::env_var("LOCALAPPDATA")?);
     p.extend(["Packages", "Microsoft.WindowsTerminal_8wekyb3d8bbwe", "LocalState"]);

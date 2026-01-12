@@ -38,14 +38,17 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     opfs::un7z(pwsh_zip, &pwsh_dir)?;
 
     let pwsh_exe = pwsh_dir.join("pwsh.exe");
-    ctx.shims_mut()?.add("pwsh", &[pwsh_exe.as_utf8()?]);
+    ctx.add_item(hmgr::Item::ShimBin("pwsh".to_string(), 
+        vec![
+            pwsh_exe.into_utf8()?
+        ]
+    ))?;
     Ok(())
 }
 
 pub fn uninstall(ctx: &Context) -> cu::Result<()> {
     opfs::ensure_terminated("pwsh.exe")?;
     ctx.move_install_to_old_if_exists()?;
-    ctx.shims_mut()?.remove("pwsh")?;
     Ok(())
 }
 

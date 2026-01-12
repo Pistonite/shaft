@@ -17,7 +17,7 @@ libc = "0.2.179"
 serde = "1"
 [build-dependencies.cu]
 package = "pistonite-cu"
-version = "0.6.10"
+version = "0.7.0"
 features = ["fs", "json"]
 
 [lib]

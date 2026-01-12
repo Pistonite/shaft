@@ -56,7 +56,7 @@ pub fn init_home_path(path: PathBuf) {
     }
 }
 
-fn home() -> &'static Path {
+pub(crate) fn home() -> &'static Path {
     HOME_PATH
         .get()
         .expect("home not initialized; please debug with -vv")
@@ -65,19 +65,24 @@ fn home() -> &'static Path {
 #[rustfmt::skip]
 home! {
     bin_root:              "bin",
-    binary:                  bin_root / file,
+    binary:                   bin_root / file,
     install_root:          "install",
-    install_dir:             install_root / package,
+    install_dir:              install_root / package,
     install_old_root:      "install-old",
-    install_old_dir:         install_old_root / package,
+    install_old_dir:          install_old_root / package,
+    items_root:            "items",
+    items_config_json:        items_root / "config.json",
+    init_ps1:                 items_root / "init.ps1",
+    init_bash:                items_root / "init.bash",
+    shim_binary:              items_root / (crate::bin_name!("shaftim")),
+    shim_binary_old:          items_root / (crate::bin_name!("shaftim.old")),
+    shim_config_json:         items_root / "shim_config.json",
     download_root:         "download",
     temp_root:             "temp",
-    temp_dir:                temp_root / path,
+    temp_dir:                 temp_root / path,
     tools_root:            "tools",
-    tools_version:           tools_root / "version",
+    tools_version:            tools_root / "version",
     windows_shell_root:    "windows-shell",
-    init_root:             "init",
-    shim_binary:             init_root / (crate::bin_name!("shaftim")),
     dot_interrupted:       ".interrupted",
     dot_lock:              ".lock",
     config_toml:           "config.toml",
@@ -86,7 +91,6 @@ home! {
     previous_command_json: "previous_command.json",
     shaft_binary:          (crate::bin_name!("shaft")),
     shaft_binary_old:      (crate::bin_name!("shaft.old")),
-    shim_config_json:      "shim_config.json",
     version_cache_json:    "version_cache.json",
 }
 
