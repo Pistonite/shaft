@@ -27,8 +27,8 @@ winreg = "0.55.0"
 cu = { workspace = true, features = [
     "fs"
 ] }
-flate2 = "1.1.5"
-tar = "0.4.4"
+flate2 = "1.1.8"
+tar = "0.4.44"
 
 [[bin]]
 name = "shaft"

@@ -11,8 +11,6 @@ pub struct Config {
 #[serde(rename_all = "kebab-case")]
 pub struct WindowsConfig {
     #[serde(default)]
-    pub control_personal_shell_folder: bool,
-    #[serde(default)]
     pub control_home: bool,
 }
 

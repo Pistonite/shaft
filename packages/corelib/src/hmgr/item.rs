@@ -13,6 +13,7 @@ pub struct ItemMgr {
     dirty: bool,
     shim_dirty: bool,
     bash_dirty: bool,
+    zsh_dirty: bool,
     pwsh_dirty: bool,
 }
 
@@ -27,6 +28,7 @@ impl ItemMgr {
                 dirty: true,
                 shim_dirty: true,
                 bash_dirty: true,
+                zsh_dirty: true,
                 pwsh_dirty: true,
             });
         };
@@ -37,6 +39,7 @@ impl ItemMgr {
             dirty: false,
             shim_dirty: false,
             bash_dirty: false,
+            zsh_dirty: false,
             pwsh_dirty: false,
         })
     }
@@ -58,6 +61,7 @@ impl ItemMgr {
             Item::ShimBin(_, _) => self.shim_dirty = true,
             Item::Pwsh(_) => self.pwsh_dirty = true,
             Item::Bash(_) => self.bash_dirty = true,
+            Item::Zsh(_) => self.zsh_dirty = true,
         }
         self.dirty = true;
         self.items.push(entry);
@@ -83,6 +87,7 @@ impl ItemMgr {
                 }
                 Item::Pwsh(_) => self.pwsh_dirty = true,
                 Item::Bash(_) => self.bash_dirty = true,
+                Item::Zsh(_) => self.zsh_dirty = true,
             }
             self.dirty = true;
             false
@@ -127,6 +132,9 @@ impl ItemMgr {
 
         if cfg!(not(windows)) && self.bash_dirty {
             self.rebuild_bash()?;
+        }
+        if cfg!(not(windows)) && self.zsh_dirty {
+            self.rebuild_zsh()?;
         }
         if cfg!(windows) && self.pwsh_dirty {
             self.rebuild_pwsh()?;
@@ -201,7 +209,7 @@ impl ItemMgr {
     #[cu::context("failed to build bash profile")]
     fn rebuild_bash(&mut self) -> cu::Result<()> {
         use std::fmt::Write as _;
-        let mut out = include_str!("shell_profile/init_template.bash").to_string();
+        let mut out = include_str!("init.bash").to_string();
         let home = hmgr::paths::home().as_utf8()?;
         let _ = writeln!(out, r#"export SHAFT_HOME='{home}'"#);
         // to be consistent with Windows, we hoist environment to the top
@@ -235,10 +243,47 @@ impl ItemMgr {
         Ok(())
     }
 
+    #[cu::context("failed to build zsh profile")]
+    fn rebuild_zsh(&mut self) -> cu::Result<()> {
+        use std::fmt::Write as _;
+        let mut out = include_str!("init.zsh").to_string();
+        let home = hmgr::paths::home().as_utf8()?;
+        let _ = writeln!(out, r#"export SHAFT_HOME='{home}'"#);
+        // to be consistent with Windows, we hoist environment to the top
+        let envs = self.build_env_map()?;
+        let mut reinvocation_needed = false;
+        for (key, value) in &envs {
+            let _ = writeln!(out, r#"export {key}='{value}'"#);
+            if &cu::env_var(key).unwrap_or_default() != value {
+                reinvocation_needed = true;
+            }
+        }
+
+        let (path, path_changed) = self.build_user_path()?;
+        let _ = writeln!(out, r#"export PATH="{path}""#);
+        let _ = writeln!(out, "# ===");
+        for entry in &self.items {
+            let Item::Zsh(script) = &entry.item else {
+                continue;
+            };
+            let _ = writeln!(out, "# == {} >>>>>\n{}", entry.package, script);
+        }
+
+        if path_changed || reinvocation_needed {
+            hmgr::add_env_assert(envs)?;
+            if !self.skip_reinvocation {
+                hmgr::require_envchange_reinvocation(true)?;
+            }
+        }
+        cu::fs::write(hmgr::paths::init_zsh(), out)?;
+        self.zsh_dirty = false;
+        Ok(())
+    }
+
     #[cu::context("failed to build powershell profile")]
     fn rebuild_pwsh(&mut self) -> cu::Result<()> {
         use std::fmt::Write as _;
-        let mut out = include_str!("shell_profile/init_template.ps1").to_string();
+        let mut out = include_str!("init.ps1").to_string();
         for entry in &self.items {
             let Item::Pwsh(script) = &entry.item else {
                 continue;
@@ -476,5 +521,14 @@ pub enum Item {
     Pwsh(String),
 
     /// Bash script added to init.bash script
+    ///
+    /// Use UserEnvVar or UserPath to modify environment variables and PATHs
+    /// to auto apply to all shells
     Bash(String),
+
+    /// Zsh script added to init.zsh script
+    ///
+    /// Use UserEnvVar or UserPath to modify environment variables and PATHs
+    /// to auto apply to all shells
+    Zsh(String),
 }

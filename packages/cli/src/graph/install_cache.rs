@@ -10,6 +10,8 @@ use registry::{BinId, PkgId};
 pub struct InstallCache {
     /// Set of packages installed
     pub pkgs: EnumSet<PkgId>,
+    /// Set of packages with dirtied configs
+    pub dirty: EnumSet<PkgId>,
     /// Binaries available mapping to the package that provides it
     pub bins: EnumMap<BinId, Option<PkgId>>,
 }
@@ -96,6 +98,18 @@ impl InstallCache {
             }
         }
     }
+
+    pub fn is_dirty(&self, pkg: PkgId) -> bool {
+        self.dirty.contains(pkg)
+    }
+
+    pub fn set_dirty(&mut self, pkg: PkgId, dirty: bool) {
+        if dirty {
+            self.dirty.insert(pkg);
+        } else {
+            self.dirty.remove(pkg);
+        }
+    }
 }
 
 impl From<&InstallCacheJson> for InstallCache {
@@ -106,6 +120,13 @@ impl From<&InstallCacheJson> for InstallCache {
                 continue;
             };
             pkgs.insert(pkg_id);
+        }
+        let mut dirty = EnumSet::new();
+        for name in &value.dirty {
+            let Some(pkg_id) = PkgId::from_str(name) else {
+                continue;
+            };
+            dirty.insert(pkg_id);
         }
         let mut bins: EnumMap<BinId, Option<PkgId>> = EnumMap::default();
         for (bin, pkg) in &value.bins {
@@ -121,7 +142,7 @@ impl From<&InstallCacheJson> for InstallCache {
             }
             bins[bin_id] = Some(pkg_id);
         }
-        Self { pkgs, bins }
+        Self { pkgs, dirty, bins }
     }
 }
 impl From<InstallCacheJson> for InstallCache {
@@ -134,12 +155,13 @@ impl From<InstallCacheJson> for InstallCache {
 impl From<&InstallCache> for InstallCacheJson {
     fn from(value: &InstallCache) -> Self {
         let pkgs = value.pkgs.iter().map(|x| x.to_string()).collect();
+        let dirty = value.dirty.iter().map(|x| x.to_string()).collect();
         let bins = value
             .bins
             .iter()
             .filter_map(|(k, v)| Some((k.to_string(), v.as_ref().copied()?.to_string())))
             .collect();
-        Self { pkgs, bins }
+        Self { pkgs, dirty, bins }
     }
 }
 impl From<InstallCache> for InstallCacheJson {
@@ -153,6 +175,9 @@ impl From<InstallCache> for InstallCacheJson {
 struct InstallCacheJson {
     /// List of packages installed
     pub pkgs: Vec<String>,
+    /// List of packages with dirtied (edited) config
+    #[serde(default)]
+    pub dirty: Vec<String>,
     /// Binaries available mapping to the package that provides it
     pub bins: BTreeMap<String, String>,
 }

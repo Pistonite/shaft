@@ -1,7 +1,7 @@
 use corelib::ItemMgr;
 use cu::pre::*;
 use enumset::EnumSet;
-use registry::{Context, PkgId, Verified};
+use registry::{Context, PkgId, Stage, Verified};
 
 use crate::graph::{self, InstallCache};
 
@@ -30,7 +30,8 @@ pub fn sync_pkgs(pkgs: EnumSet<PkgId>, installed: &mut InstallCache) -> cu::Resu
     let mut ctx = Context::new(items);
     for pkg in graph {
         ctx.pkg = pkg;
-        ctx = cu::check!(do_sync_package(ctx), "failed to sync '{pkg}'")?;
+        let result = do_sync_package(ctx, installed);
+        ctx = cu::check!(result, "failed to sync '{pkg}'")?;
         ctx.set_bar(None);
         installed.add(pkg)?;
         installed.save()?;
@@ -38,41 +39,74 @@ pub fn sync_pkgs(pkgs: EnumSet<PkgId>, installed: &mut InstallCache) -> cu::Resu
     Ok(())
 }
 
-fn do_sync_package(mut ctx: Context) -> cu::Result<Context> {
+fn do_sync_package(mut ctx: Context, installed: &mut InstallCache) -> cu::Result<Context> {
     let pkg = ctx.pkg;
     let package = ctx.pkg.package();
-    let needs_backup = match package.verify(&ctx)? {
+    ctx.stage.set(Stage::Verify);
+
+    let sync_type = match package.verify(&ctx)? {
+        Verified::NotInstalled => SyncType::Full,
+        Verified::NotUpToDate => SyncType::FullWithBackup,
         Verified::UpToDate => {
-            // TODO: check config dirty
+            if installed.is_dirty(pkg) {
+                SyncType::Config
+            } else {
+                SyncType::UpToDate
+            }
+        }
+    };
+
+    let (bar, mut backup_guard) = match sync_type {
+        SyncType::UpToDate => {
             cu::info!("up to date: '{pkg}'");
             return Ok(ctx);
         }
-        Verified::NotUpToDate => {
-            cu::debug!("needs update: '{pkg}'");
-            true
+        SyncType::Config => {
+            cu::debug!("sync type for '{pkg}': config");
+            let bar = cu::progress(format!("config '{pkg}'")).spawn();
+            ctx.set_bar(Some(&bar));
+            (bar, None)
         }
-        Verified::NotInstalled => false,
-    };
-    let bar = cu::progress(format!("sync '{pkg}'")).spawn();
-    ctx.set_bar(Some(&bar));
-    let mut backup_guard = if needs_backup {
-        cu::progress!(bar, "backup");
-        Some(package.backup_guard(&ctx)?)
-    } else {
-        None
+        SyncType::FullWithBackup => {
+            cu::debug!("sync type for '{pkg}': full-backup");
+            let bar = cu::progress(format!("sync '{pkg}'")).spawn();
+            ctx.set_bar(Some(&bar));
+
+            cu::progress!(bar, "backup");
+            ctx.stage.set(Stage::Backup);
+            (bar, Some(package.backup_guard(&ctx)?))
+        }
+        SyncType::Full => {
+            cu::debug!("sync type for '{pkg}': full");
+            let bar = cu::progress(format!("sync '{pkg}'")).spawn();
+            ctx.set_bar(Some(&bar));
+            (bar, None)
+        }
     };
 
-    cu::progress!(bar, "downloading");
-    package.download(&ctx)?;
-    cu::progress!(bar, "building");
-    package.build(&ctx)?;
-    cu::progress!(bar, "installing");
-    package.install(&ctx)?;
+    if !matches!(sync_type, SyncType::Config) {
+        cu::progress!(bar, "downloading");
+        ctx.stage.set(Stage::Download);
+        package.download(&ctx)?;
+
+        cu::progress!(bar, "building");
+        ctx.stage.set(Stage::Build);
+        package.build(&ctx)?;
+
+        cu::progress!(bar, "installing");
+        ctx.stage.set(Stage::Install);
+        package.install(&ctx)?;
+    }
+
     cu::progress!(bar, "configuring");
+    ctx.stage.set(Stage::Configure);
     ctx.items_mut()?.remove_package(pkg.to_str())?;
     package.configure(&ctx)?;
     ctx.items_mut()?.rebuild_items(Some(&bar))?;
+    installed.set_dirty(pkg, false);
+
     cu::progress!(bar, "cleaning");
+    ctx.stage.set(Stage::Clean);
     package.clean(&ctx)?;
 
     cu::progress!(bar, "verifying");
@@ -90,4 +124,15 @@ fn do_sync_package(mut ctx: Context) -> cu::Result<Context> {
     drop(backup_guard);
 
     Ok(ctx)
+}
+
+enum SyncType {
+    /// already up-to-date, nothing to do
+    UpToDate,
+    /// Just run the config stage to refresh the config
+    Config,
+    /// Full sync - download and install
+    Full,
+    /// Full sync - download and install, and also backup the old installation
+    FullWithBackup,
 }

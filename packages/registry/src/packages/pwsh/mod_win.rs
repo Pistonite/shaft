@@ -46,6 +46,19 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     Ok(())
 }
 
+pub fn configure(ctx: &Context) -> cu::Result<()> {
+    todo!()
+}
+
+pub fn config_location(ctx: &Context) -> cu::Result<Option<PathBuf>> {
+    Ok(Some(config_location_impl(ctx)))
+}
+fn config_location_impl(ctx: &Context) -> PathBuf {
+    let mut p = ctx.install_dir();
+    p.push("config.toml");
+    p
+}
+
 pub fn uninstall(ctx: &Context) -> cu::Result<()> {
     opfs::ensure_terminated("pwsh.exe")?;
     ctx.move_install_to_old_if_exists()?;
@@ -55,4 +68,19 @@ pub fn uninstall(ctx: &Context) -> cu::Result<()> {
 fn download_url() -> String {
     let arch = is_arm!("arm64", else "x64");
     format!("https://github.com/PowerShell/PowerShell/releases/download/v{VERSION}/PowerShell-{VERSION}-win-{arch}.zip")
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+struct Config {
+    use_ps5_profile: Option<ProfileType>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+enum ProfileType {
+    AllUsersAllHosts,
+    AllUsersCurrentHosts,
+    CurrentUserAllHosts,
+    CurrentUserCurrentHost
 }

@@ -90,22 +90,22 @@ fn sudo_path_name(path: &Path, name: &str, reason: &str) -> cu::Result<cu::Comma
         // this also allows --non-interactive to fail here
         // note we use prompt! instead of yesno!, because we don't want -y to bypass
         // this automatically
-        cu::prompt_validate!(
-            (
-                r#"[sudo] will spawn this executable: {}
+        cu::prompt(format!(
+            r#"[sudo] will spawn this executable: {}
 - reason: {}
 ** enter 'ok' to allow. A User Access Control (UAC) window will show"#,
-                path.display(),
-                reason
-            ),
-            |answer| {
-                let valid = answer.trim() == "ok";
-                if !valid {
-                    cu::error!("please enter 'ok'");
-                }
-                Ok(valid)
+            path.display(),
+            reason
+        ))
+        .validate_with(|answer| {
+            let valid = answer.trim() == "ok";
+            if !valid {
+                cu::error!("please enter 'ok'");
             }
-        )?;
+            Ok(valid)
+        })
+        .or_cancel()
+        .run()?;
     }
     let mut command = which_sudo()?.command();
     if !name.is_empty() {
@@ -156,7 +156,7 @@ fn check_credential(sudo_path: &Path) -> cu::Result<bool> {
 }
 
 fn refresh_credential(sudo_path: &Path, prompt: &str, timeout: Duration) -> cu::Result<()> {
-    let password = cu::prompt_password!("{prompt}")?;
+    let password = cu::prompt(prompt).password().or_cancel().run()?;
     let mut child = sudo_path
         .command()
         .arg("-vS")

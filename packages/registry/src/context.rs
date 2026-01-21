@@ -11,6 +11,7 @@ use crate::PkgId;
 pub struct Context {
     /// The id of the package being operated on
     pub pkg: PkgId,
+    pub stage: cu::Atomic<u8, Stage>,
     /// Shim config
     items: RefCell<ItemMgr>,
     bar: Option<Arc<cu::ProgressBar>>,
@@ -19,6 +20,7 @@ impl Context {
     pub fn new(items: ItemMgr) -> Self {
         Self {
             pkg: PkgId::CorePseudo,
+            stage: cu::Atomic::new_u8(Stage::Verify.into()),
             items: RefCell::new(items),
             bar: None,
         }
@@ -27,6 +29,9 @@ impl Context {
         self.pkg.to_str()
     }
     pub fn items_mut(&self) -> cu::Result<RefMut<'_, ItemMgr>> {
+        if self.stage.get() != Stage::Configure {
+            cu::bail!("config items may only be modified during the configure stage");
+        }
         cu::check!(
             self.items.try_borrow_mut(),
             "unexpected: failed to borrow items_mut"
@@ -76,5 +81,37 @@ impl Context {
             "failed to move install dir to install-old"
         )?;
         Ok(())
+    }
+}
+
+/// Stages when working with the package
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum Stage {
+    Verify = 0,
+    Backup = 1,
+    Download = 2,
+    Build = 3,
+    Install = 4,
+    Configure = 5,
+    Clean = 6,
+}
+impl From<Stage> for u8 {
+    fn from(stage: Stage) -> Self {
+        stage as u8
+    }
+}
+impl From<u8> for Stage {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => Stage::Verify,
+            1 => Stage::Backup,
+            2 => Stage::Download,
+            3 => Stage::Build,
+            4 => Stage::Install,
+            5 => Stage::Configure,
+            6 => Stage::Clean,
+            _ => panic!("invalid Stage value: {value}"),
+        }
     }
 }
