@@ -19,6 +19,7 @@ clap = { version = "4", features = ["cargo"] }
 registry = { package = "shaft-registry", path = "../registry" }
 enumset.workspace = true
 enum-map.workspace = true
+viopen = { version = "0.1.0", git = "https://github.com/Pistonite/shellutils", branch = "main", features = ["print"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.55.0"

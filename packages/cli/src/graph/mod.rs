@@ -124,8 +124,8 @@ pub fn resolve_sync_order(
     let mut remaining = pkgs;
     let mut out = Vec::with_capacity(pkgs.len() + 1);
     // always sync core-pseudo first
-    remaining.remove(PkgId::CorePseudo);
-    out.push(PkgId::CorePseudo);
+    remaining.remove(PkgId::Core);
+    out.push(PkgId::Core);
     while !remaining.is_empty() {
         let mut next_to_add = EnumSet::new();
         'outer: for pkg_id in remaining {

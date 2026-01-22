@@ -179,7 +179,7 @@ impl CliCommand {
             CliCommand::Upgrade(cmd) => cmd.run()?,
             CliCommand::Sync(cmd) => cmd.run()?,
             CliCommand::Remove(cmd) => cmd.run()?,
-            CliCommand::Config(_) => todo!(),
+            CliCommand::Config(cmd) => cmd.run()?,
             CliCommand::Clean(_) => {}
         }
         Ok(())
@@ -244,6 +244,17 @@ pub struct CliCommandConfig {
     #[as_ref]
     #[serde(skip)]
     pub flags: cu::cli::Flags,
+}
+impl CliCommandConfig {
+    fn run(&self) -> cu::Result<()> {
+        cu::lv::disable_print_time();
+        if self.location {
+            let location = crate::cmds::config_location(&self.package)?;
+            println!("{}", location);
+            return Ok(());
+        }
+        crate::cmds::config(&self.package)
+    }
 }
 
 #[derive(clap::Parser, Debug, AsRef, Serialize, Deserialize)]

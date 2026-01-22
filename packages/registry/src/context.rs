@@ -19,7 +19,7 @@ pub struct Context {
 impl Context {
     pub fn new(items: ItemMgr) -> Self {
         Self {
-            pkg: PkgId::CorePseudo,
+            pkg: PkgId::Core,
             stage: cu::Atomic::new_u8(Stage::Verify.into()),
             items: RefCell::new(items),
             bar: None,
@@ -51,6 +51,19 @@ impl Context {
 
     pub fn temp_dir(&self) -> PathBuf {
         hmgr::paths::temp_dir(self.pkg_name())
+    }
+    pub fn load_config_file_or_default(&self, default_config: &str) -> cu::Result<toml::Table> {
+        let config_file = self.config_file();
+        let Ok(config) = cu::fs::read_string(&config_file) else {
+            let _ = cu::fs::write(&config_file, &default_config)?;
+            let default = toml::parse(default_config)?;
+            return Ok(default);
+        };
+        let config = cu::check!(toml::parse(&config), "failed to parse config file for '{}'", self.pkg)?;
+        Ok(config)
+    }
+    pub fn config_file(&self) -> PathBuf {
+        hmgr::paths::config_file(self.pkg_name())
     }
     pub fn install_dir(&self) -> PathBuf {
         hmgr::paths::install_dir(self.pkg_name())

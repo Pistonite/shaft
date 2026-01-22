@@ -122,7 +122,7 @@ pub fn file_sha256(path: &Path, bar: Option<Arc<cu::ProgressBar>>) -> cu::Result
     Ok(out)
 }
 
-/// Extract an archive with 7z. Requires the 7z binary to exist
+/// Extract an archive with 7z. Requires the 7z binary to exist. out_dir will be created.
 #[inline(always)]
 pub fn un7z(archive_path: impl AsRef<Path>, out_dir: impl AsRef<Path>) -> cu::Result<()> {
     un7z_impl(archive_path.as_ref(), out_dir.as_ref())
@@ -137,7 +137,6 @@ fn un7z_impl(archive_path: &Path, out_dir: &Path) -> cu::Result<()> {
         quote_path(out_dir)?
     );
     // 7z will create the out dir if not exist, so we don't need to check
-
     cu::which("powershell")?
         .command()
         .args(["-NoLogo", "-NoProfile", "-c", &script])

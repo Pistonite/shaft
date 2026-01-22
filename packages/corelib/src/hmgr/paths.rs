@@ -66,6 +66,8 @@ pub(crate) fn home() -> &'static Path {
 home! {
     bin_root:              "bin",
     binary:                   bin_root / file,
+    config_root:           "config",
+    config_toml:              config_root / "core.toml",
     install_root:          "install",
     install_dir:              install_root / package,
     install_old_root:      "install-old",
@@ -85,13 +87,20 @@ home! {
     tools_version:            tools_root / "version",
     dot_interrupted:       ".interrupted",
     dot_lock:              ".lock",
-    config_toml:           "config.toml",
     environment_json:      "environment.json",
     install_cache_json:    "install_cache.json",
     previous_command_json: "previous_command.json",
     shaft_binary:          (crate::bin_name!("shaft")),
     shaft_binary_old:      (crate::bin_name!("shaft.old")),
     version_cache_json:    "version_cache.json",
+}
+
+/// HOME/config/pkg.toml
+#[inline(always)]
+pub fn config_file(package: &str) -> PathBuf {
+    let mut p = config_root();
+    p.push(format!("{package}.toml"));
+    p
 }
 
 /// HOME/download/<identifier_stem>-<url_hash>.<ext>

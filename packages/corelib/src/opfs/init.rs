@@ -116,7 +116,7 @@ pub fn cli_version() -> &'static str {
 }
 
 #[macro_export]
-macro_rules! is_arm {
+macro_rules! if_arm {
     () => {
         cfg!(target_arch = "aarch64")
     };

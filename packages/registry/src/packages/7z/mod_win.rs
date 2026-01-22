@@ -19,7 +19,7 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
 }
 pub fn download(ctx: &Context) -> cu::Result<()> {
     let sha256_checksum = 
-    is_arm!(
+    if_arm!(
 "6365c7c44e217b9c1009e065daf9f9aa37454e64315b4aaa263f7f8f060755dc",
 else 
 "78afa2a1c773caf3cf7edf62f857d2a8a5da55fb0fff5da416074c0d28b2b55f");
@@ -42,7 +42,11 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
         .stdin_null()
         .wait_nz()?;
 
-    cu::fs::make_dir(hmgr::paths::bin_root())?;
+    Ok(())
+}
+
+pub fn configure(ctx: &Context) -> cu::Result<()> {
+    let install_dir = ctx.install_dir();
     let exe_path = hmgr::paths::binary("7z.exe");
     let exefm_path = hmgr::paths::binary("7zfm.exe");
     ctx.add_item(hmgr::Item::LinkBin(
@@ -55,6 +59,7 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     ))?;
     Ok(())
 }
+
 pub fn uninstall(ctx: &Context) -> cu::Result<()> {
     ensure_terminated()?;
 
@@ -86,7 +91,7 @@ fn ensure_terminated() -> cu::Result<()> {
 }
 
 fn download_url() -> String {
-    let arch = is_arm!("arm64", else "x64");
+    let arch = if_arm!("arm64", else "x64");
     let version_no_dot = VERSION.replace(".", "");
     format!("https://github.com/ip7z/7zip/releases/download/{VERSION}/7z{version_no_dot}-{arch}.exe")
 }

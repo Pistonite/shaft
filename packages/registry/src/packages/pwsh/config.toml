@@ -1,7 +1,10 @@
 
 # If defined, shaft will always clone the PS5 profile to pwsh installed by shaft
-# The pwsh profile to be used will be AllUsersAllHosts, since
-# the installation is user-specific
+# The pwsh profile to be used will be AllUsersAllHosts, since the installation is user-specific
+#
+# Additionally, when specified, `vipwsh` will open the PS5 profile specified,
+# otherwise `vipwsh` will open the PS7 profile AllUsersAllHosts
+# 
 # see available values by running `$Profile | select-object *`
-use-ps5-profile = "AllUsersAllHosts"
+use-ps5-profile = "CurrentUsersAllHosts"
 
