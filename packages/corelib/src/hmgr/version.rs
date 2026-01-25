@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
+use std::fmt;
 
 use cu::pre::*;
 
@@ -8,18 +9,6 @@ use crate::hmgr;
 /// Wrapper for parsing version number
 #[derive(PartialEq)]
 pub struct Version<'a>(pub &'a str);
-impl<'a> PartialOrd for Version<'a> {
-    #[inline(always)]
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.partial_cmp(&other.0)
-    }
-}
-impl<'a> PartialEq<&str> for Version<'a> {
-    #[inline(always)]
-    fn eq(&self, other: &&str) -> bool {
-        self.0 == *other
-    }
-}
 impl<'a> PartialOrd<&str> for Version<'a> {
     fn partial_cmp(&self, other: &&str) -> Option<Ordering> {
         if self.0 == *other {
@@ -51,10 +40,32 @@ impl<'a> PartialEq<String> for Version<'a> {
         self.0 == other
     }
 }
+impl<'a> PartialEq<&str> for Version<'a> {
+    #[inline(always)]
+    fn eq(&self, other: &&str) -> bool {
+        self.0 == *other
+    }
+}
 impl<'a> PartialOrd<String> for Version<'a> {
     #[inline(always)]
     fn partial_cmp(&self, other: &String) -> Option<Ordering> {
         self.partial_cmp(&other.as_str())
+    }
+}
+impl<'a> PartialOrd for Version<'a> {
+    #[inline(always)]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.partial_cmp(&other.0)
+    }
+}
+impl<'a> fmt::Debug for Version<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(self.0, f)
+    }
+}
+impl<'a> fmt::Display for Version<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self.0, f)
     }
 }
 

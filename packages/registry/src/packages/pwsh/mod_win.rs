@@ -3,9 +3,9 @@
 use crate::pre::*;
 
 // using preview version to enable tilde (~) expansion
-static VERSION: &str = "7.6.0-preview.6";
+static VERSION: Version = Version("7.6.0-preview.6");
 
-register_binaries!("pwsh", "vipwsh");
+register_binaries!("pwsh");
 
 pub fn binary_dependencies() -> EnumSet<BinId> {
     enum_set! { BinId::_7z }
@@ -13,10 +13,9 @@ pub fn binary_dependencies() -> EnumSet<BinId> {
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_bin_in_path_and_shaft!("pwsh");
-    check_bin_in_path_and_shaft!("vipwsh");
     let version = command_output!("pwsh", ["-NoLogo", "-NoProfile", "-c", "$PSVersionTable.PSVersion.ToString()"]);
     let is_preview = version.contains("preview");
-    let is_uptodate = Version(version.trim()) >= VERSION;
+    let is_uptodate = VERSION <= version.trim();
     Ok(Verified::is_uptodate(is_preview && is_uptodate))
 }
 
@@ -51,7 +50,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     let config = ctx.load_config_file_or_default(include_str!("config.toml"))?;
     if let Some(toml::Value::String(ps5_profile)) = config.get("use-ps5-profile") {
         if !matches!(ps5_profile.as_str(),
-            "AllUsersAllHosts" | "AllUsersCurrentHosts"
+            "AllUsersAllHosts" | "AllUsersCurrentHost"
             | "CurrentUserAllHosts" | "CurrentUserCurrentHost") {
             cu::bail!("invalid powershell profile name: {ps5_profile}");
         }
@@ -93,19 +92,4 @@ pub fn uninstall(ctx: &Context) -> cu::Result<()> {
 fn download_url() -> String {
     let arch = if_arm!("arm64", else "x64");
     format!("https://github.com/PowerShell/PowerShell/releases/download/v{VERSION}/PowerShell-{VERSION}-win-{arch}.zip")
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-struct Config {
-    use_ps5_profile: Option<ProfileType>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-enum ProfileType {
-    AllUsersAllHosts,
-    AllUsersCurrentHosts,
-    CurrentUserAllHosts,
-    CurrentUserCurrentHost
 }

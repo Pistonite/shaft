@@ -88,6 +88,7 @@ impl InstallCache {
     }
 
     pub fn remove(&mut self, pkg: PkgId) {
+        self.dirty.remove(pkg);
         if !self.pkgs.remove(pkg) {
             // was not installed, no-op
             return;
@@ -126,7 +127,9 @@ impl From<&InstallCacheJson> for InstallCache {
             let Some(pkg_id) = PkgId::from_str(name) else {
                 continue;
             };
-            dirty.insert(pkg_id);
+            if pkgs.contains(pkg_id) {
+                dirty.insert(pkg_id);
+            }
         }
         let mut bins: EnumMap<BinId, Option<PkgId>> = EnumMap::default();
         for (bin, pkg) in &value.bins {
@@ -136,6 +139,9 @@ impl From<&InstallCacheJson> for InstallCache {
             let Some(pkg_id) = PkgId::from_str(pkg) else {
                 continue;
             };
+            if !pkgs.contains(pkg_id) {
+                continue;
+            }
             // ensures the package still provides the binary
             if !pkg_id.package().binaries().contains(bin_id) {
                 continue;

@@ -6,5 +6,5 @@
 # otherwise `vipwsh` will open the PS7 profile AllUsersAllHosts
 # 
 # see available values by running `$Profile | select-object *`
-use-ps5-profile = "CurrentUsersAllHosts"
+use-ps5-profile = "CurrentUserAllHosts"
 

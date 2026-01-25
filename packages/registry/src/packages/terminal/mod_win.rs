@@ -2,304 +2,102 @@
 
 use crate::pre::*;
 
-static INTERNAL_VERSION: &str = "1";
+static INTERNAL_VERSION: &str = "3";
+static FONT_VERSION: &str = "v3.4.0";
+
+pub fn binary_dependencies() -> EnumSet<BinId> {
+    enum_set! { BinId::_7z }
+}
 
 pub fn config_dependencies() -> EnumSet<PkgId> {
-    Default::default()
+    enum_set! { PkgId::Pwsh }
 }
 
 pub fn verify(ctx: &Context) -> cu::Result<Verified> {
-    let setting_json = setting_json()?;
-    if !setting_json.exists() {
-        return Ok(Verified::NotInstalled);
-    }
+    check_bin_in_path!("wt");
     let id = ctx.pkg.to_str();
     let version = hmgr::get_cached_version(id)?;
     Ok(Verified::is_uptodate(version.as_deref() == Some(INTERNAL_VERSION)))
 }
 
-pub fn install(ctx: &Context) -> cu::Result<()> {
-    cu::warn!("please also install/update HackNerdFont:\n  https://github.com/ryanoasis/nerd-fonts/releases");
-    let _ = cu::prompt!("press ENTER when confirmed HackNerdFont is installed")?;
-    cu::check!(verify(ctx), "system-git requires 'git' to be installed on the system")?;
+pub fn download(ctx: &Context) -> cu::Result<()> {
+    hmgr::download_file("hack-nerd-font.zip", font_download_url(), "8ca33a60c791392d872b80d26c42f2bfa914a480f9eb2d7516d9f84373c36897", ctx.bar())?;
     Ok(())
 }
 
-pub fn uninstall(_: &Context) -> cu::Result<()> {
+pub fn install(_: &Context) -> cu::Result<()> {
+    if cu::which("wt").is_err() {
+        cu::info!("installing Microsoft.WindowsTerminal with winget");
+        opfs::ensure_terminated("wt.exe")?;
+        opfs::ensure_terminated("WindowsTerminal.exe")?;
+        cu::which("winget")?.command()
+            .args(["install", "Microsoft.WindowsTerminal"])
+            .stdoe(cu::lv::T).stdin_null().wait_nz()?;
+    }
     Ok(())
 }
 
-#[cu::context("failed to get windows terminal settings dir")]
-fn setting_dir() -> cu::Result<PathBuf> {
-    let mut p = PathBuf::from(cu::env_var("LOCALAPPDATA")?);
-    p.extend(["Packages", "Microsoft.WindowsTerminal_8wekyb3d8bbwe", "LocalState"]);
-    Ok(p)
+pub fn configure(ctx: &Context) -> cu::Result<()> {
+    let font_version = hmgr::get_cached_version("hack-nerd-font")?;
+    if font_version.as_deref() != Some(FONT_VERSION) {
+        cu::info!("installing hack nerd font...");
+        let zip_path = hmgr::paths::download("hack-nerd-font.zip", font_download_url());
+        let temp_dir = hmgr::paths::temp_dir("hack-nerd-font");
+        opfs::un7z(&zip_path, &temp_dir)?;
+
+        // install all *.ttf files in temp_dir for current user
+        let script = format!(
+            r#"$fontsFolder = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts"
+if (-not (Test-Path $fontsFolder)) {{ New-Item -ItemType Directory -Path $fontsFolder -Force | Out-Null }}
+$fontReg = "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"
+$files = Get-ChildItem {} -Filter "*.ttf"
+foreach ($file in $files) {{
+    $dest = Join-Path $fontsFolder $file.Name
+    Copy-Item $file.FullName -Destination $dest -Force
+    $fontName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name) + " (TrueType)"
+    Set-ItemProperty -Path $fontReg -Name $fontName -Value $dest
+}}"#,
+            opfs::quote_path(&temp_dir)?
+        );
+        cu::which("powershell")?
+            .command()
+            .args(["-NoLogo", "-NoProfile", "-c", &script])
+            .stdout(cu::lv::D)
+            .stderr(cu::lv::E)
+            .stdin_null()
+            .wait_nz()?;
+
+        hmgr::set_cached_version("hack-nerd-font", FONT_VERSION)?;
+    }
+
+    let setting_path = setting_json()?;
+    let config = cu::check!(json::parse::<json::Value>(&cu::fs::read_string(&setting_path)?), "failed to parse config for windows terminal")?;
+    let input = json! {
+        {
+            "config": config,
+            "meta": {
+                "pwsh_installed": ctx.is_installed(PkgId::Pwsh)
+            }
+        }
+    };
+    let config = cu::check!(jsexe::run(&input, include_str!("./config.js")), "failed to configure windows terminal")?;
+    cu::fs::write_json_pretty(setting_path, &config)?;
+    hmgr::set_cached_version(ctx.pkg.to_str(), INTERNAL_VERSION)?;
+
+    Ok(())
 }
+
+pub fn pre_uninstall(_: &Context) -> cu::Result<()> {
+    cu::bail!("uninstalling windows terminal is not supported");
+}
+pub use pre_uninstall as uninstall;
 
 fn setting_json() -> cu::Result<PathBuf> {
-    let mut p = setting_dir()?;
-    p.push("settings.json");
+    let mut p = PathBuf::from(cu::env_var("LOCALAPPDATA")?);
+    p.extend(["Packages", "Microsoft.WindowsTerminal_8wekyb3d8bbwe", "LocalState","settings.json"]);
     Ok(p)
 }
 
-fn zap_setting_json(config: &mut json::Value) {
-    if !config.is_object() {
-        *config = json!({});
-    }
-    config["showTabsInTitlebar"] = false.into();
-    config["alwaysShowTabs"] = false.into();
-    zap_schemes(config);
-    zap_key_bindings(config);
-    zap_font(config);
-    zap_themes(config);
-    let profiles_defaults = get_profiles_defaults_mut(config);
-    profiles_defaults["adjustIndistinguishableColors"] = "always".into();
-    profiles_defaults["cursorShape"] = "bar".into();
-    profiles_defaults["intenseTextStyle"] = "bright".into();
-    profiles_defaults["padding"] = "2".into();
-    profiles_defaults["scrollbarState"] = "hidden".into();
-}
-
-fn zap_schemes(config: &mut json::Value) {
-    let scheme_name = "Catppuccin Mocha/Frappe";
-
-    let schemes = match config.get_mut("schemes") {
-        Some(x) if x.is_array() => x.as_array_mut().unwrap(),
-        _ => {
-            config["schemes"] = json!([]);
-            config.get_mut("schemes").unwrap().as_array_mut().unwrap()
-        }
-    };
-    let mut the_scheme = None;
-    for scheme in schemes.iter_mut() {
-        let Some(name) = scheme.get_mut("name") else {
-            continue;
-        };
-        if name.as_str() != Some(scheme_name) {
-            continue;
-        }
-        the_scheme = Some(scheme);
-        break;
-    }
-    let new_scheme = json!{
-        {
-            "name": scheme_name,
-            "background": "#303446",
-            "black": "#45475A",
-            "blue": "#89B4FA",
-            "brightBlack": "#585B70",
-            "brightBlue": "#89B4FA",
-            "brightCyan": "#94E2D5",
-            "brightGreen": "#A6E3A1",
-            "brightPurple": "#F5C2E7",
-            "brightRed": "#F38BA8",
-            "brightWhite": "#A6ADC8",
-            "brightYellow": "#F9E2AF",
-            "cursorColor": "#F5E0DC",
-            "cyan": "#94E2D5",
-            "foreground": "#CDD6F4",
-            "green": "#A6E3A1",
-            "purple": "#F5C2E7",
-            "red": "#F38BA8",
-            "selectionBackground": "#585B70",
-            "white": "#BAC2DE",
-            "yellow": "#F9E2AF" 
-        }
-    };
-    match the_scheme {
-        None => schemes.push(new_scheme),
-        Some(x) => *x = new_scheme
-    }
-
-    let profiles_defaults = get_profiles_defaults_mut(config);
-    profiles_defaults["colorScheme"] = scheme_name.into();
-}
-
-fn zap_key_bindings(config: &mut json::Value) {
-    config["keybindings"] = json!{
-        [
-            {
-                "id": null,
-                "keys": "ctrl+v"
-            },
-            {
-                "id": "User.find",
-                "keys": "ctrl+shift+f"
-            },
-            {
-                "id": "Terminal.MoveFocusDown",
-                "keys": "ctrl+alt+j"
-            },
-            {
-                "id": "User.copy.644BA8F2",
-                "keys": "ctrl+c"
-            },
-            {
-                "id": null,
-                "keys": "ctrl+shift+d"
-            },
-            {
-                "id": "Terminal.MoveFocusLeft",
-                "keys": "ctrl+alt+h"
-            },
-            {
-                "id": null,
-                "keys": "alt+left"
-            },
-            {
-                "id": "Terminal.MoveFocusRight",
-                "keys": "ctrl+alt+l"
-            },
-            {
-                "id": "Terminal.MoveFocusUp",
-                "keys": "ctrl+alt+k"
-            },
-            {
-                "id": null,
-                "keys": "alt+down"
-            },
-            {
-                "id": null,
-                "keys": "alt+right"
-            },
-            {
-                "id": "Terminal.MoveFocusPrevious",
-                "keys": "ctrl+alt+6"
-            },
-            {
-                "id": null,
-                "keys": "ctrl+alt+left"
-            },
-            {
-                "id": "Terminal.DuplicateTab",
-                "keys": "ctrl+alt+w"
-            },
-            {
-                "id": null,
-                "keys": "alt+up"
-            },
-            {
-                "id": null,
-                "keys": "ctrl+shift+w"
-            }
-        ]
-        };
-}
-
-fn zap_font(config: &mut json::Value) {
-    let profiles_defaults = get_profiles_defaults_mut(config);
-    match profiles_defaults.get_mut("font") {
-        Some(x) if x.is_object() => {
-            x["face"] = "Hack Nerd Font".into();
-        }
-        _ => {
-            profiles_defaults["font"] = json!{{
-                "face": "Hack Nerd Font"
-            }};
-        }
-    };
-}
-
-fn zap_themes(config: &mut json::Value) {
-    let themes = match config.get_mut("themes") {
-        Some(x) if x.is_array() => x.as_array_mut().unwrap(),
-        _ => {
-            config["themes"] = json!([]);
-            config.get_mut("themes").unwrap().as_array_mut().unwrap()
-        }
-    };
-
-    let mut latte = None;
-    let mut mocha = None;
-    for theme in themes.iter_mut() {
-        let Some(name) = theme.get_mut("name") else {
-            continue;
-        };
-        let Some(name) = name.as_str() else {
-            continue;
-        };
-        match name {
-            "Catppuccin Latte" => latte = Some(theme),
-            "Catppuccin Mocha" => mocha = Some(theme),
-            _ => {}
-        }
-    }
-    let mut extra = vec![];
-    let new_latte = json!{
-        {
-            "name": "Catppuccin Latte",
-            "tab": 
-            {
-                "background": "#EFF1F5FF",
-                "iconStyle": "default",
-                "showCloseButton": "always",
-                "unfocusedBackground": null
-            },
-            "tabRow": 
-            {
-                "background": "#E6E9EFFF",
-                "unfocusedBackground": "#DCE0E8FF"
-            },
-            "window": 
-            {
-                "applicationTheme": "light",
-                "experimental.rainbowFrame": false,
-                "frame": null,
-                "unfocusedFrame": null,
-                "useMica": false
-            }
-        }
-    };
-    let new_mocha = json!{
-        {
-            "name": "Catppuccin Mocha",
-            "tab": 
-            {
-                "background": "#1E1E2EFF",
-                "iconStyle": "default",
-                "showCloseButton": "always",
-                "unfocusedBackground": null
-            },
-            "tabRow": 
-            {
-                "background": "#181825FF",
-                "unfocusedBackground": "#11111BFF"
-            },
-            "window": 
-            {
-                "applicationTheme": "dark",
-                "experimental.rainbowFrame": false,
-                "frame": null,
-                "unfocusedFrame": null,
-                "useMica": false
-            }
-        }
-    };
-    match latte {
-        Some(x) => *x = new_latte,
-        None => extra.push(new_latte)
-    }
-    match mocha {
-        Some(x) => *x = new_mocha,
-        None => extra.push(new_mocha)
-    }
-    themes.extend(extra);
-    config["theme"] = "Catppuccin Mocha".into();
-}
-
-fn get_profiles_defaults_mut(config: &mut json::Value) -> &mut json::Value {
-    match config.get_mut("profiles") {
-        Some(x) if x.is_object() => {}
-        _ => {
-            config["profiles"] = json!({});
-        }
-    };
-    match config.get_mut("profiles").unwrap().get_mut("defaults") {
-        Some(x) if x.is_object() => {
-        }
-        _ => {
-            config["profiles"]["defaults"] = json!({});
-        }
-    }
-    config.get_mut("profiles").unwrap().get_mut("defaults").unwrap()
+fn font_download_url() -> String {
+    format!("https://github.com/ryanoasis/nerd-fonts/releases/download/{FONT_VERSION}/Hack.zip")
 }

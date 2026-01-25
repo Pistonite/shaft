@@ -41,7 +41,7 @@ pub(crate) mod pre {
         BinId, Context, Package, PkgId, Verified, check_bin_in_path, check_bin_in_path_and_shaft,
         register_binaries,
     };
-    pub(crate) use corelib::{Version, bin_name, command_output, epkg, hmgr, if_arm, opfs};
+    pub(crate) use corelib::{Version, bin_name, command_output, epkg, hmgr, if_arm, opfs, jsexe};
     pub(crate) use cu::pre::*;
     pub(crate) use enumset::{EnumSet, enum_set};
     pub(crate) use std::path::{Path, PathBuf};

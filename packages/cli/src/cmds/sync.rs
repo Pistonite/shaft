@@ -28,18 +28,33 @@ pub fn sync_pkgs(pkgs: EnumSet<PkgId>, installed: &mut InstallCache) -> cu::Resu
     }
     let items = ItemMgr::load()?;
     let mut ctx = Context::new(items);
-    for pkg in graph {
+    for pkg in installed.pkgs {
+        ctx.set_installed(pkg, true);
+    }
+
+    for (i, pkg) in graph.iter().copied().enumerate() {
         ctx.pkg = pkg;
         let result = do_sync_package(ctx, installed);
-        ctx = cu::check!(result, "failed to sync '{pkg}'")?;
+        let result = cu::check!(result, "failed to sync '{pkg}'")?;
+        ctx = result.1;
         ctx.set_bar(None);
         installed.add(pkg)?;
+        ctx.set_installed(pkg, true);
+        // dirty the config of inverted config dependencies
+        if !matches!(result.0, SyncType::UpToDate) {
+            for pkg2 in graph.iter().skip(i+1).copied() {
+                if pkg2.package().config_dependencies().contains(pkg) {
+                    installed.set_dirty(pkg2, true);
+                }
+            }
+        }
         installed.save()?;
     }
+
     Ok(())
 }
 
-fn do_sync_package(mut ctx: Context, installed: &mut InstallCache) -> cu::Result<Context> {
+fn do_sync_package(mut ctx: Context, installed: &mut InstallCache) -> cu::Result<(SyncType, Context)> {
     let pkg = ctx.pkg;
     let package = ctx.pkg.package();
     ctx.stage.set(Stage::Verify);
@@ -59,7 +74,7 @@ fn do_sync_package(mut ctx: Context, installed: &mut InstallCache) -> cu::Result
     let (bar, mut backup_guard) = match sync_type {
         SyncType::UpToDate => {
             cu::info!("up to date: '{pkg}'");
-            return Ok(ctx);
+            return Ok((sync_type, ctx));
         }
         SyncType::Config => {
             cu::debug!("sync type for '{pkg}': config");
@@ -123,7 +138,7 @@ fn do_sync_package(mut ctx: Context, installed: &mut InstallCache) -> cu::Result
     }
     drop(backup_guard);
 
-    Ok(ctx)
+ Ok((sync_type, ctx))
 }
 
 enum SyncType {

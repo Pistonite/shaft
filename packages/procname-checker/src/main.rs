@@ -41,7 +41,7 @@ fn main(cli: Cli) -> cu::Result<()> {
                         };
                         let name = process.name().display().to_string();
                         if can_print {
-                            cu::info!("+[{pid}] exe={exe} {name}");
+                            cu::info!("+[{pid}] [exe={exe}] (name: {name})");
                         }
                     }
                 }

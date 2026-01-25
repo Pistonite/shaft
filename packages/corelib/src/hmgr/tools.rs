@@ -10,7 +10,10 @@ static TOOLS_TAR_GZ: &[u8] = include_bytes!("./tools.tar.gz");
 pub fn ensure_unpacked() -> cu::Result<()> {
     let version = opfs::cli_version();
     let version_path = hmgr::paths::tools_version();
-    let need_unpack = cu::fs::read_string(version_path).is_ok_and(|x| x == version);
+    let need_unpack = match cu::fs::read_string(version_path) {
+        Err(_) => true,
+        Ok(x) => x != version,
+    };
     if need_unpack {
         cu::check!(do_unpack(), "failed to unpack tools")?;
     }

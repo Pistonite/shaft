@@ -94,7 +94,8 @@ to see why the auto-mount fails.
 "#;
         cu::hint!("ATTENTION! please add the following to your powershell profile:");
         println!("\n{}\n", init_script);
-        cu::hint!("you can open the profile by `notepad $PROFILE.CurrentUserAllHosts`");
+        cu::hint!("you can open the profile by running:");
+        println!("\nNew-Item -ItemType File -Path $PROFILE.CurrentUserAllHosts -Force | Out-Null;\nnotepad $PROFILE.CurrentUserAllHosts\n");
         cu::prompt!("please press ENTER to continue once it's added")?;
     } else {
         let init_script = format!(
@@ -138,7 +139,7 @@ press ENTER to accept the default, or enter another path",
         }
         output = user_selected_home;
         Ok(true)
-    });
+    }).run()?;
 
     Ok(output)
 }

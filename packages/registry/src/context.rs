@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use corelib::hmgr::{self, Item, ItemMgr};
 use cu::pre::*;
+use enumset::EnumSet;
 
 use crate::PkgId;
 
@@ -15,6 +16,7 @@ pub struct Context {
     /// Shim config
     items: RefCell<ItemMgr>,
     bar: Option<Arc<cu::ProgressBar>>,
+    installed: EnumSet<PkgId>,
 }
 impl Context {
     pub fn new(items: ItemMgr) -> Self {
@@ -23,6 +25,7 @@ impl Context {
             stage: cu::Atomic::new_u8(Stage::Verify.into()),
             items: RefCell::new(items),
             bar: None,
+            installed: EnumSet::default(),
         }
     }
     pub fn pkg_name(&self) -> &'static str {
@@ -95,6 +98,16 @@ impl Context {
         )?;
         Ok(())
     }
+    pub fn set_installed(&mut self, pkg: PkgId, installed: bool) {
+        if installed {
+            self.installed.insert(pkg);
+        } else {
+            self.installed.remove(pkg);
+        }
+    }
+    pub fn is_installed(&self, pkg: PkgId) -> bool {
+        self.installed.contains(pkg)
+    }
 }
 
 /// Stages when working with the package
@@ -108,6 +121,7 @@ pub enum Stage {
     Install = 4,
     Configure = 5,
     Clean = 6,
+    Uninstall= 7,
 }
 impl From<Stage> for u8 {
     fn from(stage: Stage) -> Self {
@@ -124,6 +138,7 @@ impl From<u8> for Stage {
             4 => Stage::Install,
             5 => Stage::Configure,
             6 => Stage::Clean,
+            7 => Stage::Uninstall,
             _ => panic!("invalid Stage value: {value}"),
         }
     }

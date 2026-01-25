@@ -67,12 +67,6 @@ impl CliApi {
             "failed to init environment"
         )?;
 
-        // this is to make it easier to run the tool in development
-        #[cfg(not(debug_assertions))]
-        {
-            cu::check!(crate::init::check_init_binary(), "failed to init binary")?;
-        }
-
         if run_version {
             cu::info!("self-check OK");
             return Ok(());
@@ -222,6 +216,9 @@ impl CliCommandSync {
 pub struct CliCommandRemove {
     /// Package(s) to remove.
     pub packages: Vec<String>,
+    /// Force uninstall when package is in an unclean state.
+    #[clap(short, long)]
+    pub force: bool,
     #[clap(flatten)]
     #[as_ref]
     #[serde(skip)]
@@ -229,7 +226,7 @@ pub struct CliCommandRemove {
 }
 impl CliCommandRemove {
     fn run(&self) -> cu::Result<()> {
-        crate::cmds::remove(&self.packages)
+        crate::cmds::remove(&self.packages, self.force)
     }
 }
 

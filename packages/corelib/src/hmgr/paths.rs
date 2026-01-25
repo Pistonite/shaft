@@ -90,7 +90,6 @@ home! {
     environment_json:      "environment.json",
     install_cache_json:    "install_cache.json",
     previous_command_json: "previous_command.json",
-    shaft_binary:          (crate::bin_name!("shaft")),
     shaft_binary_old:      (crate::bin_name!("shaft.old")),
     version_cache_json:    "version_cache.json",
 }

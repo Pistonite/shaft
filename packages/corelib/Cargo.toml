@@ -5,6 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
+boa_engine = "0.21.0"
 cu = { workspace = true, features = ["process", "json", "derive", "prompt"] }
 enumset.workspace = true
 fs2 = "0.4.3"
