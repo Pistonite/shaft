@@ -37,7 +37,9 @@ pub fn check_requirements() -> cu::Result<()> {
     #[cfg(windows)]
     if let Err(e) = cu::which("winget") {
         cu::error!("winget not found: {e:?}");
-        cu::hint!("winget is part of Windows. Please troubleshoot with https://learn.microsoft.com/en-us/windows/msix/app-installer/install-update-app-installer");
+        cu::hint!(
+            "winget is part of Windows. Please troubleshoot with https://learn.microsoft.com/en-us/windows/msix/app-installer/install-update-app-installer"
+        );
         cu::bail!("requirement not satisfied: winget not found in PATH");
     }
 

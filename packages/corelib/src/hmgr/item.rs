@@ -67,7 +67,11 @@ impl ItemMgr {
         self.items.push(entry);
     }
 
-    pub fn remove_package(&mut self, package: &str) -> cu::Result<()> {
+    pub fn remove_package(
+        &mut self,
+        package: &str,
+        bar: Option<&Arc<cu::ProgressBar>>,
+    ) -> cu::Result<()> {
         let mut bin_to_remove = vec![];
         let mut _env_to_remove = vec![];
         let mut _path_to_remove = BTreeSet::new();
@@ -92,9 +96,17 @@ impl ItemMgr {
             self.dirty = true;
             false
         });
-        let bin_root = hmgr::paths::bin_root();
-        for bin in bin_to_remove {
-            opfs::safe_remove_link(&bin_root.join(bin))?;
+
+        if !bin_to_remove.is_empty() {
+            let bar = cu::progress("removing old links")
+                .parent(bar.cloned())
+                .total(bin_to_remove.len())
+                .spawn();
+            let bin_root = hmgr::paths::bin_root();
+            for bin in bin_to_remove {
+                cu::progress!(bar += 1, "{bin}");
+                opfs::safe_remove_link(&bin_root.join(bin))?;
+            }
         }
 
         #[cfg(windows)]
@@ -225,11 +237,16 @@ impl ItemMgr {
         let (path, path_changed) = self.build_user_path()?;
         let _ = writeln!(out, r#"export PATH="{path}""#);
         let _ = writeln!(out, "# ===");
+        let mut current_package = "";
         for entry in &self.items {
             let Item::Bash(script) = &entry.item else {
                 continue;
             };
-            let _ = writeln!(out, "# == {} >>>>>\n{}", entry.package, script);
+            if entry.package != current_package {
+                current_package = &entry.package;
+                let _ = writeln!(out, "# == {current_package} >>>>>");
+            }
+            let _ = writeln!(out, "{script}");
         }
 
         if path_changed || reinvocation_needed {
@@ -262,11 +279,16 @@ impl ItemMgr {
         let (path, path_changed) = self.build_user_path()?;
         let _ = writeln!(out, r#"export PATH="{path}""#);
         let _ = writeln!(out, "# ===");
+        let mut current_package = "";
         for entry in &self.items {
             let Item::Zsh(script) = &entry.item else {
                 continue;
             };
-            let _ = writeln!(out, "# == {} >>>>>\n{}", entry.package, script);
+            if entry.package != current_package {
+                current_package = &entry.package;
+                let _ = writeln!(out, "# == {current_package} >>>>>");
+            }
+            let _ = writeln!(out, "{script}");
         }
 
         if path_changed || reinvocation_needed {
@@ -284,11 +306,16 @@ impl ItemMgr {
     fn rebuild_pwsh(&mut self) -> cu::Result<()> {
         use std::fmt::Write as _;
         let mut out = include_str!("init.ps1").to_string();
+        let mut current_package = "";
         for entry in &self.items {
             let Item::Pwsh(script) = &entry.item else {
                 continue;
             };
-            let _ = writeln!(out, "# == {} >>>>>\n{}", entry.package, script);
+            if entry.package != current_package {
+                current_package = &entry.package;
+                let _ = writeln!(out, "# == {current_package} >>>>>");
+            }
+            let _ = writeln!(out, "{script}");
         }
         cu::fs::write(hmgr::paths::init_ps1(), &out)?;
         self.pwsh_dirty = false;

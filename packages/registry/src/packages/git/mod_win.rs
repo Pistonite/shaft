@@ -4,8 +4,6 @@ use crate::pre::*;
 
 register_binaries!("git", "scalar");
 
-static VERSION: Version = Version("2.52.0.vfs");
-
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_bin_in_path!("git");
     let version = command_output!("git", ["--version"]);
@@ -14,8 +12,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     }
     check_bin_in_path!("scalar");
     let version = version.strip_prefix("git version").unwrap_or(&version);
-    let is_uptodate = VERSION <= version.trim();
-    Ok(Verified::is_uptodate(is_uptodate))
+    Ok(Verified::is_uptodate(!(Version(version.trim()) < metadata::git::VERSION)))
 }
 
 pub fn install(_: &Context) -> cu::Result<()> {

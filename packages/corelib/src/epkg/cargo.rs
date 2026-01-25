@@ -71,18 +71,16 @@ pub fn installed_info(package_name: &str) -> cu::Result<Option<CargoInstalledInf
 #[cu::context("failed to install '{package}' with cargo")]
 pub fn install_git_commit(package: &str, git: &str, rev: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;
-    cu::info!("installing '{package}' with cargo...");
-    cu::which("cargo")?
+    let (child, bar) = cu::which("cargo")?
         .command()
         .add(cu::args![
             "install", package, "--git", git, "--rev", rev, "--locked"
         ])
         .preset(cu::pio::cargo(format!("cargo install '{package}'")))
-        .spawn()?
-        .0
-        .wait_nz()?;
+        .spawn()?;
+    child.wait_nz()?;
+    bar.done();
     state.installed_packages.clear();
-    cu::info!("installed '{package}' with cargo");
     Ok(())
 }
 
@@ -90,16 +88,14 @@ pub fn install_git_commit(package: &str, git: &str, rev: &str) -> cu::Result<()>
 #[cu::context("failed to install '{package}' with cargo")]
 pub fn install(package: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;
-    cu::info!("installing '{package}' with cargo...");
-    cu::which("cargo")?
+    let (child, bar) = cu::which("cargo")?
         .command()
         .add(cu::args!["install", package, "--locked"])
         .preset(cu::pio::cargo(format!("cargo install '{package}'")))
-        .spawn()?
-        .0
-        .wait_nz()?;
+        .spawn()?;
+    child.wait_nz()?;
+    bar.done();
     state.installed_packages.clear();
-    cu::info!("installed '{package}' with cargo");
     Ok(())
 }
 
@@ -107,8 +103,7 @@ pub fn install(package: &str) -> cu::Result<()> {
 #[cu::context("failed to install '{package}' with cargo-binstall")]
 pub fn binstall(package: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;
-    cu::info!("installing '{package}' with cargo-binstall...");
-    cu::which("cargo-binstall")?
+    let (child, bar) = cu::which("cargo-binstall")?
         .command()
         .add(cu::args![
             package,
@@ -117,12 +112,13 @@ pub fn binstall(package: &str) -> cu::Result<()> {
             "--no-confirm",
             "--locked",
         ])
-        .stdout(cu::lv::P)
+        .stdout(cu::pio::spinner(format!("cargo binstall '{package}'")))
         .stderr(cu::lv::E)
         .stdin_null()
-        .wait_nz()?;
+        .spawn()?;
+    child.wait_nz()?;
+    bar.done();
     state.installed_packages.clear();
-    cu::info!("installed '{package}' with cargo-binstall");
     Ok(())
 }
 
@@ -130,8 +126,7 @@ pub fn binstall(package: &str) -> cu::Result<()> {
 #[cu::context("failed to install '{package}' with cargo-binstall")]
 pub fn binstall_git(package: &str, git: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;
-    cu::info!("installing '{package}' with cargo-binstall...");
-    cu::which("cargo-binstall")?
+    let (child, bar) = cu::which("cargo-binstall")?
         .command()
         .add(cu::args![
             package,
@@ -142,12 +137,13 @@ pub fn binstall_git(package: &str, git: &str) -> cu::Result<()> {
             "--git",
             git
         ])
-        .stdout(cu::lv::P)
+        .stdout(cu::pio::spinner(format!("cargo binstall '{package}'")))
         .stderr(cu::lv::E)
         .stdin_null()
-        .wait_nz()?;
+        .spawn()?;
+    child.wait_nz()?;
+    bar.done();
     state.installed_packages.clear();
-    cu::info!("installed '{package}' with cargo-binstall");
     Ok(())
 }
 

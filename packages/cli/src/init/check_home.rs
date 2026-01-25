@@ -95,7 +95,9 @@ to see why the auto-mount fails.
         cu::hint!("ATTENTION! please add the following to your powershell profile:");
         println!("\n{}\n", init_script);
         cu::hint!("you can open the profile by running:");
-        println!("\nNew-Item -ItemType File -Path $PROFILE.CurrentUserAllHosts -Force | Out-Null;\nnotepad $PROFILE.CurrentUserAllHosts\n");
+        println!(
+            "\nNew-Item -ItemType File -Path $PROFILE.CurrentUserAllHosts -Force | Out-Null;\nnotepad $PROFILE.CurrentUserAllHosts\n"
+        );
         cu::prompt!("please press ENTER to continue once it's added")?;
     } else {
         let init_script = format!(
@@ -120,26 +122,29 @@ press ENTER to accept the default, or enter another path",
     );
 
     let mut output = PathBuf::new();
-    cu::prompt(prompt).or_cancel().validate_with(|answer| {
-        let user_selected_home = if answer.is_empty() {
-            default_home.to_path_buf()
-        } else {
-            std::mem::take(answer).into()
-        };
-        let user_selected_home = user_selected_home.normalize()?;
-        if user_selected_home.as_utf8().is_err() {
-            cu::error!("selected home path is not utf-8, please choose another location");
-            return Ok(false);
-        }
-        if let Ok(false) = cu::fs::is_empty_dir(&user_selected_home) {
-            cu::error!(
-                "selected homd path is a non-empty directory, please select another location"
-            );
-            return Ok(false);
-        }
-        output = user_selected_home;
-        Ok(true)
-    }).run()?;
+    cu::prompt(prompt)
+        .or_cancel()
+        .validate_with(|answer| {
+            let user_selected_home = if answer.is_empty() {
+                default_home.to_path_buf()
+            } else {
+                std::mem::take(answer).into()
+            };
+            let user_selected_home = user_selected_home.normalize()?;
+            if user_selected_home.as_utf8().is_err() {
+                cu::error!("selected home path is not utf-8, please choose another location");
+                return Ok(false);
+            }
+            if let Ok(false) = cu::fs::is_empty_dir(&user_selected_home) {
+                cu::error!(
+                    "selected homd path is a non-empty directory, please select another location"
+                );
+                return Ok(false);
+            }
+            output = user_selected_home;
+            Ok(true)
+        })
+        .run()?;
 
     Ok(output)
 }

@@ -14,5 +14,5 @@ serde = "1"
 phf = { version = "0.13.1", features = ["macros"] }
 
 [build-dependencies]
-cu = { workspace = true }
+cu = { workspace = true, features = ["toml"] }
 shaft-registry-build = { path = "../registry-build" }

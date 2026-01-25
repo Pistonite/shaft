@@ -237,6 +237,9 @@ pub struct CliCommandConfig {
     /// Print config location instead of opening.
     #[clap(short, long)]
     pub location: bool,
+    /// Just mark the config as dirty instead of editing
+    #[clap(short, long)]
+    pub dirty: bool,
     #[clap(flatten)]
     #[as_ref]
     #[serde(skip)]
@@ -250,7 +253,11 @@ impl CliCommandConfig {
             println!("{}", location);
             return Ok(());
         }
-        crate::cmds::config(&self.package)
+        if self.dirty {
+            crate::cmds::config_dirty(&self.package)
+        } else {
+            crate::cmds::config(&self.package)
+        }
     }
 }
 

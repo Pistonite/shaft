@@ -5,4 +5,4 @@ pub use remove::remove;
 mod upgrade;
 pub use upgrade::upgrade;
 mod config;
-pub use config::{config, config_location};
+pub use config::{config, config_dirty, config_location};

@@ -23,15 +23,26 @@ pub fn run(input: &json::Value, script: &str) -> cu::Result<json::Value> {
     let mut context = JsContext::default();
     context.set_runtime_limits(limits);
 
-    let input_string = cu::check!(json::stringify(input), "failed to serialize script input to string")?;
+    let input_string = cu::check!(
+        json::stringify(input),
+        "failed to serialize script input to string"
+    )?;
 
-    let script = format!("{}{}\n/**/JSON.stringify(main({}))", include_str!("./lib.js"), script, input_string);
+    let script = format!(
+        "{}{}\n/**/JSON.stringify(main({}))",
+        include_str!("./lib.js"),
+        script,
+        input_string
+    );
     let output = match context.eval(JsSource::from_bytes(&script)) {
         Ok(x) => {
             let s = cu::check!(x.as_string(), "javascript output is not a string: {x:?}")?;
-            let s = cu::check!(s.to_std_string(), "javascript output cannot be converted to utf-8")?;
+            let s = cu::check!(
+                s.to_std_string(),
+                "javascript output cannot be converted to utf-8"
+            )?;
             s
-        },
+        }
         Err(e) => {
             cu::bail!("error evaluating javascript: {e:?}");
         }

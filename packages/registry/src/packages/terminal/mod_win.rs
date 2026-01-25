@@ -3,7 +3,6 @@
 use crate::pre::*;
 
 static INTERNAL_VERSION: &str = "6";
-static FONT_VERSION: &str = "v3.4.0";
 
 pub fn binary_dependencies() -> EnumSet<BinId> {
     enum_set! { BinId::_7z }
@@ -21,7 +20,9 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
 }
 
 pub fn download(ctx: &Context) -> cu::Result<()> {
-    hmgr::download_file("hack-nerd-font.zip", font_download_url(), "8ca33a60c791392d872b80d26c42f2bfa914a480f9eb2d7516d9f84373c36897", ctx.bar())?;
+    hmgr::download_file("hack-nerd-font.zip", font_download_url(), 
+        metadata::hack_font::SHA
+        , ctx.bar())?;
     Ok(())
 }
 
@@ -37,7 +38,7 @@ pub fn install(_: &Context) -> cu::Result<()> {
 
 pub fn configure(ctx: &Context) -> cu::Result<()> {
     let font_version = hmgr::get_cached_version("hack-nerd-font")?;
-    if font_version.as_deref() != Some(FONT_VERSION) {
+    if font_version.as_deref() != Some(metadata::hack_font::VERSION) {
         cu::info!("installing hack nerd font...");
         let zip_path = hmgr::paths::download("hack-nerd-font.zip", font_download_url());
         let temp_dir = hmgr::paths::temp_dir("hack-nerd-font");
@@ -65,7 +66,7 @@ foreach ($file in $files) {{
             .stdin_null()
             .wait_nz()?;
 
-        hmgr::set_cached_version("hack-nerd-font", FONT_VERSION)?;
+        hmgr::set_cached_version("hack-nerd-font", metadata::hack_font::VERSION)?;
     }
 
     let setting_path = setting_json()?;
@@ -98,5 +99,6 @@ fn setting_json() -> cu::Result<PathBuf> {
 }
 
 fn font_download_url() -> String {
-    format!("https://github.com/ryanoasis/nerd-fonts/releases/download/{FONT_VERSION}/Hack.zip")
+    let version = metadata::hack_font::VERSION;
+    format!("https://github.com/ryanoasis/nerd-fonts/releases/download/{version}/Hack.zip")
 }

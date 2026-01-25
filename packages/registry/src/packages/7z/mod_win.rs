@@ -5,8 +5,6 @@ mod version;
 
 register_binaries!("7z", "7zfm");
 
-static VERSION: &str = "25.01";
-
 pub fn verify(ctx: &Context) -> cu::Result<Verified> {
     check_bin_in_path_and_shaft!("7z");
     check_bin_in_path_and_shaft!("7zfm");
@@ -15,15 +13,10 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
         // so it can be uninstalled
         return Ok(Verified::NotUpToDate);
     }
-    version::check(VERSION)
+    version::check(metadata::_7z::VERSION)
 }
 pub fn download(ctx: &Context) -> cu::Result<()> {
-    let sha256_checksum = 
-    if_arm!(
-"6365c7c44e217b9c1009e065daf9f9aa37454e64315b4aaa263f7f8f060755dc",
-else 
-"78afa2a1c773caf3cf7edf62f857d2a8a5da55fb0fff5da416074c0d28b2b55f");
-    hmgr::download_file("7z-installer.exe", download_url(), sha256_checksum, ctx.bar())?;
+    hmgr::download_file("7z-installer.exe", download_url(), metadata::_7z::SHA, ctx.bar())?;
     Ok(())
 }
 pub fn install(ctx: &Context) -> cu::Result<()> {
@@ -92,8 +85,9 @@ fn ensure_terminated() -> cu::Result<()> {
 
 fn download_url() -> String {
     let arch = if_arm!("arm64", else "x64");
-    let version_no_dot = VERSION.replace(".", "");
-    format!("https://github.com/ip7z/7zip/releases/download/{VERSION}/7z{version_no_dot}-{arch}.exe")
+    let version = metadata::_7z::VERSION;
+    let version_no_dot = version.replace(".", "");
+    format!("https://github.com/ip7z/7zip/releases/download/{version}/7z{version_no_dot}-{arch}.exe")
 }
 
 fn uninstaller_path(ctx: &Context) -> PathBuf {

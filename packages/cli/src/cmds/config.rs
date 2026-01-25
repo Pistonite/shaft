@@ -5,22 +5,26 @@ use registry::{Context, PkgId, Stage};
 
 use crate::graph::InstallCache;
 
-
 pub fn config(package: &str) -> cu::Result<()> {
     let pkg = cu::check!(PkgId::from_str(package), "cannot find package '{package}'")?;
     let config_location = config_location_path(pkg)?;
     let mut installed = InstallCache::load()?;
     installed.set_dirty(pkg, true);
-    cu::check!(installed.save(), "failed to mark configuration for '{pkg}' as dirty")?;
+    cu::check!(
+        installed.save(),
+        "failed to mark configuration for '{pkg}' as dirty"
+    )?;
     if config_location.is_dir() {
-        cu::hint!(r"the config location for '{pkg}' is a directory.
+        cu::hint!(
+            r"the config location for '{pkg}' is a directory.
 you can print the path with
 
     shaft config -l {pkg}
 
 the config for this package has been marked dirty;
 after editing the config, please run `shaft sync`
-");
+"
+        );
         cu::bail!("please print the config location and manually edit it");
     }
     let content = cu::fs::read_string(&config_location).ok();
@@ -31,6 +35,18 @@ after editing the config, please run `shaft sync`
         return Ok(());
     }
     cu::hint!(r"configuration saved; after done configuring, please run `shaft sync`");
+    Ok(())
+}
+
+pub fn config_dirty(package: &str) -> cu::Result<()> {
+    let pkg = cu::check!(PkgId::from_str(package), "cannot find package '{package}'")?;
+    let mut installed = InstallCache::load()?;
+    installed.set_dirty(pkg, true);
+    cu::check!(
+        installed.save(),
+        "failed to mark configuration for '{pkg}' as dirty"
+    )?;
+    cu::info!("dirtied '{package}'");
     Ok(())
 }
 

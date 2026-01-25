@@ -57,3 +57,37 @@ macro_rules! check_installed_with_pacman {
 }
 #[cfg(target_os = "linux")]
 pub(crate) use check_installed_with_pacman;
+
+macro_rules! check_installed_with_cargo {
+    ($l:literal) => {{
+        check_bin_in_path!($l);
+        match corelib::epkg::cargo::installed_info($l)? {
+            None => {
+                cu::bail!(concat!(
+                    "current '",
+                    $l,
+                    "' is not installed with cargo; please uninstall it"
+                ))
+            }
+            Some(info) => info,
+        }
+    }};
+}
+pub(crate) use check_installed_with_cargo;
+
+#[cfg(windows)]
+macro_rules! check_installed_with_git {
+    ($l:literal, $path:literal) => {{
+        let path = check_bin_in_path!($l);
+        if corelib::opfs::find_in_wingit($path) != Ok(path) {
+            cu::bail!(concat!(
+                "current '",
+                $l,
+                "' is not installed with Git; please uninstall it"
+            ))
+        }
+        path
+    }};
+}
+#[cfg(windows)]
+pub(crate) use check_installed_with_git;

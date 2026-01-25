@@ -1,5 +1,7 @@
 use std::os::windows::fs::MetadataExt;
 use std::path::Path;
+#[cfg(windows)]
+use std::path::PathBuf;
 use std::{io::Read, sync::Arc};
 
 use cu::pre::*;
@@ -162,4 +164,23 @@ fn quote_path_impl(path: &Path) -> cu::Result<String> {
         }
         Ok(format!("\"{s}\""))
     }
+}
+
+/// Find a file in the Windows installation of Git
+#[cfg(windows)]
+#[inline(always)]
+pub fn find_in_wingit(path: impl AsRef<Path>) -> cu::Result<PathBuf> {
+    find_in_wingit_impl(path.as_ref())
+}
+#[cu::context("cannot find in git installation: '{}'", path.display())]
+fn find_in_wingit_impl(path: &Path) -> cu::Result<PathBuf> {
+    let mut git_path = cu::which("git")?;
+    // find the mingw64
+    let mut mingw64_path = git_path.join("mingw64");
+    while !mingw64_path.is_dir() {
+        git_path = git_path.parent_abs()?;
+        mingw64_path = git_path.join("mingw64");
+    }
+    cu::trace!("found mingw64: '{}'", mingw64_path.display());
+    Ok(git_path.join(path).normalize_executable()?)
 }

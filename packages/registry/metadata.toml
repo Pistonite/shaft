@@ -1,0 +1,29 @@
+[_7z]
+VERSION = "25.01"
+'cfg(target_arch="aarch64")'.SHA = "6365c7c44e217b9c1009e065daf9f9aa37454e64315b4aaa263f7f8f060755dc"
+'cfg(target_arch="x86_64")'.SHA = "78afa2a1c773caf3cf7edf62f857d2a8a5da55fb0fff5da416074c0d28b2b55f"
+
+[coreutils]
+eza.VERSION = "0.23.4"
+which.VERSION = "0.1.2"
+uutils.VERSION = "0.5.0"
+
+[shellutils]
+REPO = "https://github.com/Pistonite/shellutils"
+COMMIT = "e3702e3c473f8dace61734913be4e2189b30bf2f"
+
+[git]
+'cfg(windows)'.VERSION = "2.52.0.vfs"
+
+[pwsh]
+# using preview version to enable tilde (~) expansion
+VERSION = "7.6.0-preview.6"
+'cfg(target_arch="aarch64")'.SHA = "36dc90e7f0e7870b0970c9a58790de4de4217e65acafaf790e87b7c97d93649f"
+'cfg(target_arch="x86_64")'.SHA = "481ce45bd9ebfab9a5b254a35f145fb6259bd452ae67d92ab1d231b6367987d9"
+
+[hack_font]
+VERSION = "v3.4.0"
+SHA = "8ca33a60c791392d872b80d26c42f2bfa914a480f9eb2d7516d9f84373c36897"
+
+[cargo_binstall]
+VERSION = "1.17.3"

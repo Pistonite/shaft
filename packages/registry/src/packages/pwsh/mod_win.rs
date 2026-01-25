@@ -2,9 +2,6 @@
 
 use crate::pre::*;
 
-// using preview version to enable tilde (~) expansion
-static VERSION: Version = Version("7.6.0-preview.6");
-
 register_binaries!("pwsh");
 
 pub fn binary_dependencies() -> EnumSet<BinId> {
@@ -28,17 +25,12 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
     }
     let version = command_output!("pwsh", ["-NoLogo", "-NoProfile", "-c", "$PSVersionTable.PSVersion.ToString()"]);
     let is_preview = version.contains("preview");
-    let is_uptodate = VERSION <= version.trim();
+    let is_uptodate = !(Version(version.trim()) < metadata::pwsh::VERSION);
     Ok(Verified::is_uptodate(is_preview && is_uptodate))
 }
 
 pub fn download(ctx: &Context) -> cu::Result<()> {
-    let sha256_checksum = if_arm!(
-        "36dc90e7f0e7870b0970c9a58790de4de4217e65acafaf790e87b7c97d93649f"
-    , else 
-        "481ce45bd9ebfab9a5b254a35f145fb6259bd452ae67d92ab1d231b6367987d9"
-    );
-    hmgr::download_file("pwsh.zip", download_url(), sha256_checksum, ctx.bar())?;
+    hmgr::download_file("pwsh.zip", download_url(), metadata::pwsh::SHA, ctx.bar())?;
     Ok(())
 }
 
@@ -104,5 +96,6 @@ pub fn uninstall(ctx: &Context) -> cu::Result<()> {
 
 fn download_url() -> String {
     let arch = if_arm!("arm64", else "x64");
-    format!("https://github.com/PowerShell/PowerShell/releases/download/v{VERSION}/PowerShell-{VERSION}-win-{arch}.zip")
+    let version = metadata::pwsh::VERSION;
+    format!("https://github.com/PowerShell/PowerShell/releases/download/v{version}/PowerShell-{version}-win-{arch}.zip")
 }

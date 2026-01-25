@@ -62,7 +62,11 @@ impl Context {
             let default = toml::parse(default_config)?;
             return Ok(default);
         };
-        let config = cu::check!(toml::parse(&config), "failed to parse config file for '{}'", self.pkg)?;
+        let config = cu::check!(
+            toml::parse(&config),
+            "failed to parse config file for '{}'",
+            self.pkg
+        )?;
         Ok(config)
     }
     pub fn config_file(&self) -> PathBuf {
@@ -121,7 +125,7 @@ pub enum Stage {
     Install = 4,
     Configure = 5,
     Clean = 6,
-    Uninstall= 7,
+    Uninstall = 7,
 }
 impl From<Stage> for u8 {
     fn from(stage: Stage) -> Self {

@@ -1,28 +1,12 @@
 //! Tool for installing cargo tools from binary releases
 
-use cu::pre::*;
-
 use crate::pre::*;
 
 register_binaries!("cargo-binstall");
-static VERSION: &str = "1.16.6";
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
-    check_bin_in_path!("cargo-binstall");
-    match epkg::cargo::installed_info("cargo-binstall")? {
-        None => return Ok(Verified::NotInstalled),
-        Some(info) => {
-            if Version(&info.version) < VERSION {
-                return Ok(Verified::NotUpToDate);
-            }
-        }
-    }
-    let current_version = command_output!("cargo-binstall", ["-V"]);
-    if Version(&current_version) < VERSION {
-        return Ok(Verified::NotUpToDate);
-    }
-
-    Ok(Verified::UpToDate)
+    let info = check_installed_with_cargo!("cargo-binstall");
+    Ok(Verified::is_uptodate(!(Version(&info.version) < metadata::cargo_binstall::VERSION)))
 }
 
 pub fn install(_: &Context) -> cu::Result<()> {

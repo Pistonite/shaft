@@ -36,7 +36,7 @@ pub fn remove(packages: &[String], force: bool) -> cu::Result<()> {
         ctx.stage.set(Stage::Verify);
         match package.verify(&ctx) {
             Ok(Verified::NotInstalled) => {
-                if ! force {
+                if !force {
                     cu::warn!("'{pkg}' is not installed, skipping");
                     continue;
                 }
@@ -87,7 +87,11 @@ pub fn remove(packages: &[String], force: bool) -> cu::Result<()> {
     Ok(())
 }
 
-fn rectify_pkgs_to_remove(pkgs: EnumSet<PkgId>, installed: &InstallCache, force: bool) -> EnumSet<PkgId> {
+fn rectify_pkgs_to_remove(
+    pkgs: EnumSet<PkgId>,
+    installed: &InstallCache,
+    force: bool,
+) -> EnumSet<PkgId> {
     let mut out = EnumSet::new();
     // check if each package is installed
     for pkg in pkgs {
@@ -116,7 +120,7 @@ fn do_remove_package(mut ctx: Context) -> cu::Result<Context> {
     ctx.stage.set(Stage::Uninstall);
     package.uninstall(&ctx)?;
     ctx.stage.set(Stage::Configure);
-    ctx.items_mut()?.remove_package(pkg.to_str())?;
+    ctx.items_mut()?.remove_package(pkg.to_str(), Some(&bar))?;
 
     cu::progress!(bar, "cleaning");
     ctx.stage.set(Stage::Clean);

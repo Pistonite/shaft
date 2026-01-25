@@ -42,7 +42,7 @@ pub fn sync_pkgs(pkgs: EnumSet<PkgId>, installed: &mut InstallCache) -> cu::Resu
         ctx.set_installed(pkg, true);
         // dirty the config of inverted config dependencies
         if !matches!(result.0, SyncType::UpToDate) {
-            for pkg2 in graph.iter().skip(i+1).copied() {
+            for pkg2 in graph.iter().skip(i + 1).copied() {
                 if pkg2.package().config_dependencies().contains(pkg) {
                     installed.set_dirty(pkg2, true);
                 }
@@ -54,7 +54,10 @@ pub fn sync_pkgs(pkgs: EnumSet<PkgId>, installed: &mut InstallCache) -> cu::Resu
     Ok(())
 }
 
-fn do_sync_package(mut ctx: Context, installed: &mut InstallCache) -> cu::Result<(SyncType, Context)> {
+fn do_sync_package(
+    mut ctx: Context,
+    installed: &mut InstallCache,
+) -> cu::Result<(SyncType, Context)> {
     let pkg = ctx.pkg;
     let package = ctx.pkg.package();
     ctx.stage.set(Stage::Verify);
@@ -115,7 +118,7 @@ fn do_sync_package(mut ctx: Context, installed: &mut InstallCache) -> cu::Result
 
     cu::progress!(bar, "configuring");
     ctx.stage.set(Stage::Configure);
-    ctx.items_mut()?.remove_package(pkg.to_str())?;
+    ctx.items_mut()?.remove_package(pkg.to_str(), Some(&bar))?;
     package.configure(&ctx)?;
     ctx.items_mut()?.rebuild_items(Some(&bar))?;
     installed.set_dirty(pkg, false);
@@ -145,7 +148,7 @@ fn do_sync_package(mut ctx: Context, installed: &mut InstallCache) -> cu::Result
     }
     drop(backup_guard);
 
- Ok((sync_type, ctx))
+    Ok((sync_type, ctx))
 }
 
 enum SyncType {

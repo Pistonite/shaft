@@ -233,7 +233,11 @@ pub fn select_provider(
     // prompt for a provider
     let mut prompt = String::new();
     let _ = writeln!(prompt, "please select a provider for binary '{bin_id}':");
-    let pkg_width = providers.iter().map(|p| p.to_str().len()).max().unwrap_or(1);
+    let pkg_width = providers
+        .iter()
+        .map(|p| p.to_str().len())
+        .max()
+        .unwrap_or(1);
     for (i, provider) in providers.iter().enumerate() {
         let _ = writeln!(
             prompt,
@@ -246,23 +250,26 @@ pub fn select_provider(
     }
     let _ = write!(prompt, "--- enter a number:");
     let mut pkg_id = PkgId::Core;
-    cu::prompt(prompt).validate_with(|answer| {
-        let Ok(answer) = cu::parse::<usize>(&answer) else {
-            cu::error!("please enter a number for the provider");
-            return Ok(false);
-        };
-        if answer ==0 {
-            cu::error!("number to small!");
-            return Ok(false);
-        }
-        let pkg = providers.iter().skip(answer - 1).next();
-        let Some(pkg) = pkg else {
-            cu::error!("number too large: {answer} (max {})", providers.len());
-            return Ok(false);
-        };
-        pkg_id = pkg;
-        Ok(true)
-    }).or_cancel().run()?;
+    cu::prompt(prompt)
+        .validate_with(|answer| {
+            let Ok(answer) = cu::parse::<usize>(&answer) else {
+                cu::error!("please enter a number for the provider");
+                return Ok(false);
+            };
+            if answer == 0 {
+                cu::error!("number to small!");
+                return Ok(false);
+            }
+            let pkg = providers.iter().skip(answer - 1).next();
+            let Some(pkg) = pkg else {
+                cu::error!("number too large: {answer} (max {})", providers.len());
+                return Ok(false);
+            };
+            pkg_id = pkg;
+            Ok(true)
+        })
+        .or_cancel()
+        .run()?;
 
     provider_selection[bin_id] = Some(pkg_id);
     cu::debug!("user selected provider for '{bin_id}': '{pkg_id}'");
