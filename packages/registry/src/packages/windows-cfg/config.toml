@@ -1,0 +1,28 @@
+# THIS IS NOT A REAL CONFIG
+# This is just documentation for manually configuring Windows correctly
+
+["File Explorer"]
+# Classic Context Menu 
+reg.exe add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve
+
+["Developer Settings"]
+# Settings > System > Advanced
+#    > File Explorer
+#        Show file extensions - ON
+#        Show hidden and system files - ON
+#        Show full path in title bar - ON
+#        Show empty drives - ON
+#    Enable long paths - ON
+#    Terminal - Windows Terminal
+#    PowerShell > Change execution ... without signing. Require ... remote scripts - ON
+#    Enable Sudo > ON
+#    Developer Mode > Off
+
+["Start Menu"]
+# No All Programs
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoStartMenuMorePrograms" -Value 1 -Force -Type DWord
+# Settings > Personalization > Start
+#    [x] More Pins
+#    Show recommended files ... - ON
+#    > Folders
+#        Settings - ON

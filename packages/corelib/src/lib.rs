@@ -13,8 +13,7 @@ pub use hmgr::{ItemMgr, Version};
 pub(crate) mod internal;
 
 pub fn check_requirements() -> cu::Result<()> {
-    if let Err(e) = opfs::which_sudo() {
-        cu::error!("sudo not found: {e:?}");
+    if opfs::which_sudo().is_err() {
         if cfg!(windows) {
             cu::hint!("sudo is required.");
             cu::hint!("please refer to the following link to enable it on Windows");
@@ -40,6 +39,11 @@ pub fn check_requirements() -> cu::Result<()> {
         cu::error!("winget not found: {e:?}");
         cu::hint!("winget is part of Windows. Please troubleshoot with https://learn.microsoft.com/en-us/windows/msix/app-installer/install-update-app-installer");
         cu::bail!("requirement not satisfied: winget not found in PATH");
+    }
+
+    #[cfg(not(windows))]
+    if cu::which("bash").is_err() {
+        cu::bail!("requirement not satisfied: bash not found in PATH");
     }
     Ok(())
 }

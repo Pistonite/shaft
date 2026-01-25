@@ -99,10 +99,10 @@ function main(config) {
         "name": "Windows PowerShell"
     };
     const POWERSHELL7_PROFILE = {
-        "commandline": "%SHAFT_HOME%\\install\\pwsh\\pwsh.exe -NoLogo",
+        "commandline": META.install_dir + "\\pwsh.exe -NoLogo",
         "guid": "{bb6f7902-320e-4f8c-bbad-9578445057d2}",
         "hidden": false,
-        "icon": "%SHAFT_HOME%\\install\\pwsh\\pwsh.exe",
+        "icon": META.install_dir + "\\pwsh.exe",
         "name": "PowerShell 7",
         "startingDirectory": "%USERPROFILE%"
     };

@@ -133,6 +133,13 @@ fn do_sync_package(mut ctx: Context, installed: &mut InstallCache) -> cu::Result
             }
         }
         _ => {
+            cu::hint!("verification failed after installation");
+            cu::hint!("this could happen if a package installer modified the environment variable");
+            if cfg!(windows) {
+                cu::hint!("please try restarting all terminal processes");
+            } else {
+                cu::hint!("please try restarting the shell session");
+            }
             cu::bail!("verification failed after installation");
         }
     }

@@ -11,8 +11,21 @@ pub fn binary_dependencies() -> EnumSet<BinId> {
     enum_set! { BinId::_7z }
 }
 
-pub fn verify(_: &Context) -> cu::Result<Verified> {
-    check_bin_in_path_and_shaft!("pwsh");
+pub fn verify(ctx: &Context) -> cu::Result<Verified> {
+    match cu::which("pwsh") {
+        Err(_) => return Ok(Verified::NotInstalled),
+        Ok(path) => {
+            if path != hmgr::paths::binary(bin_name!("pwsh"))
+            && path != ctx.install_dir().join(bin_name!("pwsh"))
+            {
+                cu::bail!(
+                    "found existing '{}' installed outside of shaft, please uninstall it first (at '{}')",
+                    "pwsh",
+                    path.display()
+                );
+            }
+        }
+    }
     let version = command_output!("pwsh", ["-NoLogo", "-NoProfile", "-c", "$PSVersionTable.PSVersion.ToString()"]);
     let is_preview = version.contains("preview");
     let is_uptodate = VERSION <= version.trim();

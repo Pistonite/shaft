@@ -205,6 +205,8 @@ pub fn select_provider(
     bin_id: BinId,
     installed: &InstallCache,
 ) -> cu::Result<PkgId> {
+    use std::fmt::Write as _;
+
     if let Some(pkg_id) = provider_selection[bin_id] {
         return Ok(pkg_id);
     }
@@ -229,37 +231,39 @@ pub fn select_provider(
     }
 
     // prompt for a provider
-    let mut error: Option<String> = None;
-
-    let pkg_id = loop {
-        cu::hint!("please select a provider for binary '{bin_id}':");
-        for (i, provider) in providers.iter().enumerate() {
-            cu::print!(
-                "{}  {}: {}",
-                i + 1,
-                provider.to_str(),
-                provider.package().short_desc
-            );
-        }
-        if let Some(e) = error {
-            cu::error!("{e}");
-        }
-        let answer = cu::prompt!("enter a number: ")?;
+    let mut prompt = String::new();
+    let _ = writeln!(prompt, "please select a provider for binary '{bin_id}':");
+    let pkg_width = providers.iter().map(|p| p.to_str().len()).max().unwrap_or(1);
+    for (i, provider) in providers.iter().enumerate() {
+        let _ = writeln!(
+            prompt,
+            "{}  {:>width$}: {}",
+            i + 1,
+            provider.to_str(),
+            provider.package().short_desc,
+            width = pkg_width
+        );
+    }
+    let _ = write!(prompt, "--- enter a number:");
+    let mut pkg_id = PkgId::Core;
+    cu::prompt(prompt).validate_with(|answer| {
         let Ok(answer) = cu::parse::<usize>(&answer) else {
-            error = Some("please enter a number for the provider".to_string());
-            continue;
+            cu::error!("please enter a number for the provider");
+            return Ok(false);
         };
-        if answer == 0 {
-            error = Some(format!("number too small: {answer}"));
-            continue;
+        if answer ==0 {
+            cu::error!("number to small!");
+            return Ok(false);
         }
-        let pkg_id = providers.iter().skip(answer - 1).next();
-        let Some(pkg_id) = pkg_id else {
-            error = Some(format!("number too large: {answer}"));
-            continue;
+        let pkg = providers.iter().skip(answer - 1).next();
+        let Some(pkg) = pkg else {
+            cu::error!("number too large: {answer} (max {})", providers.len());
+            return Ok(false);
         };
-        break pkg_id;
-    };
+        pkg_id = pkg;
+        Ok(true)
+    }).or_cancel().run()?;
+
     provider_selection[bin_id] = Some(pkg_id);
     cu::debug!("user selected provider for '{bin_id}': '{pkg_id}'");
     Ok(pkg_id)

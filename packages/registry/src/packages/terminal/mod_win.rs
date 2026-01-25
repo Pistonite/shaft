@@ -2,7 +2,7 @@
 
 use crate::pre::*;
 
-static INTERNAL_VERSION: &str = "3";
+static INTERNAL_VERSION: &str = "6";
 static FONT_VERSION: &str = "v3.4.0";
 
 pub fn binary_dependencies() -> EnumSet<BinId> {
@@ -30,9 +30,7 @@ pub fn install(_: &Context) -> cu::Result<()> {
         cu::info!("installing Microsoft.WindowsTerminal with winget");
         opfs::ensure_terminated("wt.exe")?;
         opfs::ensure_terminated("WindowsTerminal.exe")?;
-        cu::which("winget")?.command()
-            .args(["install", "Microsoft.WindowsTerminal"])
-            .stdoe(cu::lv::T).stdin_null().wait_nz()?;
+        epkg::winget::install("Microsoft.WindowsTerminal")?;
     }
     Ok(())
 }
@@ -76,7 +74,8 @@ foreach ($file in $files) {{
         {
             "config": config,
             "meta": {
-                "pwsh_installed": ctx.is_installed(PkgId::Pwsh)
+                "pwsh_installed": ctx.is_installed(PkgId::Pwsh),
+                "install_dir": hmgr::paths::install_dir("pwsh").as_utf8()?,
             }
         }
     };

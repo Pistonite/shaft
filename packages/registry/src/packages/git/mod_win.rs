@@ -1,85 +1,33 @@
-//! Git version control System
-
-// use op::installer::pacman;
+//! Microsoft fork of Git
 
 use crate::pre::*;
 
-register_binaries!("git");
+register_binaries!("git", "scalar");
 
-static GIT_WINDOWS_VERSION: &str = "2.51.2.windows.1";
-static GIT_MICROSOFT_VERSION: &str = "2.51.2.vfs";
-static GIT_WINDOWS_ARM_SHA256: &str = "cfa59dc9ca121844a9346224e856ee11916ebd606b211d4291f8b97aa482dd94";
-static GIT_WINDOWS_X64_SHA256: &str = "ebd318e1d3ee0cc1ac8ead026f1edf8678dcb42c7d74d757b8e2fa8a1be0b25f";
+static VERSION: Version = Version("2.52.0.vfs");
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
-    // check_bin_in_path!("git");
-    //
-    // // portable git
-    // let expected = op::home::bin("git.exe");
-    // cu::check!(ctx.check_bin_location("git", &expected),
-    //     "current 'git' is not installed with shaft; please uninstall it or use the 'system-git' package")?;
-    // version::verify(ctx)
-    todo!()
+    check_bin_in_path!("git");
+    let version = command_output!("git", ["--version"]);
+    if !version.contains("vfs") {
+        cu::bail!("current 'git' is not the vfs version (microsoft.git); please uninstall it or use the 'system-git' package");
+    }
+    check_bin_in_path!("scalar");
+    let version = version.strip_prefix("git version").unwrap_or(&version);
+    let is_uptodate = VERSION <= version.trim();
+    Ok(Verified::is_uptodate(is_uptodate))
 }
 
-pub fn download(_: &Context) -> cu::Result<()> {
-//     let temp_dir = ctx.temp_dir();
-//     let download_path = temp_dir.join("git.7z.exe");
-//     let extract_path = temp_dir.join("extracted");
-//     let url = version::windows_download_url();
-//     // download
-// let sha256 = if op::is_arm!() {
-//         GIT_WINDOWS_ARM_SHA256
-//     } else {
-//         GIT_WINDOWS_X64_SHA256
-//     };
-//     op::co_download_to_file(url, &download_path, sha256).await?;
-//     // extract
-//     download_path.command()
-//         .add(cu::args!["-o", extract_path, "-y"])
-//         .all_null()
-//         .co_wait_nz().await?;
-//     Ok(())
-    todo!()
-}
-// fn download_url() -> String {
-//     let i = match GIT_WINDOWS_VERSION.find("windows"){
-//         Some(x) => x-1,
-//         None => GIT_WINDOWS_VERSION.len()
-//     };
-//     let version_short = &GIT_WINDOWS_VERSION[0..i];
-//     let arch = if op::is_arm!() {
-//         "arm64"
-//     } else {
-//         "64-bit"
-//     };
-//
-//     format!("https://github.com/git-for-windows/git/releases/download/v{GIT_WINDOWS_VERSION}/PortableGit-{version_short}-{arch}.7z.exe")
-// }
-
-pub fn install(ctx: &Context) -> cu::Result<()> {
-    // match ctx.platform {
-    //     Platform::Arch => {
-    //         op::sysinfo::ensure_terminated("git")?;
-    //         todo!()
-    //     }
-    //     Platform::Windows => {
-    //         op::sysinfo::ensure_terminated("git.exe")?;
-    //         let temp_dir = ctx.temp_dir();
-    //         let extract_path = temp_dir.join("extracted");
-    //         let old_path = temp_dir.join("old");
-    //         cu::fs::rec_remove(&old_path)?;
-    //         let install_dir = ctx.install_dir();
-    //         if install_dir.exists() {
-    //             std::fs::rename(&install_dir, old_path)
-    //         }
-    //     }
-    // }
-    todo!()
+pub fn install(_: &Context) -> cu::Result<()> {
+    opfs::ensure_terminated("git.exe")?;
+    opfs::ensure_terminated("scalar.exe")?;
+    epkg::winget::install("Microsoft.Git")?;
+    Ok(())
 }
 
-pub fn uninstall(ctx: &Context) -> cu::Result<()> {
-    todo!()
+pub fn uninstall(_: &Context) -> cu::Result<()> {
+    opfs::ensure_terminated("git.exe")?;
+    opfs::ensure_terminated("scalar.exe")?;
+    epkg::winget::uninstall("Microsoft.Git")?;
+    Ok(())
 }
-
-pub mod version;

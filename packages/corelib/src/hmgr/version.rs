@@ -17,6 +17,11 @@ impl<'a> PartialOrd<&str> for Version<'a> {
         let self_parts = self.0.trim().split(['.', '-', '_']).collect::<Vec<_>>();
         let other_parts = other.trim().split(['.', '-', '_']).collect::<Vec<_>>();
         for (s, o) in std::iter::zip(&self_parts, &other_parts) {
+            let s = s.trim();
+            let o = o.trim();
+            if s == o {
+                continue;
+            }
             match (cu::parse::<u64>(s), cu::parse::<u64>(o)) {
                 (Ok(s), Ok(o)) => {
                     // both are version numbers
