@@ -5,12 +5,17 @@ use crate::pre::*;
 #[rustfmt::skip]
 register_binaries!(
     "perl", "gpg", "curl", "wget",
-    "fzf", "jq",
+    "fzf", "jq", "task", "x",
     "bat", "dust", "fd", "websocat", "zoxide", "c", "ci",
     "viopen", "vibash", "vihosts", "n"
 );
 
+mod common;
 mod perl;
+
+pub fn binary_dependencies() -> EnumSet<BinId> {
+    enum_set! { BinId::_7z }
+}
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_installed_pacman_package!("perl");
@@ -36,6 +41,12 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     }
     let v = check_installed_pacman_package!("jq");
     if Version(&v) < metadata::jq::VERSION {
+        return Ok(Verified::NotUpToDate);
+    }
+    check_bin_in_path_and_shaft!("task");
+    check_bin_in_path_and_shaft!("x");
+    let v = command_output!("task", ["--version"]);
+    if Version(&v) < metadata::task::VERSION {
         return Ok(Verified::NotUpToDate);
     }
     let v = check_installed_with_cargo!("bat");
@@ -66,13 +77,26 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     if Version(&v.version) < metadata::shellutils::n::VERSION {
         return Ok(Verified::NotUpToDate);
     }
-    let alias_version = hmgr::get_cached_version("shellutils-alias")?;
-    Ok(Verified::is_uptodate(
-        alias_version.as_deref() == Some(metadata::shellutils::ALIAS_VERSION),
-    ))
+    Ok(Verified::is_uptodate(common::ALIAS_VERSION.is_uptodate()?))
+}
+
+pub fn download(ctx: &Context) -> cu::Result<()> {
+    hmgr::download_file("task.tgz", task_url(), metadata::task::SHA, ctx.bar())?;
+    Ok(())
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
+    let install_dir = ctx.install_dir();
+    cu::fs::make_dir(&install_dir)?;
+    let task_tgz = hmgr::paths::download("task.tgz", task_url());
+    let temp_dir = hmgr::paths::temp_dir("task-tgz");
+    let temp_tgz = temp_dir.join("task.tgz");
+    let temp_tar = temp_dir.join("task.tar");
+    cu::fs::copy(&task_tgz, &temp_tgz)?;
+    opfs::un7z(temp_tgz, &temp_dir, ctx.bar_ref())?;
+    opfs::un7z(temp_tar, &temp_dir, ctx.bar_ref())?;
+    let task_exe = temp_dir.join(bin_name!("task"));
+    cu::fs::copy(task_exe, install_dir.join(bin_name!("task")))?;
     epkg::pacman::install("perl", ctx.bar_ref())?;
     epkg::pacman::install("curl", ctx.bar_ref())?;
     epkg::pacman::install("wget", ctx.bar_ref())?;
@@ -115,8 +139,22 @@ pub fn uninstall(ctx: &Context) -> cu::Result<()> {
 }
 
 pub fn configure(ctx: &Context) -> cu::Result<()> {
-    let alias_version = hmgr::get_cached_version("shellutils-alias")?;
-    if alias_version.as_deref() != Some(metadata::shellutils::ALIAS_VERSION) {
+    let task_exe = ctx.install_dir().join(bin_name!("task")).into_utf8()?;
+    ctx.add_item(hmgr::Item::LinkBin(
+        hmgr::paths::binary(bin_name!("task")).into_utf8()?,
+        task_exe.clone(),
+    ))?;
+    ctx.add_item(hmgr::Item::LinkBin(
+        hmgr::paths::binary(bin_name!("x")).into_utf8()?,
+        task_exe.clone(),
+    ))?;
+    let mut script = command_output!(&task_exe, ["--completion", "bash"]);
+    script.push_str("\ncomplete -F _task x");
+    ctx.add_item(hmgr::Item::Bash(script))?;
+    let mut script = "compdef _task x\n".to_string();
+    script.push_str(&command_output!(&task_exe, ["--completion", "zsh"]));
+    ctx.add_item(hmgr::Item::Zsh(script))?;
+
         ctx.add_item(hmgr::Item::UserEnvVar(
             "EDITOR".to_string(),
             "viopen".to_string(),
@@ -140,7 +178,12 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
             vec![cu::which("viopen")?.into_utf8()?, "/etc/hosts".to_string()],
         ))?;
 
-        hmgr::set_cached_version("shellutils-alias", metadata::shellutils::ALIAS_VERSION)?;
-    }
+    common::ALIAS_VERSION.update()?;
     Ok(())
+}
+
+fn task_url() -> String {
+    let repo = metadata::task::REPO;
+    let ver = metadata::task::VERSION;
+    format!("{repo}/releases/download/v{ver}/task_linux_amd64.tar.gz")
 }

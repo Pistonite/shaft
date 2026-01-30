@@ -2,19 +2,17 @@
 
 use crate::pre::*;
 
-static ALIAS_VERSION: VersionCache =
-    VersionCache::new("shellutils-alias", metadata::shellutils::ALIAS_VERSION);
-
 #[rustfmt::skip]
 register_binaries!(
     "perl", "gpg", "curl", "wget",
     "fzf", "jq", "task", "x",
     "bat", "dust", "fd", "websocat", "zoxide", "c", "ci",
-    "viopen", "vipwsh", "vihosts", "n",
+    "viopen", "vihosts", "n",
     "vipath",
     "wsclip"
 );
 
+mod common;
 mod wget;
 
 pub fn binary_dependencies() -> EnumSet<BinId> {
@@ -93,7 +91,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
         return Ok(Verified::NotUpToDate);
     }
 
-    Ok(Verified::is_uptodate(ALIAS_VERSION.is_uptodate()?))
+    Ok(Verified::is_uptodate(common::ALIAS_VERSION.is_uptodate()?))
 }
 pub fn download(ctx: &Context) -> cu::Result<()> {
     hmgr::download_file(
@@ -222,7 +220,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         ],
     ))?;
 
-    ALIAS_VERSION.update()?;
+    common::ALIAS_VERSION.update()?;
     Ok(())
 }
 

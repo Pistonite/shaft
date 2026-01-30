@@ -1,7 +1,8 @@
 use std::path::Path;
 #[cfg(windows)]
 use std::path::PathBuf;
-use std::{io::Read, sync::Arc};
+use std::io::Read;
+use std::sync::Arc;
 
 use cu::pre::*;
 use sha2::{Digest, Sha256};
@@ -205,7 +206,7 @@ fn un7z_impl(
             "x",
             "-y",
             archive_path.as_utf8()?,
-            &format!("-o{}", quote_path(out_dir)),
+            &format!("-o{}", out_dir.as_utf8()?),
         ])
         .stdoe(
             cu::pio::spinner(format!("extracting {file_name}"))
