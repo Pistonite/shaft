@@ -1,4 +1,6 @@
 # shaft
+#
+# test
 
 `shaft` is my package and config manager that allows me to set up
 tools and environments consistently cross-platform.
