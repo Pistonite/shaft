@@ -30,7 +30,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     let config = ctx.load_config_file_or_default(include_str!("config.toml"))?;
     let cfg_editor = config.get("editor").and_then(|x|x.as_bool()).unwrap_or(true);
     let cfg_autocrlf = if cfg!(windows) {
-        config.get("editor").and_then(|x|x.as_bool()).unwrap_or(true)
+        config.get("autocrlf").and_then(|x|x.as_bool()).unwrap_or(true)
     } else {
         false
     };
