@@ -59,8 +59,14 @@ impl ItemMgr {
             return;
         }
         match &entry.item {
-            Item::UserEnvVar(_, _) => {}
-            Item::UserPath(_) => {}
+            Item::UserEnvVar(_, _) => {
+                self.bash_dirty = true;
+                self.zsh_dirty = true;
+            }
+            Item::UserPath(_) => {
+                self.bash_dirty = true;
+                self.zsh_dirty = true;
+            }
             Item::LinkBin(_, _) => {}
             Item::ShimBin(_, _) => self.shim_dirty = true,
             Item::Pwsh(_) => self.pwsh_dirty = true,
@@ -86,9 +92,13 @@ impl ItemMgr {
             match &entry.item {
                 Item::UserEnvVar(k, v) => {
                     _env_to_remove.insert(k.to_string(), v.to_string());
+                    self.bash_dirty = true;
+                    self.zsh_dirty = true;
                 }
                 Item::UserPath(path) => {
                     _path_to_remove.insert(path.to_string());
+                    self.bash_dirty = true;
+                    self.zsh_dirty = true;
                 }
                 Item::LinkBin(bin, _) => bin_to_remove.push(bin.to_string()),
                 Item::ShimBin(bin, _) => {
