@@ -20,7 +20,7 @@ macro_rules! check_bin_in_path_and_shaft {
             Ok(path) => {
                 if path != corelib::hmgr::paths::binary(corelib::bin_name!($bin)) {
                     cu::bail!(
-                        "found existing '{}' installed outside of shaft, please uninstall it first (at '{}')",
+                        "found existing '{}' installed outside of shaft, please uninstall it first (at '{}'), or ensure the shaft bin has higher priority in PATH",
                         $bin,
                         path.display()
                     );
@@ -86,20 +86,3 @@ macro_rules! check_installed_with_cargo {
     }};
 }
 pub(crate) use check_installed_with_cargo;
-
-#[cfg(windows)]
-macro_rules! check_installed_with_git {
-    ($l:literal, $path:literal) => {{
-        let path = check_bin_in_path!($l);
-        if corelib::opfs::find_in_wingit($path) != Ok(path) {
-            cu::bail!(concat!(
-                "current '",
-                $l,
-                "' is not installed with Git; please uninstall it"
-            ))
-        }
-        path
-    }};
-}
-#[cfg(windows)]
-pub(crate) use check_installed_with_git;

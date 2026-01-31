@@ -1,0 +1,5 @@
+# The default versions to install when syncing
+# (empty string = not specified = latest/default)
+node-version = ""
+yarn-version = ""
+pnpm-version = ""

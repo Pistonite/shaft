@@ -1,7 +1,7 @@
+use std::io::Read;
 use std::path::Path;
 #[cfg(windows)]
 use std::path::PathBuf;
-use std::io::Read;
 use std::sync::Arc;
 
 use cu::pre::*;

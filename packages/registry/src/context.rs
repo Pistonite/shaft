@@ -2,11 +2,11 @@ use std::cell::{RefCell, RefMut};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use corelib::hmgr::{self, Item, ItemMgr, VersionCache};
+use corelib::hmgr::{self, Item, ItemMgr};
 use cu::pre::*;
 use enumset::EnumSet;
 
-use crate::{PkgId, Verified};
+use crate::PkgId;
 
 /// Context passed to package functions
 pub struct Context {

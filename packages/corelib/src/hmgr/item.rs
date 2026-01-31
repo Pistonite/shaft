@@ -147,6 +147,10 @@ impl ItemMgr {
         Ok(())
     }
 
+    pub fn set_need_reinvocation(&mut self) {
+        self.reinvocation_needed = true;
+    }
+
     #[cu::context("failed to build installed items")]
     pub fn rebuild_items(&mut self, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
         if !self.dirty {
@@ -420,7 +424,7 @@ impl ItemMgr {
         {
             use std::fmt::Write as _;
             // on windows, we need to read the existing paths
-            let path = hmgr::windows::get_user("PATH")?;
+            let path = hmgr::windows::get_user_this_session("PATH")?;
             let current_paths: BTreeSet<_> =
                 path.split(';').map(|x| x.trim().to_string()).collect();
             // To be safe, we will expand %SHAFT_HOME% on windows

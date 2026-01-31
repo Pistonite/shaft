@@ -155,28 +155,28 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     script.push_str(&command_output!(&task_exe, ["--completion", "zsh"]));
     ctx.add_item(hmgr::Item::Zsh(script))?;
 
-        ctx.add_item(hmgr::Item::UserEnvVar(
-            "EDITOR".to_string(),
-            "viopen".to_string(),
-        ))?;
+    ctx.add_item(hmgr::Item::UserEnvVar(
+        "EDITOR".to_string(),
+        "viopen".to_string(),
+    ))?;
 
-        // zoxide needs to be after starship, recommended to be at the end
-        let script = command_output!("zoxide", ["init", "bash", "--cmd", "c"]);
-        ctx.add_priority_item(-1, hmgr::Item::Bash(script))?;
-        let script = command_output!("zoxide", ["init", "zsh", "--cmd", "c"]);
-        ctx.add_priority_item(-1, hmgr::Item::Zsh(script))?;
+    // zoxide needs to be after starship, recommended to be at the end
+    let script = command_output!("zoxide", ["init", "bash", "--cmd", "c"]);
+    ctx.add_priority_item(-1, hmgr::Item::Bash(script))?;
+    let script = command_output!("zoxide", ["init", "zsh", "--cmd", "c"]);
+    ctx.add_priority_item(-1, hmgr::Item::Zsh(script))?;
 
-        if let Some(mut home) = std::env::home_dir() {
-            home.push(".bashrc");
-            ctx.add_item(hmgr::Item::ShimBin(
-                "vibash".to_string(),
-                vec![cu::which("viopen")?.into_utf8()?, home.into_utf8()?],
-            ))?;
-        }
+    if let Some(mut home) = std::env::home_dir() {
+        home.push(".bashrc");
         ctx.add_item(hmgr::Item::ShimBin(
-            "vihosts".to_string(),
-            vec![cu::which("viopen")?.into_utf8()?, "/etc/hosts".to_string()],
+            "vibash".to_string(),
+            vec![cu::which("viopen")?.into_utf8()?, home.into_utf8()?],
         ))?;
+    }
+    ctx.add_item(hmgr::Item::ShimBin(
+        "vihosts".to_string(),
+        vec![cu::which("viopen")?.into_utf8()?, "/etc/hosts".to_string()],
+    ))?;
 
     common::ALIAS_VERSION.update()?;
     Ok(())

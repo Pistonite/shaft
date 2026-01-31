@@ -2,8 +2,8 @@
 
 use crate::pre::*;
 
-mod eza;
 mod common;
+mod eza;
 
 register_binaries!(
     "ls", "diff", "find", "gzip", "sed", "grep", "zip", "unzip", "tar"

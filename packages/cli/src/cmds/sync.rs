@@ -140,7 +140,8 @@ fn do_sync_package(
             }
         }
         _ => {
-            cu::hint!(r"verification failed after installation
+            cu::hint!(
+                r"verification failed after installation
 this could happen for one of the following reasons:
 - an external package installer modified the environment variable
 - an external package installer has an outdated registry/mirrors
@@ -150,7 +151,8 @@ this could happen for one of the following reasons:
 please try restarting all terminal processes and shell sessions,
 and update the registries/mirrors of external package managers
 such as pacman and cargo.
-");
+"
+            );
             cu::bail!("failed to verify '{pkg}' after installation");
         }
     }

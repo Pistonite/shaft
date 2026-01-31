@@ -347,6 +347,12 @@ const fetch_by_package = async (meta: Metafile, pkg: string): Promise<MetaKeyVal
                 }),
             }
         }
+        case "volta": {
+            return await fetch_from_github_release({
+                repo: meta.get(pkg, "pnpm.REPO"),
+                query: (_, tag) => ({ "pnpm.VERSION": strip_v(tag) })
+            });
+        }
 
         default:
             console.log(`WARNING: unknown package '${pkg}'`);

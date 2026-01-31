@@ -2,11 +2,19 @@
 
 use crate::pre::*;
 
-mod eza;
 mod common;
+mod eza;
 
 register_binaries!(
-    "ls", "diff", "find", "gzip", "sed", "grep", "zip", "unzip", "tar",
+    "ls",
+    "diff",
+    "find",
+    "gzip",
+    "sed",
+    "grep",
+    "zip",
+    "unzip",
+    "tar",
     "update-mirrors"
 );
 
@@ -46,7 +54,10 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     eza::install(ctx)?;
     let install_dir = ctx.install_dir();
     let update_mirrors_sh = install_dir.join("update-mirrors.sh");
-    cu::fs::write(update_mirrors_sh, include_bytes!("./pacman-update-mirrors.sh"))?;
+    cu::fs::write(
+        update_mirrors_sh,
+        include_bytes!("./pacman-update-mirrors.sh"),
+    )?;
 
     epkg::pacman::install("base", ctx.bar_ref())?;
     epkg::pacman::install("bash-completion", ctx.bar_ref())?;
@@ -67,10 +78,13 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     let install_dir = ctx.install_dir();
     let update_mirrors_sh = install_dir.join("update-mirrors.sh");
 
-    ctx.add_item(hmgr::Item::ShimBin("update-mirrors".to_string(), vec![
-        cu::which("bash")?.into_utf8()?,
-        update_mirrors_sh.into_utf8()?
-    ]))?;
+    ctx.add_item(hmgr::Item::ShimBin(
+        "update-mirrors".to_string(),
+        vec![
+            cu::which("bash")?.into_utf8()?,
+            update_mirrors_sh.into_utf8()?,
+        ],
+    ))?;
 
     // using shell alias for UI-only differences
     let grep_alias = "alias grep='grep --color=auto'";
