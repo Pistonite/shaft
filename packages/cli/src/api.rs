@@ -182,7 +182,7 @@ impl CliCommandRemove {
 #[derive(clap::Parser, Debug, AsRef, Serialize, Deserialize)]
 pub struct CliCommandConfig {
     /// Package to config
-    pub package: String,
+    pub package: Option<String>,
     /// Print config location instead of opening.
     #[clap(short, long)]
     pub location: bool,
@@ -198,14 +198,27 @@ impl CliCommandConfig {
     fn run(&self) -> cu::Result<()> {
         cu::lv::disable_print_time();
         if self.location {
-            let location = crate::cmds::config_location(&self.package)?;
+            let Some(package) = &self.package else {
+                cu::bail!("please specify a package name");
+            };
+            let location = crate::cmds::config_location(package)?;
             println!("{}", location);
             return Ok(());
         }
         if self.dirty {
-            crate::cmds::config_dirty(&self.package)
+            match &self.package {
+                None => {
+                    crate::cmds::config_dirty_all()
+                }
+                Some(package) => {
+                    crate::cmds::config_dirty(package)
+                }
+            }
         } else {
-            crate::cmds::config(&self.package)
+            let Some(package) = &self.package else {
+                cu::bail!("please specify a package name");
+            };
+            crate::cmds::config(package)
         }
     }
 }

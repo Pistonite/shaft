@@ -127,9 +127,10 @@ fn build_internal(config_path: &Path) -> cu::Result<pm::TokenStream2> {
             if !command.paths.is_empty() {
                 cu::bail!("for {exe_name}: paths must be empty when bash=true");
             }
+            let target = command.target;
             let args = command.args;
             match_blocks.push(pm::quote! {
-                return lib::exec_bash_replace(&[ #( #args, )* ], args);
+                return lib::exec_bash_replace(&[ #target, #( ,#args )* ], args);
             });
             continue;
         }

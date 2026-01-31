@@ -11,6 +11,8 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
 }
 
 pub fn uninstall() -> cu::Result<()> {
+    let eza_path = hmgr::paths::binary(bin_name!("eza"));
+    cu::fs::remove(&eza_path)?;
     epkg::cargo::uninstall("eza")
 }
 

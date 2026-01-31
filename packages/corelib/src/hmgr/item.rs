@@ -35,7 +35,13 @@ impl ItemMgr {
                 pwsh_dirty: true,
             });
         };
-        let items = json::parse(&items)?;
+        let items = match json::parse(&items) {
+            Ok(x) => x,
+            Err(e) => {
+                cu::warn!("failed to load installed items; the format might have changed; sync will fix re-configure the items if that is the case.");
+                return Err(e);
+            }
+        };
         Ok(Self {
             items,
             skip_reinvocation: false,

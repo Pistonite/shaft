@@ -50,6 +50,16 @@ pub fn config_dirty(package: &str) -> cu::Result<()> {
     Ok(())
 }
 
+pub fn config_dirty_all() -> cu::Result<()> {
+    let mut installed = InstallCache::load()?;
+    for pkg in installed.pkgs {
+        installed.set_dirty(pkg, true);
+        cu::info!("dirtied '{pkg}'");
+    }
+    cu::check!(installed.save(), "failed to save configuration")?;
+    Ok(())
+}
+
 pub fn config_location(package: &str) -> cu::Result<String> {
     let pkg = cu::check!(PkgId::from_str(package), "cannot find package '{package}'")?;
     Ok(config_location_path(pkg)?.into_utf8()?)

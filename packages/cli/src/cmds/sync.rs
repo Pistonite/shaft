@@ -1,4 +1,4 @@
-use corelib::ItemMgr;
+use corelib::{hmgr, ItemMgr};
 use cu::pre::*;
 use enumset::EnumSet;
 use registry::{Context, PkgId, Stage, Verified};
@@ -21,12 +21,25 @@ pub fn sync_pkgs(pkgs: EnumSet<PkgId>, installed: &mut InstallCache) -> cu::Resu
     if pkgs.is_empty() {
         return Ok(());
     }
+    let items = match ItemMgr::load() {
+        Ok(x) => x,
+        Err(e) => {
+            cu::error!("{e:?}");
+            cu::warn!("marking all installed packages as dirty, as items failed to load");
+            cu::warn!("this is a bug if this persists.");
+            for pkg in installed.pkgs {
+                installed.set_dirty(pkg, true);
+            }
+            let config_path = hmgr::paths::items_config_json();
+            cu::fs::remove(config_path)?;
+            ItemMgr::load()?
+        }
+    };
     let graph = graph::build_sync_graph(pkgs, &installed, &mut Default::default())?;
     match graph.len() {
         1 => cu::info!("syncing 1 package..."),
         x => cu::info!("syncing {x} packages..."),
     }
-    let items = ItemMgr::load()?;
     let mut ctx = Context::new(items);
     for pkg in installed.pkgs {
         ctx.set_installed(pkg, true);
