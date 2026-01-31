@@ -353,6 +353,7 @@ const fetch_by_package = async (meta: Metafile, pkg: string): Promise<MetaKeyVal
                 query: (_, tag) => ({ "pnpm.VERSION": strip_v(tag) })
             });
         }
+        case "uv": return await fetch_from_cratesio({ crate: "uv" });
 
         default:
             console.log(`WARNING: unknown package '${pkg}'`);

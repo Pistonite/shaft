@@ -110,3 +110,6 @@ pnpm.VERSION = "10.28.2"
 node.VERSION = "24"
 yarn.VERSION = "4"
 
+[uv]
+ALIAS_VERSION = "1"
+VERSION = "0.9.28"

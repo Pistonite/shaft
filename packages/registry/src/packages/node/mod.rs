@@ -97,74 +97,69 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         volta_home.join(bin_name!("volta-shim")).into_utf8()?,
     ))?;
 
-    if cu::env_var("VOLTA_HOME").unwrap_or_default() == volta_home_str {
-        let config_file = ctx.load_config_file_or_default(include_str!("config.toml"))?;
-        {
-            let mut package = "node".to_string();
-            let version = config_file.get("node-version")
-                .and_then(|x|x.as_str()).unwrap_or_default();
-            if !version.is_empty() {
-                cu::warn!("node version is pinned to {version}");
-                package.push('@');
-                package.push_str(version);
-            }
-            let (child, bar, _) = volta_bin
-                .command()
-                .args([ "install", &package])
-                .stdoe(
-                    cu::pio::spinner("install node").configure_spinner(|b| b.parent(ctx.bar())),
-                )
-                .stdin_null()
-                .spawn()?;
-            child.wait_nz()?;
-            bar.done();
+    let config_file = ctx.load_config_file_or_default(include_str!("config.toml"))?;
+    {
+        let mut package = "node".to_string();
+        let version = config_file
+            .get("node-version")
+            .and_then(|x| x.as_str())
+            .unwrap_or_default();
+        if !version.is_empty() {
+            cu::warn!("node version is pinned to {version}");
+            package.push('@');
+            package.push_str(version);
         }
-        {
-            let mut package = "pnpm".to_string();
-            let version = config_file.get("pnpm-version")
-                .and_then(|x|x.as_str()).unwrap_or_default();
-            if !version.is_empty() {
-                cu::warn!("pnpm version is pinned to {version}");
-                package.push('@');
-                package.push_str(version);
-            }
-            let (child, bar, _) = volta_bin
-                .command()
-                .args(["install", &package])
-                .stdoe(
-                    cu::pio::spinner("install pnpm").configure_spinner(|b| b.parent(ctx.bar())),
-                )
-                .stdin_null()
-                .spawn()?;
-            child.wait_nz()?;
-            bar.done();
+        let (child, bar, _) = volta_bin
+            .command()
+            .args(["install", &package])
+            .env("VOLTA_HOME", &volta_home)
+            .stdoe(cu::pio::spinner("install node").configure_spinner(|b| b.parent(ctx.bar())))
+            .stdin_null()
+            .spawn()?;
+        child.wait_nz()?;
+        bar.done();
+    }
+    {
+        let mut package = "pnpm".to_string();
+        let version = config_file
+            .get("pnpm-version")
+            .and_then(|x| x.as_str())
+            .unwrap_or_default();
+        if !version.is_empty() {
+            cu::warn!("pnpm version is pinned to {version}");
+            package.push('@');
+            package.push_str(version);
         }
-        {
-            let mut package = "yarn".to_string();
-            let version = config_file.get("yarn-version")
-                .and_then(|x|x.as_str()).unwrap_or_default();
-            if !version.is_empty() {
-                cu::warn!("yarn version is pinned to {version}");
-                package.push('@');
-                package.push_str(version);
-            }
-            let (child, bar, _) = volta_bin
-                .command()
-                .args(["install", &package])
-                .stdoe(
-                    cu::pio::spinner("install yarn").configure_spinner(|b| b.parent(ctx.bar())),
-                )
-                .stdin_null()
-                .spawn()?;
-            child.wait_nz()?;
-            bar.done();
+        let (child, bar, _) = volta_bin
+            .command()
+            .args(["install", &package])
+            .env("VOLTA_HOME", &volta_home)
+            .stdoe(cu::pio::spinner("install pnpm").configure_spinner(|b| b.parent(ctx.bar())))
+            .stdin_null()
+            .spawn()?;
+        child.wait_nz()?;
+        bar.done();
+    }
+    {
+        let mut package = "yarn".to_string();
+        let version = config_file
+            .get("yarn-version")
+            .and_then(|x| x.as_str())
+            .unwrap_or_default();
+        if !version.is_empty() {
+            cu::warn!("yarn version is pinned to {version}");
+            package.push('@');
+            package.push_str(version);
         }
-    } else {
-        cu::warn!(
-            "volta is installed but not initialized, please run `shaft sync node` again to initialize"
-        );
-        ctx.items_mut()?.set_need_reinvocation();
-        return Ok(());
+        let (child, bar, _) = volta_bin
+            .command()
+            .args(["install", &package])
+            .env("VOLTA_HOME", &volta_home)
+            .stdoe(cu::pio::spinner("install yarn").configure_spinner(|b| b.parent(ctx.bar())))
+            .stdin_null()
+            .spawn()?;
+        child.wait_nz()?;
+        bar.done();
     }
     ALIAS_VERSION.update()?;
     Ok(())
