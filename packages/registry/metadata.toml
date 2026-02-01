@@ -87,7 +87,7 @@ VERSION = "10.3.0"
 VERSION = "1.14.1"
 
 [zoxide]
-VERSION = "0.9.8"
+VERSION = "0.9.9"
 
 [hack_font]
 REPO = "https://github.com/ryanoasis/nerd-fonts"
@@ -113,3 +113,20 @@ yarn.VERSION = "4"
 [uv]
 ALIAS_VERSION = "1"
 VERSION = "0.9.28"
+
+[clang]
+# mingw only, using packages on non-Windows
+REPO = "https://github.com/mstorsjo/llvm-mingw"
+TAG = "20251216"
+'cfg(all(windows,target_arch="aarch64"))'.SHA = "60c06bd255feb2ef1eb6fce7ee6b307d8f78ee6639660f49861c7c10a8a86164"
+'cfg(all(windows,target_arch="x86_64"))'.SHA = "2d96a4b758f7f8deaec5065833fe025aa53cfc5f704d0524002510984da0ccf4"
+'cfg(windows)'.LLVM_VERSION = "21.1.8"
+'cfg(target_os="linux")'.LLVM_VERSION = "21.1.6"
+
+[cmake]
+# this is official
+REPO = "https://github.com/Kitware/CMake"
+'cfg(windows)'.VERSION = "4.2.3"
+'cfg(target_os="linux")'.VERSION = "4.2.3"
+'cfg(all(windows,target_arch="aarch64"))'.SHA = "751b206b1cf65151b72c525d26267c1d9beebf8fafc365ae00286571d9fd3ed9"
+'cfg(all(windows,target_arch="x86_64"))'.SHA = "eb4ebf5155dbb05436d675706b2a08189430df58904257ae5e91bcba4c86933c"

@@ -3,6 +3,17 @@ import * as fs from "node:fs";
 
 import { from_toml_string, to_toml_string } from "./util.mts";
 
+export class MetafilePkg {
+    public file: Metafile;
+    public pkg: string;
+    constructor(file: Metafile, pkg: string) {
+        this.file = file;
+        this.pkg = pkg;
+    }
+    public get(key: string): string { return this.file.get(this.pkg, key); }
+    public repo(): string { return this.get("REPO"); }
+}
+
 export class Metafile {
     private path: string;
     private sections: MetaSection[];

@@ -11,7 +11,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
         check_bin_in_path!("python");
     }
     let v = check_installed_with_cargo!("uv");
-    if Version(&v.version) < metadata::uv::VERSION {
+    if Version(&v.version).lt(metadata::uv::VERSION) {
         return Ok(Verified::NotUpToDate);
     }
     Ok(Verified::UpToDate)

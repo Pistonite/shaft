@@ -17,7 +17,7 @@ pub fn generate_casings_from_kebab<T: AsRef<str>>(
 
 pub fn is_kebab(s: &str) -> bool {
     s.chars()
-        .all(|c| c.is_ascii_lowercase() || matches!(c, '0'..='9') || c == '-')
+        .all(|c: char| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
 }
 
 pub fn kebab_to_pascal(kebab: &str) -> String {
@@ -33,6 +33,10 @@ pub fn kebab_to_pascal(kebab: &str) -> String {
         };
         pascal.push(c.to_ascii_uppercase());
         pascal.push_str(&part[c.len_utf8()..]);
+    }
+    if pascal.contains('+') {
+        // c++, hehh
+        return pascal.replace('+', "_plus");
     }
     pascal
 }

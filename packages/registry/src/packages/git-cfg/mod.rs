@@ -12,7 +12,7 @@ pub fn binary_dependencies() -> EnumSet<BinId> {
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     let v = check_installed_with_cargo!("delta", "git-delta");
-    if Version(&v.version) < metadata::git::delta::VERSION {
+    if Version(&v.version).lt(metadata::git::delta::VERSION) {
         return Ok(Verified::NotUpToDate);
     }
     Ok(Verified::is_uptodate(VERSION.is_uptodate()?))

@@ -36,58 +36,58 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_bin_in_path_and_shaft!("fzf");
     let v = command_output!("fzf", ["--version"]);
     let v = v.split_once(' ').map(|x| x.0).unwrap_or(&v);
-    if Version(&v) < metadata::fzf::VERSION {
+    if Version(v).lt(metadata::fzf::VERSION) {
         return Ok(Verified::NotUpToDate);
     }
 
     check_bin_in_path_and_shaft!("jq");
     let v = command_output!("jq", ["--version"]);
     let v = v.strip_prefix("jq-").unwrap_or(&v);
-    if Version(&v) < metadata::jq::VERSION {
+    if Version(v).lt(metadata::jq::VERSION) {
         return Ok(Verified::NotUpToDate);
     }
 
     check_bin_in_path_and_shaft!("task");
     check_bin_in_path_and_shaft!("x");
     let v = command_output!("task", ["--version"]);
-    if Version(&v) < metadata::task::VERSION {
+    if Version(&v).lt(metadata::task::VERSION) {
         return Ok(Verified::NotUpToDate);
     }
 
     let v = check_installed_with_cargo!("bat");
-    if Version(&v.version) < metadata::bat::VERSION {
+    if Version(&v.version).lt(metadata::bat::VERSION) {
         return Ok(Verified::NotUpToDate);
     }
     let v = check_installed_with_cargo!("dust", "du-dust");
-    if Version(&v.version) < metadata::dust::VERSION {
+    if Version(&v.version).lt(metadata::dust::VERSION) {
         return Ok(Verified::NotUpToDate);
     }
     let v = check_installed_with_cargo!("find", "fd-find");
-    if Version(&v.version) < metadata::fd::VERSION {
+    if Version(&v.version).lt(metadata::fd::VERSION) {
         return Ok(Verified::NotUpToDate);
     }
     let v = check_installed_with_cargo!("websocat");
-    if Version(&v.version) < metadata::websocat::VERSION {
+    if Version(&v.version).lt(metadata::websocat::VERSION) {
         return Ok(Verified::NotUpToDate);
     }
     let v = check_installed_with_cargo!("zoxide");
-    if Version(&v.version) < metadata::zoxide::VERSION {
+    if Version(&v.version).lt(metadata::zoxide::VERSION) {
         return Ok(Verified::NotUpToDate);
     }
     let v = check_installed_with_cargo!("viopen");
-    if Version(&v.version) < metadata::shellutils::viopen::VERSION {
+    if Version(&v.version).lt(metadata::shellutils::viopen::VERSION) {
         return Ok(Verified::NotUpToDate);
     }
     let v = check_installed_with_cargo!("n");
-    if Version(&v.version) < metadata::shellutils::n::VERSION {
+    if Version(&v.version).lt(metadata::shellutils::n::VERSION) {
         return Ok(Verified::NotUpToDate);
     }
     let v = check_installed_with_cargo!("wsclip");
-    if Version(&v.version) < metadata::shellutils::wsclip::VERSION {
+    if Version(&v.version).lt(metadata::shellutils::wsclip::VERSION) {
         return Ok(Verified::NotUpToDate);
     }
     let v = check_installed_with_cargo!("vipath");
-    if Version(&v.version) < metadata::shellutils::vipath::VERSION {
+    if Version(&v.version).lt(metadata::shellutils::vipath::VERSION) {
         return Ok(Verified::NotUpToDate);
     }
 

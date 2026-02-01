@@ -1,0 +1,67 @@
+# List of executables that have parity
+# Linux GNU            Windows LLVM
+# -------------------------------------------------
+# gcc:            llvm-mingw:
+#   c++             c++.exe
+#   c99             c99.exe
+#   cc              cc.exe
+#   gcc             gcc.exe
+#   g++             g++.exe
+# binutils:
+#   addr2line       addr2line.exe
+#   ar              ar.exe 
+#   c++filt         llvm-cxxfilt.exe -> c++filt
+#   ld              *bash -c /.../ld
+#   nm              nm.exe
+#   objcopy         objcopy.exe
+#   objdump         *bash -c /.../objdump
+#   ranlib          ranlib.exe
+#   readelf         readelf.exe
+#   size            size.exe
+#   strings         strings.exe
+#   strip           strip.exe
+# clang:
+#   clang           clang.exe
+#   clang++         clang++.exe
+#   clang-format    clang-format.exe
+#   clang-tidy      clang-tidy.exe
+#   clangd          clangd.exe
+# llvm:
+#   llvm-addr2line  llvm-addr2line.exe
+#   llvm-ar         llvm-ar.exe
+#   llvm-cov        llvm-cov.exe
+#   llvm-cvtres     llvm-cvtres.exe
+#   llvm-cxxfilt    llvm-cxxfilt.exe
+#   llvm-dlltool    llvm-dlltool.exe
+#   llvm-lib        llvm-lib.exe
+#   llvm-ml         llvm-ml.exe
+#   llvm-nm         llvm-nm.exe
+#   llvm-objcopy    llvm-objcopy.exe
+#   llvm-objdump    llvm-objdump.exe
+#   llvm-pdbutil    llvm-pdbutil.exe
+#   llvm-profdata   llvm-profdata.exe
+#   llvm-randlib    llvm-ranlib.exe
+#   llvm-rc         llvm-rc.exe
+#   llvm-readelf    llvm.readelf.exe
+#   llvm-readobj    llvm-readobj.exe
+#   llvm-size       llvm-size.exe
+#   llvm-strings    llvm-strings.exe
+#   llvm-strip      llvm-strip.exe
+#   llvm-symbolizer llvm-symbolizer.exe
+#   llvm-windres    llvm-windres.exe
+# lldb
+#   lldb            lldb.exe
+#   lldb-argdumper  lldb-argdumper.exe
+#   lldb-dap        lldb-dap.exe
+#   lldb-instr      lldb-instr.exe
+#   lldb-server     lldb-server.exe
+# make:
+#   make            ming32-make.exe -> make.exe
+#
+# All dlls except libpython*.dll on Windows will be linked to PATH
+# If additional files should be linked on Windows (from <llvm_install>/bin),
+# add custom ones below
+windows-link-extra-files = [] # make hard links
+windows-shim-extra-files = [] # make a shim bin that calls the executable (if it depends on DLL in the install dir that's not in PATH)
+windows-bash-wrap-extra-files = [] # make a bash wrapper script that calls the executable
+

@@ -95,11 +95,17 @@ fn configure_font() -> cu::Result<()> {
     for entry in cu::fs::read_dir(&temp_dir)? {
         let entry = entry?;
         let path = entry.path();
-        if path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("ttf")) {
+        if path
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("ttf"))
+        {
             let file_name = path.file_name().unwrap();
             let dest = fonts_folder.join(file_name);
             font_files.push((
-                path.file_stem().expect("no file stem").as_utf8()?.to_string(),
+                path.file_stem()
+                    .expect("no file stem")
+                    .as_utf8()?
+                    .to_string(),
                 path,
                 dest,
             ));
@@ -130,7 +136,9 @@ fn configure_font() -> cu::Result<()> {
     // copy all *.ttf files to fonts folder
     for (_, path, dest) in &font_files {
         if let Err(e) = cu::fs::copy(path, dest) {
-            cu::hint!("failed to copy font file - if this is a permission error, close all terminal processes, and retry");
+            cu::hint!(
+                "failed to copy font file - if this is a permission error, close all terminal processes, and retry"
+            );
             cu::rethrow!(e);
         }
     }

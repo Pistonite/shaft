@@ -5,8 +5,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use cu::pre::*;
-use sha2::{Digest, Sha256};
 use flate2::read::GzDecoder;
+use sha2::{Digest, Sha256};
 use tar::Archive as TarArchive;
 use zip::ZipArchive;
 
@@ -88,10 +88,10 @@ pub fn safe_remove_link(path: &Path) -> cu::Result<()> {
     }
     // it's faster to remove directly, but it might fail
     // if the executable is currently running.
-    // However, PowerShell can still remove it as long as 
+    // However, PowerShell can still remove it as long as
     // the actual inode is not removed (the last copy of the hard link)
     let Err(e) = cu::fs::remove(path) else {
-        return Ok(())
+        return Ok(());
     };
     cu::debug!("failed to remove link: {e}, falling back to use powershell");
     // remove with powershell
@@ -175,24 +175,27 @@ pub fn unarchive(
 ) -> cu::Result<()> {
     unarchive_impl(archive_path.as_ref(), out_dir.as_ref(), clean)
 }
-fn unarchive_impl(
-    archive_path: &Path,
-    out_dir: &Path,
-    clean: bool,
-) -> cu::Result<()> {
-    let ext = cu::check!(archive_path.extension(), "missing archive extension: '{}'", archive_path.display())?;
+fn unarchive_impl(archive_path: &Path, out_dir: &Path, clean: bool) -> cu::Result<()> {
+    let ext = cu::check!(
+        archive_path.extension(),
+        "missing archive extension: '{}'",
+        archive_path.display()
+    )?;
     let ext = ext.to_ascii_lowercase();
     let ext = cu::check!(ext.into_utf8(), "unknown archive extension")?;
     enum Format {
         Tar,
         TarGz,
-        Zip
+        Zip,
     }
     let format = match ext.as_bytes() {
         b"gz" => {
             let mut path = archive_path.to_path_buf();
             path.set_extension("");
-            let ext = cu::check!(archive_path.extension(), "only .tar.gz is supported with .gz files")?;
+            let ext = cu::check!(
+                archive_path.extension(),
+                "only .tar.gz is supported with .gz files"
+            )?;
             let ext = ext.to_ascii_lowercase();
             if ext != "tar" {
                 cu::bail!("only .tar.gz is supported for .gz files");
@@ -214,48 +217,35 @@ fn unarchive_impl(
         Format::Tar => {
             untar_bytes(&archive_bytes, out_dir, clean)?;
         }
-        Format::Zip => {
-        }
-    } 
+        Format::Zip => {}
+    }
     Ok(())
 }
 
 #[cu::context("failed to unpack targz bytes")]
-pub fn untargz_bytes(
-    archive_bytes: &[u8],
-    out_dir: &Path,
-    clean: bool,
-) -> cu::Result<()> {
+pub fn untargz_bytes(archive_bytes: &[u8], out_dir: &Path, clean: bool) -> cu::Result<()> {
     if clean {
-        cu::fs::make_dir_empty(&out_dir)?;
+        cu::fs::make_dir_empty(out_dir)?;
     }
     let mut archive = TarArchive::new(GzDecoder::new(archive_bytes));
-    archive.unpack(&out_dir)?;
+    archive.unpack(out_dir)?;
     Ok(())
 }
 
 #[cu::context("failed to unpack tar bytes")]
-pub fn untar_bytes(
-    archive_bytes: &[u8],
-    out_dir: &Path,
-    clean: bool,
-) -> cu::Result<()> {
+pub fn untar_bytes(archive_bytes: &[u8], out_dir: &Path, clean: bool) -> cu::Result<()> {
     if clean {
-        cu::fs::make_dir_empty(&out_dir)?;
+        cu::fs::make_dir_empty(out_dir)?;
     }
     let mut archive = TarArchive::new(archive_bytes);
-    archive.unpack(&out_dir)?;
+    archive.unpack(out_dir)?;
     Ok(())
 }
 
 #[cu::context("failed to unpack zip bytes")]
-pub fn unzip_bytes(
-    archive_bytes: &[u8],
-    out_dir: &Path,
-    clean: bool,
-) -> cu::Result<()> {
+pub fn unzip_bytes(archive_bytes: &[u8], out_dir: &Path, clean: bool) -> cu::Result<()> {
     if clean {
-        cu::fs::make_dir_empty(&out_dir)?;
+        cu::fs::make_dir_empty(out_dir)?;
     }
     let mut archive = ZipArchive::new(Cursor::new(archive_bytes))?;
     archive.extract_unwrapped_root_dir(out_dir, zip::read::root_dir_common_filter)?;

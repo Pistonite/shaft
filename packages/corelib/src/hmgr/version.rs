@@ -1,17 +1,28 @@
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
-use std::fmt;
 
 use cu::pre::*;
 
 use crate::hmgr;
 
 /// Wrapper for parsing version number
-#[derive(PartialEq)]
+#[derive(PartialEq, Display, DebugCustom)]
+#[display("{}", self.0)]
+#[debug("{}", self.0)]
 pub struct Version<'a>(pub &'a str);
-impl<'a> PartialOrd<&str> for Version<'a> {
-    fn partial_cmp(&self, other: &&str) -> Option<Ordering> {
-        if self.0 == *other {
+impl Version<'_> {
+    /// Return true if self is less than other, or self is not comparable with other
+    #[inline(always)]
+    pub fn lt(&self, other: impl AsRef<str>) -> bool {
+        !matches!(self.compare(other), Some(Ordering::Less) | None)
+    }
+    /// Compare 2 versions
+    #[inline(always)]
+    pub fn compare(&self, other: impl AsRef<str>) -> Option<Ordering> {
+        self.compare_internal(other.as_ref())
+    }
+    fn compare_internal(&self, other: &str) -> Option<Ordering> {
+        if self.0 == other {
             return Some(Ordering::Equal);
         }
         let self_parts = self.0.trim().split(['.', '-', '_']).collect::<Vec<_>>();
@@ -49,28 +60,6 @@ impl<'a> PartialEq<&str> for Version<'a> {
     #[inline(always)]
     fn eq(&self, other: &&str) -> bool {
         self.0 == *other
-    }
-}
-impl<'a> PartialOrd<String> for Version<'a> {
-    #[inline(always)]
-    fn partial_cmp(&self, other: &String) -> Option<Ordering> {
-        self.partial_cmp(&other.as_str())
-    }
-}
-impl<'a> PartialOrd for Version<'a> {
-    #[inline(always)]
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.partial_cmp(&other.0)
-    }
-}
-impl<'a> fmt::Debug for Version<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(self.0, f)
-    }
-}
-impl<'a> fmt::Display for Version<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(self.0, f)
     }
 }
 #[derive(Clone, Copy)]

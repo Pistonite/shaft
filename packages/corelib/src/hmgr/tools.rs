@@ -21,7 +21,10 @@ pub fn ensure_unpacked() -> cu::Result<()> {
 fn do_unpack() -> cu::Result<()> {
     cu::info!("unpacking tools...");
     let tools_path = hmgr::paths::tools_root();
-    cu::check!(opfs::untargz_bytes(TOOLS_TAR_GZ, &tools_path, true /* clean */ ), "failed to unpack tools")?;
+    cu::check!(
+        opfs::untargz_bytes(TOOLS_TAR_GZ, &tools_path, true /* clean */),
+        "failed to unpack tools"
+    )?;
     let version = opfs::cli_version();
     cu::fs::write(hmgr::paths::tools_version(), version)?;
     Ok(())

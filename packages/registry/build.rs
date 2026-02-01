@@ -96,33 +96,33 @@ fn build_metadata_item(
                 ("&str", format!("{:?}", &s[1..s.len() - 1]))
             } else if s.starts_with('"') && s.ends_with('"') {
                 ("&str", format!("{s:?}"))
-            } else if let Some(_) = s.strip_suffix("u8") {
+            } else if s.strip_suffix("u8").is_some() {
                 ("u8", s.to_string())
-            } else if let Some(_) = s.strip_suffix("u16") {
+            } else if s.strip_suffix("u16").is_some() {
                 ("u16", s.to_string())
-            } else if let Some(_) = s.strip_suffix("u32") {
+            } else if s.strip_suffix("u32").is_some() {
                 ("u32", s.to_string())
-            } else if let Some(_) = s.strip_suffix("u64") {
+            } else if s.strip_suffix("u64").is_some() {
                 ("u64", s.to_string())
-            } else if let Some(_) = s.strip_suffix("u128") {
+            } else if s.strip_suffix("u128").is_some() {
                 ("u128", s.to_string())
-            } else if let Some(_) = s.strip_suffix("usize") {
+            } else if s.strip_suffix("usize").is_some() {
                 ("usize", s.to_string())
-            } else if let Some(_) = s.strip_suffix("i8") {
+            } else if s.strip_suffix("i8").is_some() {
                 ("i8", s.to_string())
-            } else if let Some(_) = s.strip_suffix("i16") {
+            } else if s.strip_suffix("i16").is_some() {
                 ("i16", s.to_string())
-            } else if let Some(_) = s.strip_suffix("i32") {
+            } else if s.strip_suffix("i32").is_some() {
                 ("i32", s.to_string())
-            } else if let Some(_) = s.strip_suffix("i64") {
+            } else if s.strip_suffix("i64").is_some() {
                 ("i64", s.to_string())
-            } else if let Some(_) = s.strip_suffix("i128") {
+            } else if s.strip_suffix("i128").is_some() {
                 ("i128", s.to_string())
-            } else if let Some(_) = s.strip_suffix("isize") {
+            } else if s.strip_suffix("isize").is_some() {
                 ("isize", s.to_string())
-            } else if let Some(_) = s.strip_suffix("f32") {
+            } else if s.strip_suffix("f32").is_some() {
                 ("f32", s.to_string())
-            } else if let Some(_) = s.strip_suffix("f64") {
+            } else if s.strip_suffix("f64").is_some() {
                 ("f64", s.to_string())
             } else {
                 ("&str", format!("{s:?}"))

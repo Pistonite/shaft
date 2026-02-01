@@ -20,11 +20,6 @@ export const parse_github_repo = (repo: string): string => {
     return match[1].replace(/\.git$/, "");
 };
 
-/** Generate a GitHub release download URL */
-export const github_release_url = (repo: string, tag: string, artifact: string): string => {
-    return `${repo}/releases/download/${tag}/${artifact}`;
-};
-
 /** Strip leading 'v' from a version tag */
 export const strip_v = (version: string): string => {
     return version[0]==="v" ? version.substring(1) : version;

@@ -49,7 +49,8 @@ members = [
     "shaftim",
     "shaftim-build",
 ]
-"#.to_string();
+"#
+        .to_string();
         let mut new_table = cu::toml::Table::new();
         if let Some(workspace) = workspace_cargo_toml.get("workspace") {
             if let Some(deps) = workspace.get("dependencies") {

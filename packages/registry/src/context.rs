@@ -65,7 +65,7 @@ impl Context {
     pub fn load_config_file_or_default(&self, default_config: &str) -> cu::Result<toml::Table> {
         let config_file = self.config_file();
         let Ok(config) = cu::fs::read_string(&config_file) else {
-            let _ = cu::fs::write(&config_file, &default_config)?;
+            cu::fs::write(&config_file, default_config)?;
             let default = toml::parse(default_config)?;
             return Ok(default);
         };

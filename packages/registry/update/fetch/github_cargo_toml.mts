@@ -2,14 +2,14 @@ import type { MetaKeyValues } from "../metafile.mts";
 import { from_toml_string, parse_github_repo } from "../util.mts";
 
 
-export type GithubCargoTomlArgs = {
+export type GitHubCargoTomlArgs = {
     repo: string;
     ref: string;
     path: string;
     query?: (version: string) => Promise<MetaKeyValues> | MetaKeyValues;
 };
 /** Fetch package version from a Cargo.toml file on GitHub */
-export const fetch_from_cargo_toml = async ({ repo, ref, path, query }: GithubCargoTomlArgs): Promise<MetaKeyValues> => {
+export const fetch_from_cargo_toml = async ({ repo, ref, path, query }: GitHubCargoTomlArgs): Promise<MetaKeyValues> => {
     query = query || ((VERSION) => ({ VERSION }));
     console.log(`-- fetching Cargo.toml from ${repo} @ ${ref}: ${path}`);
     const repo_path = parse_github_repo(repo);

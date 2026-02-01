@@ -35,7 +35,7 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
         ]
     );
     let is_preview = version.contains("preview");
-    let is_uptodate = !(Version(version.trim()) < metadata::pwsh::VERSION);
+    let is_uptodate = !(Version(version.trim()).lt(metadata::pwsh::VERSION));
     Ok(Verified::is_uptodate(is_preview && is_uptodate))
 }
 

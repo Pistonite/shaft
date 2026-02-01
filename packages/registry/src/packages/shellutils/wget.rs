@@ -14,7 +14,7 @@ pub fn version_check() -> cu::Result<Verified> {
             continue;
         };
         return Ok(Verified::is_uptodate(
-            !(Version(version) < metadata::wget::VERSION),
+            !(Version(version).lt(metadata::wget::VERSION)),
         ));
     }
     cu::bail!("failed to get wget version from output: {stdout}");

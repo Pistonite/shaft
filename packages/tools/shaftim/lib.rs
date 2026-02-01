@@ -33,7 +33,7 @@ pub fn set_path(cmd: &mut Command, paths_to_prepend: &str) {
 }
 
 #[cfg(windows)]
-pub fn exec_bash_replace(cfg_args: &[&str], cli_args: std::env::ArgsOs) -> std::process::ExitCode {
+pub fn exec_bash_replace(cfg_args: &[&str], cli_args: std::env::ArgsOs, paths_to_prepend: Option<&str>) -> std::process::ExitCode {
     // the library we use only supports utf8
     let mut cli_args_utf8 = Vec::with_capacity(cli_args.len());
     for a in cli_args {
@@ -51,6 +51,9 @@ pub fn exec_bash_replace(cfg_args: &[&str], cli_args: std::env::ArgsOs) -> std::
     );
     let mut cmd = Command::new("bash.exe");
     cmd.args(["-c", &script]);
+    if let Some(p) = paths_to_prepend {
+        set_path(&mut cmd, p);
+    }
     exec_replace(cmd)
 }
 

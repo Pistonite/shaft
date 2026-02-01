@@ -1,4 +1,4 @@
-use corelib::{hmgr, ItemMgr};
+use corelib::{ItemMgr, hmgr};
 use cu::pre::*;
 use enumset::EnumSet;
 use registry::{Context, PkgId, Stage, Verified};

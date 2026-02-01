@@ -18,6 +18,11 @@ tasks:
     - rm -rf node_modules
     - rm -rf update/temp
 
+  check:
+    - task: cargo:clippy-all
+    - task: check-rustfmt
+    - task: cargo:fmt-check
+
   check-rustfmt:
     - rustfmt --check -l $(find src/packages -name '*.rs') --edition 2024
 

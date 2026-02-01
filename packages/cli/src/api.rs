@@ -207,12 +207,8 @@ impl CliCommandConfig {
         }
         if self.dirty {
             match &self.package {
-                None => {
-                    crate::cmds::config_dirty_all()
-                }
-                Some(package) => {
-                    crate::cmds::config_dirty(package)
-                }
+                None => crate::cmds::config_dirty_all(),
+                Some(package) => crate::cmds::config_dirty(package),
             }
         } else {
             let Some(package) = &self.package else {

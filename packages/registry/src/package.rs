@@ -257,7 +257,7 @@ impl<'a, 'b> PackageRestoreGuard<'a, 'b> {
 impl<'a, 'b> Drop for PackageRestoreGuard<'a, 'b> {
     fn drop(&mut self) {
         if self.needs_restore {
-            if let Err(e) = self.package.restore(&self.context) {
+            if let Err(e) = self.package.restore(self.context) {
                 cu::error!("failed to restore package '{}': {:?}", self.context.pkg, e);
             }
         }

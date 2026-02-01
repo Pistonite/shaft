@@ -29,6 +29,22 @@ macro_rules! check_bin_in_path_and_shaft {
             }
         }
     }};
+    ($bin:literal, $system:literal) => {{
+        match cu::which($bin) {
+            Err(_) => return Ok(Verified::NotInstalled),
+            Ok(path) => {
+                if path != corelib::hmgr::paths::binary(corelib::bin_name!($bin)) {
+                    cu::bail!(
+                        "found existing '{}' installed outside of shaft, please uninstall it first (at '{}'), or ensure the shaft bin has higher priority in PATH; alternatively, use the {} package",
+                        $bin,
+                        path.display(),
+                        $system
+                    );
+                }
+                path
+            }
+        }
+    }};
 }
 pub(crate) use check_bin_in_path_and_shaft;
 

@@ -38,7 +38,9 @@ impl ItemMgr {
         let items = match json::parse(&items) {
             Ok(x) => x,
             Err(e) => {
-                cu::warn!("failed to load installed items; the format might have changed; sync will fix re-configure the items if that is the case.");
+                cu::warn!(
+                    "failed to load installed items; the format might have changed; sync will fix re-configure the items if that is the case."
+                );
                 return Err(e);
             }
         };
