@@ -98,10 +98,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     if ctx.is_installed(PkgId::Shellutils) {
         ctx.add_item(Item::shim_bin(
             bin_name!("vipwsh"),
-            ShimCommand::target_args(
-                cu::which("viopen")?.into_utf8()?,
-                [edit_profile_path.into_utf8()?],
-            ),
+            ShimCommand::target("viopen").args([edit_profile_path.into_utf8()?]),
         ))?;
     }
     Ok(())

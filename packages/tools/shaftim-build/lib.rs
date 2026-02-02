@@ -23,8 +23,6 @@ pub struct ShimCommand {
     /// to optimize hotspot executables where only the first invocation
     /// would be through the shim, and subprocesses would invoke the real executable
     /// directly.
-    ///
-    /// This can only be used if there are no additional args
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     paths: Vec<String>,
 }
@@ -44,71 +42,23 @@ impl ShimCommand {
             paths: Default::default(),
         }
     }
-    /// Create a shim to run the target executable with extra args
+    /// Set additional args
     #[inline(always)]
-    pub fn target_args(
-        target: impl Into<String>,
-        args: impl IntoIterator<Item = impl Into<String>>,
-    ) -> Self {
-        Self {
-            target: target.into(),
-            args: args.into_iter().map(|x| x.into()).collect(),
-            bash: false,
-            paths: Default::default(),
-        }
+    pub fn args(mut self, args: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        self.args = args.into_iter().map(|x| x.into()).collect();
+        self
     }
-    /// Create a shim to run target executable in bash, without any args
+    /// Set the target to be wrapped with bash
     #[inline(always)]
-    pub fn target_bash(target: impl Into<String>) -> Self {
-        Self {
-            target: target.into(),
-            args: Default::default(),
-            bash: true,
-            paths: Default::default(),
-        }
+    pub fn bash(mut self) -> Self {
+        self.bash = true;
+        self
     }
-    /// Create a shim to run target executable in bash with extra args
+    /// Set additional PATH to prepend before executing
     #[inline(always)]
-    pub fn target_bash_args(
-        target: impl Into<String>,
-        args: impl IntoIterator<Item = impl Into<String>>,
-    ) -> Self {
-        Self {
-            target: target.into(),
-            args: args.into_iter().map(|x| x.into()).collect(),
-            bash: true,
-            paths: Default::default(),
-        }
-    }
-    /// Create a shim to prepend multiple paths to PATH, then run the executable.
-    /// The order will be the same as paths passed in. The first path in `paths`
-    /// will be the first path in the PATH environment variable.
-    #[inline(always)]
-    pub fn target_paths(
-        target: impl Into<String>,
-        paths: impl IntoIterator<Item = impl Into<String>>,
-    ) -> Self {
-        Self {
-            target: target.into(),
-            args: Default::default(),
-            bash: false,
-            paths: paths.into_iter().map(|x| x.into()).collect(),
-        }
-    }
-    /// Create a shim to prepend multiple paths to PATH, then run the executable wrapped with bash.
-    /// The order will be the same as paths passed in. The first path in `paths`
-    /// will be the first path in the PATH environment variable.
-    #[inline(always)]
-    pub fn target_bash_paths(
-        target: impl Into<String>,
-        paths: impl IntoIterator<Item = impl Into<String>>,
-    ) -> Self {
-        Self {
-            target: target.into(),
-            args: Default::default(),
-            bash: true,
-            paths: paths.into_iter().map(|x| x.into()).collect(),
-        }
+    pub fn paths(mut self, paths: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        self.paths = paths.into_iter().map(|x| x.into()).collect();
+        self
     }
 }
 
@@ -136,7 +86,11 @@ fn build_internal(config_path: &Path) -> cu::Result<pm::TokenStream2> {
     let mut match_patterns = Vec::with_capacity(cap);
     let mut match_blocks = Vec::with_capacity(cap);
 
+    let mut max_exe_bytes = 0;
+
     for (exe_name, command) in config {
+        let exe_name = fix_exe_name(&exe_name)?;
+        max_exe_bytes = max_exe_bytes.max(exe_name.len());
         let pattern = pm::Literal2::byte_string(exe_name.as_bytes());
         match_patterns.push(pattern);
         if command.bash {
@@ -147,9 +101,6 @@ fn build_internal(config_path: &Path) -> cu::Result<pm::TokenStream2> {
             let set_path_impl = if command.paths.is_empty() {
                 pm::quote! { None }
             } else {
-                if !command.args.is_empty() {
-                    cu::bail!("for {exe_name}: cannot specify both args and paths");
-                }
                 let sep = if cfg!(windows) { ";" } else { ":" };
                 let path_prefix = command.paths.join(sep);
                 pm::quote! { Some(#path_prefix) }
@@ -163,9 +114,6 @@ fn build_internal(config_path: &Path) -> cu::Result<pm::TokenStream2> {
         }
 
         let set_path_impl = if !command.paths.is_empty() {
-            if !command.args.is_empty() {
-                cu::bail!("for {exe_name}: cannot specify both args and paths");
-            }
             let sep = if cfg!(windows) { ";" } else { ":" };
             let path_prefix = command.paths.join(sep);
             pm::quote! { lib::set_path(&mut c, #path_prefix); }
@@ -198,12 +146,14 @@ fn build_internal(config_path: &Path) -> cu::Result<pm::TokenStream2> {
             let Some(arg0) = args.next() else {
                 return ExitCode::FAILURE;
             };
-            let mut cmd = match lib::exe_name(&arg0) {
+            let mut exe_bytes = [0u8; #max_exe_bytes];
+            let len = lib::fix_exe_name(&arg0, &mut exe_bytes);
+            let mut cmd = match &exe_bytes[..len] {
                 #(
                     #match_patterns => { #match_blocks }
                 )*
                 _ => {
-                    eprintln!("shaft-shim: invalid executable");
+                    eprintln!("shaft-shim: (2) invalid executable: {}", arg0.display());
                     return ExitCode::FAILURE;
                 }
             };
@@ -213,4 +163,23 @@ fn build_internal(config_path: &Path) -> cu::Result<pm::TokenStream2> {
     };
 
     Ok(output)
+}
+
+#[cfg(feature = "build")]
+fn fix_exe_name(s: &str) -> cu::Result<String> {
+    // we want:
+    // - no .cmd or .exe
+    // - lowercase
+    //
+    // this is needed for matching
+    let mut lower = s.to_lowercase();
+    if let Some(s) = lower.strip_suffix(".cmd") {
+        lower = s.to_string();
+    } else if let Some(s) = lower.strip_suffix(".exe") {
+        lower = s.to_string();
+    }
+    if lower.contains(['/', '\\']) {
+        cu::bail!("invalid executable name: {lower} (no slashes allowed)");
+    }
+    Ok(lower)
 }

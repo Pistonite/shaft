@@ -1,4 +1,4 @@
-[[sections]]
+[[section]]
 comment = """
 List of GNU executables that have parity
 Linux GNU       Windows LLVM-minGW
@@ -82,7 +82,7 @@ llvm:
   bugpoint
 L count
   dsymutil
-  lit
+L lit
 L llc
 W lld.exe
 L lli
@@ -180,35 +180,10 @@ lldb:
 
 """
 
-[[sections]]
+[[section]]
 comment = "Windows-specific configuration"
 key = ["windows"]
 children = [
-    {
-        comment = """
-LLVM toolchain selection. Valid values are: "msvc" or "gnu"
-msvc: Official clang+llvm release targeting msvc.
-      - This has all llvm-* executables
-      - This has libclang.dll
-gnu:  LLVM-minGW
-      - This only has some llvm-* executables
-      - Does not have libclang.dll
-
-When "msvc", the GNU compilers and binutils (i.e. g++/objdump) are still
-available as provided by LLVM-minGW, but the llvm-* executables will
-be provided by official clang+llvm release.
-""",
-        key = ["llvm-target"],
-        value = "msvc",
-    },
-    {
-        comment = """
-Whether libclang.dll should be made available to PATH.
-Valid values are: "msvc" or "always", the later will always link it even when using LLVM-minGW
-""",
-        key = ["libclang"],
-        value = "msvc",
-    },
     {
         comment = """
 Extra files in LLVM-minGW/bin to make available in PATH.

@@ -156,7 +156,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     let exe_path = opfs::find_in_wingit("usr/bin/gpg.exe")?;
     ctx.add_item(Item::shim_bin(
         bin_name!("gpg"),
-        ShimCommand::target_bash(exe_path.into_utf8()?),
+        ShimCommand::target(exe_path.into_utf8()?).bash(),
     ))?;
     ctx.add_item(Item::link_bin(
         hmgr::paths::binary(bin_name!("wget")).into_utf8()?,
@@ -190,13 +190,10 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
 
     ctx.add_item(hmgr::Item::ShimBin(
         bin_name!("vihosts").to_string(),
-        ShimCommand::target_args(
-            cu::which("cmd")?.into_utf8()?,
-            [
-                "/c",
-                "viopen %SystemDrive%\\Windows\\System32\\drivers\\etc\\hosts",
-            ],
-        ),
+        ShimCommand::target(cu::which("cmd")?.into_utf8()?).args([
+            "/c",
+            "viopen %SystemDrive%\\Windows\\System32\\drivers\\etc\\hosts",
+        ]),
     ))?;
 
     common::ALIAS_VERSION.update()?;

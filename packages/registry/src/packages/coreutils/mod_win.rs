@@ -124,7 +124,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     let exe_path = opfs::find_in_wingit("usr/bin/grep.exe")?;
     ctx.add_item(Item::shim_bin(
         bin_name!("grep"),
-        ShimCommand::target_args(exe_path.into_utf8()?, ["--color=auto"]),
+        ShimCommand::target(exe_path.into_utf8()?).args(["--color=auto"]),
     ))?;
     const MINGW_UTILS: &[&str] = &["diff", "diff3", "cmp", "find", "gzip", "sed", "unzip"];
     for util in MINGW_UTILS {

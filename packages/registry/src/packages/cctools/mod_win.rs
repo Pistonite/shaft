@@ -12,6 +12,39 @@ register_binaries!(
     "make", "cmake", "ninja"
 );
 
+#[rustfmt::skip]
+static GNU_CC_BINUTILS_SHIM: &[&str] = &[
+    "c++", "c99", "cc", "gcc", "g++",
+    "addr2line", "ar", /*c++filt is linked*/ /*ld is bash*/
+    "nm", "objcopy" /*objdump is bash*/, "ranlib",
+    "readelf", "size", "strings", "strip"
+];
+#[rustfmt::skip]
+static GNU_CC_BINUTILS_SHIM_RENAME: &[(&str, &str)] = &[
+    ("c++filt", "llvm-cxxfilt"),
+    ("make", "mingw32-make"), // not really binutils but anyway
+];
+#[rustfmt::skip]
+static GNU_CC_BINUTILS_BASH_WRAP: &[&str] = &[ "ld","objdump" ];
+#[rustfmt::skip]
+static CLANG_LLVM_SHIM: &[&str] = &[
+    "amdgpu-arch", "c-index-test", "diagtool", "find-all-symbols",
+    "modularize", "nvptx-arch", "offload-arch", "pp-trace",
+    "bugpoint", "dsymutil", "opt", "reduce-chunk-list",
+    "sancov", "sanstats", "verify-uselistorder", "wasm-ld"
+];
+//clang*, llvm*, lldb* are also included
+//*lld* are also included
+#[rustfmt::skip]
+static CLANG_LLVM_PYTHON_WRAP: &[&str] = &[
+    "analyze-build", "git-clang-format", "hmaptool", "intercept-build",
+    "run-clang-tidy",
+];
+#[rustfmt::skip]
+static CLANG_LLVM_LINK_DLL: &[&str] = &[
+    "libclang"
+];
+
 mod clang;
 
 pub fn binary_dependencies() -> EnumSet<BinId> {
@@ -48,10 +81,11 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
 }
 
 pub fn download(ctx: &Context) -> cu::Result<()> {
+    hmgr::download_file("llvm.txz", llvm_url(), metadata::clang::SHA, ctx.bar())?;
     hmgr::download_file(
         "llvm-mingw.zip",
-        llvm_url(),
-        metadata::clang::SHA,
+        llvm_mingw_url(),
+        metadata::llvm_mingw::SHA,
         ctx.bar(),
     )?;
     hmgr::download_file("cmake.zip", cmake_url(), metadata::cmake::SHA, ctx.bar())?;
@@ -59,17 +93,69 @@ pub fn download(ctx: &Context) -> cu::Result<()> {
     Ok(())
 }
 
+fn llvm_url() -> String {
+    let repo = metadata::clang::REPO;
+    let version = metadata::clang::LLVM_VERSION;
+    let artifact = llvm_release_name();
+    format!("{repo}/releases/download/llvmorg-{version}/{artifact}.tar.xz")
+}
+
+fn llvm_release_name() -> String {
+    let version = metadata::clang::LLVM_VERSION;
+    let arch = if_arm!("aarch64", else "x86_64");
+    format!("clang+llvm-{version}-{arch}-pc-windows-msvc")
+}
+
+fn llvm_mingw_url() -> String {
+    let repo = metadata::llvm_mingw::REPO;
+    let tag = metadata::llvm_mingw::TAG;
+    let arch = if_arm!("aarch64", else "x86_64");
+    format!("{repo}/releases/download/{tag}/llvm-mingw-{tag}-ucrt-{arch}.zip")
+}
+
+fn cmake_url() -> String {
+    let repo = metadata::cmake::REPO;
+    let version = metadata::cmake::VERSION;
+    let arch = if_arm!("arm64", else "x86_64");
+    format!("{repo}/releases/download/v{version}/cmake-{version}-windows-{arch}.zip")
+}
+
+fn ninja_url() -> String {
+    let repo = metadata::ninja::REPO;
+    let version = metadata::ninja::VERSION;
+    let arch = if_arm!("winarm64", else "win");
+    format!("{repo}/releases/download/v{version}/ninja-{arch}.zip")
+}
+
 pub fn install(ctx: &Context) -> cu::Result<()> {
     ctx.move_install_to_old_if_exists()?;
     let install_dir = ctx.install_dir();
 
     {
-        let bar = cu::progress("unpacking llvm-mingw")
+        let bar = cu::progress("unpacking llvm")
             .keep(true)
             .parent(ctx.bar())
             .spawn();
         let llvm_dir = install_dir.join("llvm");
-        let clang_zip = hmgr::paths::download("llvm-mingw.zip", llvm_url());
+        if llvm_dir.exists() {
+            cu::fs::rec_remove(&llvm_dir)?;
+        }
+        let clang_zip = hmgr::paths::download("llvm.txz", llvm_url());
+        opfs::unarchive(&clang_zip, &install_dir, true)?;
+        let dir_name = install_dir.join(llvm_release_name());
+        cu::check!(
+            std::fs::rename(dir_name, llvm_dir),
+            "failed to rename directory when unpacking llvm"
+        )?;
+        bar.done();
+    }
+    {
+        let bar = cu::progress("unpacking llvm-mingw")
+            .keep(true)
+            .parent(ctx.bar())
+            .spawn();
+        let llvm_dir = install_dir.join("llvm-mingw");
+        let clang_zip = hmgr::paths::download("llvm-mingw.zip", llvm_mingw_url());
         opfs::unarchive(&clang_zip, llvm_dir, true)?;
         bar.done();
     }
@@ -104,217 +190,249 @@ pub fn uninstall(_: &Context) -> cu::Result<()> {
 pub fn configure(ctx: &Context) -> cu::Result<()> {
     configure_cmake(ctx)?;
     configure_ninja(ctx)?;
+    let bar = cu::progress("linking toolchain executables")
+        .parent(ctx.bar())
+        .spawn();
     let install_dir = ctx.install_dir();
-    let llvm_dir = install_dir.join("llvm");
-    let bin_dir = llvm_dir.join("bin");
-    let bin_dir_str = bin_dir.as_utf8()?;
+    let llvm_msvc_dir = install_dir.join("llvm\\bin");
+    let llvm_mingw_dir = install_dir.join("llvm-mingw\\bin");
+    let llvm_msvc_dir_str = llvm_msvc_dir.as_utf8()?;
+    let llvm_mingw_dir_str = llvm_mingw_dir.as_utf8()?;
 
+    let config = ctx.load_config(CONFIG)?;
+
+    // these are all relative to install_dir
     let mut link_files = vec![];
-    let mut shim_files = vec![];
-    let mut shim_rename_files = vec![];
-    let mut bash_wrap_files = vec![];
-    let mut files = BTreeSet::new();
-    let mut will_install_files = BTreeSet::new();
-    // DLLs
-    for entry in cu::fs::read_dir(&bin_dir)? {
+    let mut shim_files_gnu = vec![];
+    let mut shim_files_msvc = vec![];
+    let mut shim_rename_files_gnu = vec![];
+    let shim_rename_files_msvc: Vec<(String, String)> = vec![];
+    let mut bash_wrap_files_gnu = vec![];
+    let mut bash_wrap_files_msvc = vec![];
+    let mut python_wrap_files_gnu = vec![];
+    let mut python_wrap_files_msvc = vec![];
+
+    // all file names (relative to install_dir)
+    let mut source_files = BTreeSet::new();
+    // "seen" names in <HOME>/bin, used to detect duplicates
+    let mut target_names = BTreeSet::new();
+
+    // collect all file names
+    for entry in cu::fs::read_dir(&llvm_msvc_dir)? {
         let entry = entry?;
         let file_name = entry.file_name().into_utf8()?;
-        if file_name.ends_with(".dll") {
-            if !file_name.starts_with("libpython") {
-                link_files.push(file_name.clone());
-                will_install_files.insert(file_name.clone());
-            }
+        let rel_file_name = format!("llvm\\bin\\{file_name}");
+        if file_name.ends_with(".exe")
+            && (file_name.starts_with("clang")
+                || file_name.starts_with("llvm")
+                || file_name.starts_with("lldb")
+                || file_name.contains("lld"))
+        {
+            shim_files_msvc.push(rel_file_name.clone());
+            target_names.insert(file_name);
         }
-        files.insert(file_name);
+        source_files.insert(rel_file_name);
+    }
+    for entry in cu::fs::read_dir(&llvm_mingw_dir)? {
+        let entry = entry?;
+        let file_name = entry.file_name().into_utf8()?;
+        source_files.insert(format!("llvm-mingw\\bin\\{file_name}"));
     }
 
-    for executable in [
-        "c++",
-        "c99",
-        "cc",
-        "gcc",
-        "g++",
-        "addr2line",
-        "ar",
-        "nm",
-        "objcopy",
-        "ranlib",
-        "readelf",
-        "size",
-        "strings",
-        "strip",
-        "clang",
-        "clang++",
-        "clang-format",
-        "clang-tidy",
-        "clangd",
-        "lldb",
-    ] {
-        let file_name = bin_name!(executable);
-        if !files.contains(&file_name) {
-            cu::bail!("cannot find {file_name} in llvm-mingw installation!");
+    // GNU CC + Binutils
+    for name in GNU_CC_BINUTILS_SHIM {
+        shim_files_gnu.push(format!("llvm-mingw\\bin\\{name}.exe"));
+        if !target_names.insert(format!("{name}.exe")) {
+            cu::bail!("duplicate target name: {name}");
         }
-        will_install_files.insert(file_name.clone());
-        shim_files.push(file_name);
     }
-    #[allow(clippy::single_element_loop)]
-    for (executable, rename) in [("mingw32-make", "make")] {
-        let file_name = bin_name!(executable);
-        if !files.contains(&file_name) {
-            cu::bail!("cannot find {file_name} in llvm-mingw installation!");
+    for (target, source) in GNU_CC_BINUTILS_SHIM_RENAME {
+        shim_rename_files_gnu.push((
+            format!("{target}.exe"),
+            format!("llvm-mingw\\bin\\{source}.exe"),
+        ));
+        if !target_names.insert(format!("{target}.exe")) {
+            cu::bail!("duplicate target name: {target}");
         }
-        will_install_files.insert(file_name.clone());
-        shim_files.push(file_name.clone());
-        shim_rename_files.push((file_name, bin_name!(rename)));
     }
-    for llvm_executable in [
-        "addr2line",
-        "ar",
-        "cov",
-        "cvtres",
-        "cxxfilt",
-        "dlltool",
-        "lib",
-        "ml",
-        "nm",
-        "objcopy",
-        "objdump",
-        "pdbutil",
-        "ranlib",
-        "rc",
-        "readelf",
-        "readobj",
-        "size",
-        "strings",
-        "symbolizer",
-        "windres",
-    ] {
-        let file_name = format!("llvm-{llvm_executable}.exe");
-        if !files.contains(&file_name) {
-            cu::bail!("cannot find {file_name} in llvm-mingw installation!");
+    for name in GNU_CC_BINUTILS_BASH_WRAP {
+        bash_wrap_files_gnu.push(format!("llvm-mingw\\bin\\{name}"));
+        if !target_names.insert(format!("{name}.exe")) {
+            cu::bail!("duplicate target name: {name}");
         }
-        will_install_files.insert(file_name.clone());
-        shim_files.push(file_name);
     }
-    for lldb_executable in ["argdumper", "dap", "instr", "server"] {
-        let file_name = format!("lldb-{lldb_executable}.exe");
-        if !files.contains(&file_name) {
-            cu::bail!("cannot find {file_name} in llvm-mingw installation!");
+    for name in CLANG_LLVM_SHIM {
+        shim_files_msvc.push(format!("llvm\\bin\\{name}.exe"));
+        if !target_names.insert(format!("{name}.exe")) {
+            cu::bail!("duplicate target name: {name}");
         }
-        will_install_files.insert(file_name.clone());
-        shim_files.push(file_name);
     }
-    for bash_executable in ["ld", "objdump"] {
-        if !files.contains(bash_executable) {
-            cu::bail!("cannot find {bash_executable} in llvm-mingw installation!");
+    for name in CLANG_LLVM_PYTHON_WRAP {
+        python_wrap_files_msvc.push(format!("llvm\\bin\\{name}"));
+        if !target_names.insert(format!("{name}.exe")) {
+            cu::bail!("duplicate target name: {name}");
         }
-        will_install_files.insert(bash_executable.to_owned());
-        bash_wrap_files.push(bash_executable.to_owned());
+    }
+    for name in CLANG_LLVM_LINK_DLL {
+        link_files.push(format!("llvm\\bin\\{name}.dll"));
+        if !target_names.insert(format!("{name}.dll")) {
+            cu::bail!("duplicate target name: {name}");
+        }
     }
 
-    todo!()
+    for name in &config.windows.gnu.extra_links {
+        link_files.push(format!("llvm-mingw\\bin\\{name}"));
+        if !target_names.insert(name.to_owned()) {
+            cu::bail!("duplicate target name: {name}");
+        }
+    }
+    for name in &config.windows.gnu.extra_shims {
+        shim_files_gnu.push(format!("llvm-mingw\\bin\\{name}"));
+        if !target_names.insert(name.to_owned()) {
+            cu::bail!("duplicate target name: {name}");
+        }
+    }
+    for name in &config.windows.gnu.extra_bash_wrapped {
+        bash_wrap_files_gnu.push(format!("llvm-mingw\\bin\\{name}"));
+        if !target_names.insert(name.to_owned()) {
+            cu::bail!("duplicate target name: {name}");
+        }
+    }
+    for name in &config.windows.gnu.extra_python_wrapped {
+        python_wrap_files_gnu.push(format!("llvm-mingw\\bin\\{name}"));
+        if !target_names.insert(name.to_owned()) {
+            cu::bail!("duplicate target name: {name}");
+        }
+    }
+    for name in &config.windows.msvc.extra_links {
+        link_files.push(format!("llvm\\bin\\{name}"));
+        if !target_names.insert(name.to_owned()) {
+            cu::bail!("duplicate target name: {name}");
+        }
+    }
+    for name in &config.windows.msvc.extra_shims {
+        shim_files_msvc.push(format!("llvm\\bin\\{name}"));
+        if !target_names.insert(name.to_owned()) {
+            cu::bail!("duplicate target name: {name}");
+        }
+    }
+    for name in &config.windows.msvc.extra_bash_wrapped {
+        bash_wrap_files_msvc.push(format!("llvm\\bin\\{name}"));
+        if !target_names.insert(name.to_owned()) {
+            cu::bail!("duplicate target name: {name}");
+        }
+    }
+    for name in &config.windows.msvc.extra_python_wrapped {
+        python_wrap_files_msvc.push(format!("llvm\\bin\\{name}"));
+        if !target_names.insert(name.to_owned()) {
+            cu::bail!("duplicate target name: {name}");
+        }
+    }
+    cu::info!("cctools will create {} binaries", target_names.len());
+    cu::debug!("cctools binaries: {target_names:?}");
 
-    // let config = ctx.load_config_file_or_default(include_str!("config.toml"))?;
-    // if let Some(link_extra_files) = config
-    //     .get("windows-link-extra-files")
-    //     .and_then(|x| x.as_array())
-    // {
-    //     for value in link_extra_files {
-    //         let Some(value) = value.as_str() else {
-    //             cu::warn!("ignoring bad file in windows-link-extra-files: {value} (not a string)");
-    //             continue;
-    //         };
-    //         if !files.contains(value) {
-    //             cu::warn!("ignoring non-existing file in windows-link-extra-files: {value}");
-    //             continue;
-    //         }
-    //         if will_install_files.contains(value) {
-    //             cu::warn!(
-    //                 "ignoring file in windows-link-extra-files that is already included: {value}"
-    //             );
-    //             continue;
-    //         }
-    //         will_install_files.insert(value.to_owned());
-    //         link_files.push(value.to_owned());
-    //     }
-    // }
-    // if let Some(shim_extra_files) = config
-    //     .get("windows-shim-extra-files")
-    //     .and_then(|x| x.as_array())
-    // {
-    //     for value in shim_extra_files {
-    //         let Some(value) = value.as_str() else {
-    //             cu::warn!("ignoring bad file in windows-shim-extra-files: {value} (not a string)");
-    //             continue;
-    //         };
-    //         if !files.contains(value) {
-    //             cu::warn!("ignoring non-existing file in windows-shim-extra-files: {value}");
-    //             continue;
-    //         }
-    //         if will_install_files.contains(value) {
-    //             cu::warn!(
-    //                 "ignoring file in windows-shim-extra-files that is already included: {value}"
-    //             );
-    //             continue;
-    //         }
-    //         will_install_files.insert(value.to_owned());
-    //         shim_files.push(value.to_owned());
-    //     }
-    // }
-    // if let Some(bash_wrap_extra_files) = config
-    //     .get("windows-bash-wrap-extra-files")
-    //     .and_then(|x| x.as_array())
-    // {
-    //     for value in bash_wrap_extra_files {
-    //         let Some(value) = value.as_str() else {
-    //             cu::warn!(
-    //                 "ignoring bad file in windows-bash-wrap-extra-files: {value} (not a string)"
-    //             );
-    //             continue;
-    //         };
-    //         if !files.contains(value) {
-    //             cu::warn!("ignoring non-existing file in windows-bash-wrap-extra-files: {value}");
-    //             continue;
-    //         }
-    //         if will_install_files.contains(value) {
-    //             cu::warn!(
-    //                 "ignoring file in windows-bash-wrap-extra-files that is already included: {value}"
-    //             );
-    //             continue;
-    //         }
-    //         will_install_files.insert(value.to_owned());
-    //         bash_wrap_files.push(value.to_owned());
-    //     }
-    // }
+    fn unwrap_file(s: &str) -> cu::Result<&str> {
+        if let Some(s) = s.strip_prefix("llvm\\bin\\") {
+            return Ok(s);
+        }
+        if let Some(s) = s.strip_prefix("llvm-mingw\\bin\\") {
+            return Ok(s);
+        }
+        cu::bail!("unexpected file not in llvm or llvm-mingw: {s}");
+    }
 
-    // for file in link_files {
-    //     let to = bin_dir.join(&file).into_utf8()?;
-    //     let from = hmgr::paths::binary(file).into_utf8()?;
-    //     ctx.add_item(Item::link_bin(from, to))?;
-    // }
-    // for file in shim_files {
-    //     let to = bin_dir.join(&file).into_utf8()?;
-    //     ctx.add_item(Item::shim_bin(
-    //         file,
-    //         ShimCommand::target_paths(to, [bin_dir_str]),
-    //     ))?;
-    // }
-    // for (file, rename) in shim_rename_files {
-    //     let to = bin_dir.join(&file).into_utf8()?;
-    //     ctx.add_item(Item::shim_bin(
-    //         rename,
-    //         ShimCommand::target_paths(to, [bin_dir_str]),
-    //     ))?;
-    // }
-    // for file in bash_wrap_files {
-    //     let to = bin_dir.join(&file).into_utf8()?;
-    //     ctx.add_item(Item::shim_bin(
-    //         bin_name!(file),
-    //         ShimCommand::target_bash_paths(to, [bin_dir_str]),
-    //     ))?;
-    // }
-    //
-    // Ok(())
+    for file in link_files {
+        if !source_files.contains(&file) {
+            cu::bail!("link file not found in installation: {file}");
+        }
+        let to = install_dir.join(&file).into_utf8()?;
+        let from = hmgr::paths::binary(unwrap_file(&file)?).into_utf8()?;
+        ctx.add_item(Item::link_bin(from, to))?;
+    }
+    for file in shim_files_gnu {
+        if !source_files.contains(&file) {
+            cu::bail!("link file not found in installation: {file}");
+        }
+        let to = install_dir.join(&file).into_utf8()?;
+        let file = unwrap_file(&file)?;
+        cu::ensure!(file.ends_with(".exe"), "{file:?}")?;
+        ctx.add_item(Item::shim_bin(
+            file,
+            ShimCommand::target(to).paths([llvm_mingw_dir_str]),
+        ))?;
+    }
+    for file in shim_files_msvc {
+        if !source_files.contains(&file) {
+            cu::bail!("link file not found in installation: {file}");
+        }
+        let to = install_dir.join(&file).into_utf8()?;
+        let file = unwrap_file(&file)?;
+        cu::ensure!(file.ends_with(".exe"), "{file:?}")?;
+        ctx.add_item(Item::shim_bin(
+            file,
+            ShimCommand::target(to).paths([llvm_msvc_dir_str]),
+        ))?;
+    }
+    for (target, source) in shim_rename_files_gnu {
+        let to = install_dir.join(&source).into_utf8()?;
+        cu::ensure!(target.ends_with(".exe"), "{target:?}")?;
+        ctx.add_item(Item::shim_bin(
+            target,
+            ShimCommand::target(to).paths([llvm_mingw_dir_str]),
+        ))?;
+    }
+    for (target, source) in shim_rename_files_msvc {
+        let to = install_dir.join(&source).into_utf8()?;
+        cu::ensure!(target.ends_with(".exe"), "{target:?}")?;
+        ctx.add_item(Item::shim_bin(
+            target,
+            ShimCommand::target(to).paths([llvm_msvc_dir_str]),
+        ))?;
+    }
+    for file in bash_wrap_files_gnu {
+        let to = install_dir.join(&file).into_utf8()?;
+        let file = unwrap_file(&file)?;
+        cu::ensure!(!file.ends_with(".exe"), "{file:?}")?;
+        ctx.add_item(Item::shim_bin(
+            bin_name!(file),
+            ShimCommand::target(to).paths([llvm_mingw_dir_str]).bash(),
+        ))?;
+    }
+    for file in bash_wrap_files_msvc {
+        let to = install_dir.join(&file).into_utf8()?;
+        let file = unwrap_file(&file)?;
+        cu::ensure!(!file.ends_with(".exe"), "{file:?}")?;
+        ctx.add_item(Item::shim_bin(
+            bin_name!(file),
+            ShimCommand::target(to).paths([llvm_msvc_dir_str]).bash(),
+        ))?;
+    }
+    for file in python_wrap_files_gnu {
+        let to = install_dir.join(&file).into_utf8()?;
+        let file = unwrap_file(&file)?;
+        cu::ensure!(!file.ends_with(".exe"), "{file:?}")?;
+        ctx.add_item(Item::shim_bin(
+            bin_name!(file),
+            ShimCommand::target("python")
+                .args([to])
+                .paths([llvm_mingw_dir_str]),
+        ))?;
+    }
+    for file in python_wrap_files_msvc {
+        let to = install_dir.join(&file).into_utf8()?;
+        let file = unwrap_file(&file)?;
+        cu::ensure!(!file.ends_with(".exe"), "{file:?}")?;
+        ctx.add_item(Item::shim_bin(
+            bin_name!(file),
+            ShimCommand::target("python")
+                .args([to])
+                .paths([llvm_msvc_dir_str]),
+        ))?;
+    }
+
+    bar.done();
+
+    Ok(())
 }
 
 fn configure_cmake(ctx: &Context) -> cu::Result<()> {
@@ -343,36 +461,6 @@ pub fn config_location(ctx: &Context) -> cu::Result<Option<PathBuf>> {
     Ok(Some(ctx.config_file()))
 }
 
-fn llvm_url() -> String {
-    let repo = metadata::clang::REPO;
-    let version = metadata::clang::LLVM_VERSION;
-    let arch = if_arm!("aarch64", else "x86_64");
-    format!(
-        "{repo}/releases/download/llvmorg-{version}/clang+llvm-{version}-{arch}-pc-windows-msvc.tar.xz"
-    )
-}
-
-fn llvm_mingw_url() -> String {
-    let repo = metadata::llvm_mingw::REPO;
-    let tag = metadata::llvm_mingw::TAG;
-    let arch = if_arm!("aarch64", else "x86_64");
-    format!("{repo}/releases/download/{tag}/llvm-mingw-{tag}-ucrt-{arch}.zip")
-}
-
-fn cmake_url() -> String {
-    let repo = metadata::cmake::REPO;
-    let version = metadata::cmake::VERSION;
-    let arch = if_arm!("arm64", else "x86_64");
-    format!("{repo}/releases/download/v{version}/cmake-{version}-windows-{arch}.zip")
-}
-
-fn ninja_url() -> String {
-    let repo = metadata::ninja::REPO;
-    let version = metadata::ninja::VERSION;
-    let arch = if_arm!("winarm64", else "win");
-    format!("{repo}/releases/download/v{version}/ninja-{arch}.zip")
-}
-
 static CONFIG: ConfigDef<Config> = ConfigDef::new(include_str!("config.toml"), &[]);
 test_config!(CONFIG);
 
@@ -385,24 +473,8 @@ struct Config {
 #[derive(Deserialize)]
 #[serde(rename_all = "kebab-case")]
 struct ConfigWindows {
-    pub llvm_target: LlvmTargetOption,
-    pub libclang: LibClangOption,
     pub gnu: ExtraFileOptions,
     pub msvc: ExtraFileOptions,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "lowercase")]
-enum LlvmTargetOption {
-    MSVC,
-    GNU,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "lowercase")]
-enum LibClangOption {
-    MSVC,
-    Always,
 }
 
 #[derive(Deserialize)]

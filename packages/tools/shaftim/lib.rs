@@ -1,14 +1,48 @@
 use std::ffi::{OsStr, OsString};
-use std::path::Path;
 use std::process::Command;
+
 
 /// Get the executable name as bytes
 #[inline(always)]
-pub fn exe_name(s: &OsStr) -> &[u8] {
-    match Path::new(s).file_name() {
-        Some(name) => name.as_encoded_bytes(),
-        None => &[],
+pub fn fix_exe_name(s: &OsStr, out: &mut [u8]) -> usize {
+    // we assume and process it as ascii. if it's not ascii,
+    // it's likely an invalid executable anyway
+    let bytes = s.as_encoded_bytes();
+    #[inline(always)]
+    #[cfg(windows)]
+    fn match_path_sep(b: &u8) -> bool {
+        matches!(*b, b'/' | b'\\')
     }
+    #[inline(always)]
+    #[cfg(not(windows))]
+    fn match_path_sep(b: &u8) -> bool {
+        *b == '/'
+    }
+    let bytes = match bytes.iter().rposition(match_path_sep) {
+        None => bytes,
+        Some(i) => &bytes[i+1..]
+    };
+    if bytes.is_empty() {
+        return 0;
+    }
+    if bytes[0] == b'.' {
+        return 0;
+    }
+    let bytes = match bytes.iter().rposition(|b|*b==b'.') {
+        None => bytes,
+        Some(i) => {
+            match &bytes[i+1..] {
+                [b'e'|b'E', b'x'|b'X', b'e'|b'E'] => &bytes[..i],
+                [b'c'|b'C', b'm'|b'M', b'd'|b'D'] => &bytes[..i],
+                _ => bytes
+            }
+        }
+    };
+    let len = bytes.len().min(out.len());
+    for (src, dst) in std::iter::zip(bytes, out) {
+        *dst = (*src as char).to_ascii_lowercase() as u8;
+    }
+    len
 }
 
 /// Prepend to the PATH
