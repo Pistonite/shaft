@@ -9,9 +9,7 @@ pub fn check(expected_version: &str) -> cu::Result<Verified> {
         let Some(version) = parts.next() else {
             break;
         };
-        if Version(version).lt(expected_version) {
-            return Ok(Verified::NotUpToDate);
-        }
+        check_outdated!(version, expected_version);
         return Ok(Verified::UpToDate);
     }
     cu::warn!("failed to parse current version for '7z'");

@@ -7,6 +7,7 @@ mod version;
 pub use version::*;
 mod download;
 pub use download::*;
+pub mod config;
 pub mod tools;
 
 mod item;

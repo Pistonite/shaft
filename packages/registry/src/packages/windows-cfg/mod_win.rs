@@ -1,7 +1,12 @@
 //! Configuration documentation for Windows OS
 
 use crate::pre::*;
-pub fn verify(_: &Context) -> cu::Result<Verified> {
+pub fn verify(ctx: &Context) -> cu::Result<Verified> {
+    if !ctx.is_installed(PkgId::WindowsCfg) {
+        cu::hint!(
+            "windows-cfg is a pseudo package for documenting Windows configuration, use `shaft config windows-cfg` to read"
+        );
+    }
     Ok(Verified::UpToDate)
 }
 

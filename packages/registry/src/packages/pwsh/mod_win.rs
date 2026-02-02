@@ -72,17 +72,8 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     child.wait_nz()?;
     let ps7_profile_path = Path::new(stdout.join()??.trim()).normalize()?;
     let mut edit_profile_path = ps7_profile_path.clone();
-    let config = ctx.load_config_file_or_default(include_str!("config.toml"))?;
-    if let Some(toml::Value::String(ps5_profile)) = config.get("use-ps5-profile") {
-        if !matches!(
-            ps5_profile.as_str(),
-            "AllUsersAllHosts"
-                | "AllUsersCurrentHost"
-                | "CurrentUserAllHosts"
-                | "CurrentUserCurrentHost"
-        ) {
-            cu::bail!("invalid powershell profile name: {ps5_profile}");
-        }
+    let config = ctx.load_config(CONFIG)?;
+    if let Some(ps5_profile) = config.use_ps5_profile {
         // get ps5 profile location
         let (child, stdout) = cu::which("powershell.exe")?
             .command()
@@ -131,4 +122,33 @@ fn download_url() -> String {
     let arch = if_arm!("arm64", else "x64");
     let version = metadata::pwsh::VERSION;
     format!("{repo}/releases/download/v{version}/PowerShell-{version}-win-{arch}.zip")
+}
+
+static CONFIG: ConfigDef<Config> = ConfigDef::new(include_str!("config.toml"), &[]);
+test_config!(CONFIG);
+
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
+struct Config {
+    pub use_ps5_profile: Option<ProfileName>,
+}
+#[derive(Deserialize, Debug, Display)]
+#[display("{self:?}")]
+enum ProfileName {
+    AllUsersAllHosts,
+    AllUsersCurrentHost,
+    CurrentUserAllHosts,
+    CurrentUserCurrentHost,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_profile_name() {
+        assert_eq!(
+            ProfileName::AllUsersCurrentHost.to_string(),
+            "AllUsersCurrentHost"
+        );
+    }
 }

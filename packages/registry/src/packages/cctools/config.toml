@@ -1,67 +1,296 @@
-# List of executables that have parity
-# Linux GNU            Windows LLVM
-# -------------------------------------------------
-# gcc:            llvm-mingw:
-#   c++             c++.exe
-#   c99             c99.exe
-#   cc              cc.exe
-#   gcc             gcc.exe
-#   g++             g++.exe
-# binutils:
-#   addr2line       addr2line.exe
-#   ar              ar.exe 
-#   c++filt         llvm-cxxfilt.exe -> c++filt
-#   ld              *bash -c /.../ld
-#   nm              nm.exe
-#   objcopy         objcopy.exe
-#   objdump         *bash -c /.../objdump
-#   ranlib          ranlib.exe
-#   readelf         readelf.exe
-#   size            size.exe
-#   strings         strings.exe
-#   strip           strip.exe
-# clang:
-#   clang           clang.exe
-#   clang++         clang++.exe
-#   clang-format    clang-format.exe
-#   clang-tidy      clang-tidy.exe
-#   clangd          clangd.exe
-# llvm:
-#   llvm-addr2line  llvm-addr2line.exe
-#   llvm-ar         llvm-ar.exe
-#   llvm-cov        llvm-cov.exe
-#   llvm-cvtres     llvm-cvtres.exe
-#   llvm-cxxfilt    llvm-cxxfilt.exe
-#   llvm-dlltool    llvm-dlltool.exe
-#   llvm-lib        llvm-lib.exe
-#   llvm-ml         llvm-ml.exe
-#   llvm-nm         llvm-nm.exe
-#   llvm-objcopy    llvm-objcopy.exe
-#   llvm-objdump    llvm-objdump.exe
-#   llvm-pdbutil    llvm-pdbutil.exe
-#   llvm-profdata   llvm-profdata.exe
-#   llvm-randlib    llvm-ranlib.exe
-#   llvm-rc         llvm-rc.exe
-#   llvm-readelf    llvm.readelf.exe
-#   llvm-readobj    llvm-readobj.exe
-#   llvm-size       llvm-size.exe
-#   llvm-strings    llvm-strings.exe
-#   llvm-strip      llvm-strip.exe
-#   llvm-symbolizer llvm-symbolizer.exe
-#   llvm-windres    llvm-windres.exe
-# lldb
-#   lldb            lldb.exe
-#   lldb-argdumper  lldb-argdumper.exe
-#   lldb-dap        lldb-dap.exe
-#   lldb-instr      lldb-instr.exe
-#   lldb-server     lldb-server.exe
-# make:
-#   make            ming32-make.exe -> make.exe
-#
-# All dlls except libpython*.dll on Windows will be linked to PATH
-# If additional files should be linked on Windows (from <llvm_install>/bin),
-# add custom ones below
-windows-link-extra-files = [] # make hard links
-windows-shim-extra-files = [] # make a shim bin that calls the executable (if it depends on DLL in the install dir that's not in PATH)
-windows-bash-wrap-extra-files = [] # make a bash wrapper script that calls the executable
+[[sections]]
+comment = """
+List of GNU executables that have parity
+Linux GNU       Windows LLVM-minGW
+-------------------------------------------------
+gcc:            llvm-mingw:
+  c++             c++.exe
+  c99             c99.exe
+  cc              cc.exe
+  gcc             gcc.exe
+  g++             g++.exe
+binutils:
+  addr2line       addr2line.exe
+  ar              ar.exe 
+  c++filt         *links to llvm-cxxfilt.exe (from LLVM-minGW)
+  ld              *bash-wrapped ld
+  nm              nm.exe
+  objcopy         objcopy.exe
+  objdump         *bash-wrapped objdump
+  ranlib          ranlib.exe
+  readelf         readelf.exe
+  size            size.exe
+  strings         strings.exe
+  strip           strip.exe
+make:
+  make            *links to mingw32-make.exe
 
+List of CLANG/LLVM executables that are both on Linux and Windows
+-------------------------------------------------
+L means this is only in Linux
+! means this is in both Linux and Windows, but will not be made
+  in PATH in Windows
+  Of course, the Windows executable will have an extra .exe extension
+W means only on Windows
+-------------------------------------------------
+clang:
+  amdgpu-arch
+  analyze-build             (Windows: python-wrapped)
+  c-index-test
+  clang
+  clang++
+L clang-21
+  clang-apply-replacements
+  clang-change-namespace
+  clang-check
+  clang-cl
+  clang-cpp
+  clang-doc
+  clang-extdef-mapping
+  clang-format
+  clang-include-cleaner
+  clang-include-fixer
+  clang-installapi
+  clang-linker-wrapper
+  clang-move
+  clang-nvlink-wrapper
+  clang-offload-bundler
+  clang-offload-packager
+  clang-query
+  clang-refactor
+  clang-reorder-fields
+  clang-repl
+  clang-scan-deps
+  clang-sycl-linker
+W clang-tblgen.exe
+  clang-tidy
+  clangd
+  diagtool
+  find-all-symbols
+  git-clang-format           (Windows: python-wrapped)
+  hmaptool                   (Windows: python-wrapped)
+  intercept-build            (Windows: python-wrapped)
+  modularize
+  nvptx-arch
+  offload-arch
+  pp-trace
+  run-clang-tidy             (Windows: python-wrapped)
+! scan-build
+! scan-build-py
+! scan-view
+llvm:
+  bugpoint
+L count
+  dsymutil
+  lit
+L llc
+W lld.exe
+L lli
+L lli-child-target
+  llvm-addr2line
+  llvm-ar
+  llvm-as
+  llvm-bcanalyzer
+  llvm-bitcode-strip
+  llvm-c-test
+  llvm-cat
+  llvm-cfi-verify
+  llvm-cgdata
+  llvm-config
+  llvm-cov
+  llvm-ctxprof-util
+  llvm-cvtres
+  llvm-cxxdump
+  llvm-cxxfilt
+  llvm-cxxmap
+  llvm-debuginfo-analyzer
+  llvm-debuginfod
+  llvm-debuginfod-find
+  llvm-diff
+  llvm-dis
+  llvm-dlltool
+  llvm-dwarfdump
+  llvm-dwarfutil
+  llvm-dwp
+W llvm-exegesis
+  llvm-extract
+  llvm-gsymutil
+  llvm-ifs
+  llvm-install-name-tool
+  llvm-jitlink
+  llvm-jitlink-executor
+  llvm-lib
+  llvm-libtool-darwin
+  llvm-link
+  llvm-lipo
+  llvm-lto
+  llvm-lto2
+  llvm-mc
+  llvm-mca
+  llvm-ml
+  llvm-ml64
+  llvm-modextract
+  llvm-mt
+  llvm-nm
+  llvm-objcopy
+  llvm-objdump
+  llvm-opt-report
+  llvm-otool
+  llvm-pdbutil
+  llvm-profdata
+  llvm-profgen
+  llvm-ranlib
+  llvm-rc
+  llvm-readelf
+  llvm-readobj
+  llvm-readtapi
+  llvm-reduce
+  llvm-remarkutil
+  llvm-rtdyld
+  llvm-sim
+  llvm-size
+  llvm-split
+  llvm-stress
+  llvm-strings
+  llvm-strip
+  llvm-symbolizer
+  llvm-tblgen
+L llvm-test-mustache-spec
+  llvm-tli-checker
+  llvm-undname
+  llvm-windres
+  llvm-xray
+L not
+L obj2yaml
+  opt
+  reduce-chunk-list
+  sancov
+  sanstats
+L split-file
+  verify-uselistorder
+L yaml-bench
+L yaml2obj
+W wasm-ld.exe
+lldb:
+  lldb
+  lldb-argdumper
+  lldb-dap
+  lldb-instr
+  lldb-server
+
+"""
+
+[[sections]]
+comment = "Windows-specific configuration"
+key = ["windows"]
+children = [
+    {
+        comment = """
+LLVM toolchain selection. Valid values are: "msvc" or "gnu"
+msvc: Official clang+llvm release targeting msvc.
+      - This has all llvm-* executables
+      - This has libclang.dll
+gnu:  LLVM-minGW
+      - This only has some llvm-* executables
+      - Does not have libclang.dll
+
+When "msvc", the GNU compilers and binutils (i.e. g++/objdump) are still
+available as provided by LLVM-minGW, but the llvm-* executables will
+be provided by official clang+llvm release.
+""",
+        key = ["llvm-target"],
+        value = "msvc",
+    },
+    {
+        comment = """
+Whether libclang.dll should be made available to PATH.
+Valid values are: "msvc" or "always", the later will always link it even when using LLVM-minGW
+""",
+        key = ["libclang"],
+        value = "msvc",
+    },
+    {
+        comment = """
+Extra files in LLVM-minGW/bin to make available in PATH.
+This has effect regardless of llvm-target.
+However, it cannot conflict with whatever is already available based on other configs
+""",
+        key = ["gnu", "extra-links"],
+        value = [],
+    },
+    {
+        comment = """
+Extra files in LLVM-minGW/bin to make available in PATH as a shim executable.
+The shim executable will prepend LLVM-minGW/bin to PATH, so that nested invocations
+will not go through the shim.
+This has effect regardless of llvm-target.
+However, it cannot conflict with whatever is already available based on other configs
+""",
+        key = ["gnu", "extra-shims"],
+        value = [],
+    },
+    {
+        comment = """
+Extra files in LLVM-minGW/bin to make available in PATH as a bash-wrapped executable
+The shim executable will prepend LLVM-minGW/bin to PATH, so that nested invocations
+will not go through the shim.
+This has effect regardless of llvm-target.
+However, it cannot conflict with whatever is already available based on other configs
+""",
+        key = ["gnu", "extra-bash-wrapped"],
+        value = [],
+    },
+    {
+        comment = """
+Extra files in LLVM-minGW/bin to make available in PATH as a python-wrapped executable
+The shim executable will prepend LLVM-minGW/bin to PATH, so that nested invocations
+will not go through the shim.
+This has effect regardless of llvm-target.
+However, it cannot conflict with whatever is already available based on other configs
+""",
+        key = ["gnu", "extra-python-wrapped"],
+        value = [],
+    },
+    {
+        comment = """
+Extra files in clang-LLVM/bin to make available in PATH.
+This has effect regardless of llvm-target.
+However, it cannot conflict with whatever is already available based on other configs
+""",
+        key = ["msvc", "extra-links"],
+        value = [],
+    },
+    {
+        comment = """
+Extra files in clang-LLVM/bin to make available in PATH as a shim executable.
+The shim executable will prepend LLVM-minGW/bin to PATH, so that nested invocations
+will not go through the shim.
+This has effect regardless of llvm-target.
+However, it cannot conflict with whatever is already available based on other configs
+""",
+        key = ["msvc", "extra-shims"],
+        value = [],
+    },
+    {
+        comment = """
+Extra files in clang-LLVM/bin to make available in PATH as a bash-wrapped executable
+The shim executable will prepend LLVM-minGW/bin to PATH, so that nested invocations
+will not go through the shim.
+This has effect regardless of llvm-target.
+However, it cannot conflict with whatever is already available based on other configs
+""",
+        key = ["msvc", "extra-bash-wrapped"],
+        value = [],
+    },
+    {
+        comment = """
+Extra files in clang-LLVM/bin to make available in PATH as a python-wrapped executable
+The shim executable will prepend LLVM-minGW/bin to PATH, so that nested invocations
+will not go through the shim.
+This has effect regardless of llvm-target.
+However, it cannot conflict with whatever is already available based on other configs
+""",
+        key = ["msvc", "extra-python-wrapped"],
+        value = [],
+    },
+]

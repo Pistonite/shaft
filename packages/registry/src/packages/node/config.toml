@@ -1,5 +1,11 @@
-# The default versions to install when syncing
-# (empty string = not specified = latest/default)
-node-version = ""
-yarn-version = ""
-pnpm-version = ""
+[[section]]
+key = ["default-version"]
+comment = """
+The default versions to install when syncing
+empty string = not specifed = latest/default
+"""
+children = [
+    { key = "node", value = "" },
+    { key = "yarn", value = "" },
+    { key = "pnpm", value = "" },
+]

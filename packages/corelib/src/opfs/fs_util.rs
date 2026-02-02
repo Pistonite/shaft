@@ -8,6 +8,7 @@ use cu::pre::*;
 use flate2::read::GzDecoder;
 use sha2::{Digest, Sha256};
 use tar::Archive as TarArchive;
+use xz2::bufread::XzDecoder;
 use zip::ZipArchive;
 
 #[cfg(windows)]
@@ -176,6 +177,12 @@ pub fn unarchive(
     unarchive_impl(archive_path.as_ref(), out_dir.as_ref(), clean)
 }
 fn unarchive_impl(archive_path: &Path, out_dir: &Path, clean: bool) -> cu::Result<()> {
+    cu::trace!(
+        "extracting '{}' to '{}', clean={}",
+        archive_path.display(),
+        out_dir.display(),
+        clean
+    );
     let ext = cu::check!(
         archive_path.extension(),
         "missing archive extension: '{}'",
@@ -186,23 +193,33 @@ fn unarchive_impl(archive_path: &Path, out_dir: &Path, clean: bool) -> cu::Resul
     enum Format {
         Tar,
         TarGz,
+        TarXz,
         Zip,
+    }
+    fn is_second_extension_tar(path: &Path) -> bool {
+        let mut path = path.to_path_buf();
+        path.set_extension("");
+        let Some(ext) = path.extension() else {
+            return false;
+        };
+        let ext = ext.to_ascii_lowercase();
+        ext == "tar"
     }
     let format = match ext.as_bytes() {
         b"gz" => {
-            let mut path = archive_path.to_path_buf();
-            path.set_extension("");
-            let ext = cu::check!(
-                archive_path.extension(),
-                "only .tar.gz is supported with .gz files"
-            )?;
-            let ext = ext.to_ascii_lowercase();
-            if ext != "tar" {
+            if !is_second_extension_tar(archive_path) {
                 cu::bail!("only .tar.gz is supported for .gz files");
             }
             Format::TarGz
         }
+        b"xz" => {
+            if !is_second_extension_tar(archive_path) {
+                cu::bail!("only .tar.xz is supported for .xz files");
+            }
+            Format::TarXz
+        }
         b"tgz" => Format::TarGz,
+        b"txz" => Format::TarXz,
         b"tar" => Format::Tar,
         b"zip" => Format::Zip,
         _ => {
@@ -214,10 +231,15 @@ fn unarchive_impl(archive_path: &Path, out_dir: &Path, clean: bool) -> cu::Resul
         Format::TarGz => {
             untargz_bytes(&archive_bytes, out_dir, clean)?;
         }
+        Format::TarXz => {
+            untarxz_bytes(&archive_bytes, out_dir, clean)?;
+        }
         Format::Tar => {
             untar_bytes(&archive_bytes, out_dir, clean)?;
         }
-        Format::Zip => {}
+        Format::Zip => {
+            unzip_bytes(&archive_bytes, out_dir, clean)?;
+        }
     }
     Ok(())
 }
@@ -228,6 +250,16 @@ pub fn untargz_bytes(archive_bytes: &[u8], out_dir: &Path, clean: bool) -> cu::R
         cu::fs::make_dir_empty(out_dir)?;
     }
     let mut archive = TarArchive::new(GzDecoder::new(archive_bytes));
+    archive.unpack(out_dir)?;
+    Ok(())
+}
+
+#[cu::context("failed to unpack tarxz bytes")]
+pub fn untarxz_bytes(archive_bytes: &[u8], out_dir: &Path, clean: bool) -> cu::Result<()> {
+    if clean {
+        cu::fs::make_dir_empty(out_dir)?;
+    }
+    let mut archive = TarArchive::new(XzDecoder::new(archive_bytes));
     archive.unpack(out_dir)?;
     Ok(())
 }

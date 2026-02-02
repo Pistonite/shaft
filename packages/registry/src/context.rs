@@ -2,6 +2,7 @@ use std::cell::{RefCell, RefMut};
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use corelib::hmgr::config::ConfigDef;
 use corelib::hmgr::{self, Item, ItemMgr};
 use cu::pre::*;
 use enumset::EnumSet;
@@ -62,19 +63,12 @@ impl Context {
     pub fn temp_dir(&self) -> PathBuf {
         hmgr::paths::temp_dir(self.pkg_name())
     }
-    pub fn load_config_file_or_default(&self, default_config: &str) -> cu::Result<toml::Table> {
-        let config_file = self.config_file();
-        let Ok(config) = cu::fs::read_string(&config_file) else {
-            cu::fs::write(&config_file, default_config)?;
-            let default = toml::parse(default_config)?;
-            return Ok(default);
-        };
-        let config = cu::check!(
-            toml::parse(&config),
-            "failed to parse config file for '{}'",
+    pub fn load_config<T: for<'de> Deserialize<'de>>(&self, def: ConfigDef<T>) -> cu::Result<T> {
+        cu::check!(
+            def.load(self.config_file()),
+            "failed to load config file for package '{}'",
             self.pkg
-        )?;
-        Ok(config)
+        )
     }
     pub fn config_file(&self) -> PathBuf {
         hmgr::paths::config_file(self.pkg_name())

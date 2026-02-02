@@ -115,13 +115,19 @@ ALIAS_VERSION = "1"
 VERSION = "0.9.28"
 
 [clang]
-# mingw only, using packages on non-Windows
+REPO = "https://github.com/llvm/llvm-project"
+'cfg(all(windows,target_arch="aarch64"))'.SHA = "f214b1226d8de005b5f691dd29d9dfea2b49e22d0de445429916173dbb626f7f"
+'cfg(all(windows,target_arch="x86_64"))'.SHA = "749d22f565fcd5718dbed06512572d0e5353b502c03fe1f7f17ee8b8aca21a47"
+'cfg(windows)'.LLVM_VERSION = "21.1.8"
+'cfg(target_os="linux")'.LLVM_VERSION = "21.1.6"
+
+[llvm_mingw]
 REPO = "https://github.com/mstorsjo/llvm-mingw"
 TAG = "20251216"
 'cfg(all(windows,target_arch="aarch64"))'.SHA = "60c06bd255feb2ef1eb6fce7ee6b307d8f78ee6639660f49861c7c10a8a86164"
 'cfg(all(windows,target_arch="x86_64"))'.SHA = "2d96a4b758f7f8deaec5065833fe025aa53cfc5f704d0524002510984da0ccf4"
 'cfg(windows)'.LLVM_VERSION = "21.1.8"
-'cfg(target_os="linux")'.LLVM_VERSION = "21.1.6"
+
 
 [cmake]
 # this is official
@@ -130,3 +136,10 @@ REPO = "https://github.com/Kitware/CMake"
 'cfg(target_os="linux")'.VERSION = "4.2.3"
 'cfg(all(windows,target_arch="aarch64"))'.SHA = "751b206b1cf65151b72c525d26267c1d9beebf8fafc365ae00286571d9fd3ed9"
 'cfg(all(windows,target_arch="x86_64"))'.SHA = "eb4ebf5155dbb05436d675706b2a08189430df58904257ae5e91bcba4c86933c"
+
+[ninja]
+REPO = "https://github.com/ninja-build/ninja"
+'cfg(windows)'.VERSION = "1.13.2"
+'cfg(target_os="linux")'.VERSION = "1.13.2"
+'cfg(all(windows,target_arch="aarch64"))'.SHA = "e52f0bdef9dfb1003229dbd6508a508c4073fd017247002adc66e5e806cb0391"
+'cfg(all(windows,target_arch="x86_64"))'.SHA = "07fc8261b42b20e71d1720b39068c2e14ffcee6396b76fb7a795fb460b78dc65"

@@ -14,7 +14,7 @@ impl Version<'_> {
     /// Return true if self is less than other, or self is not comparable with other
     #[inline(always)]
     pub fn lt(&self, other: impl AsRef<str>) -> bool {
-        !matches!(self.compare(other), Some(Ordering::Less) | None)
+        matches!(self.compare(other), Some(Ordering::Less) | None)
     }
     /// Compare 2 versions
     #[inline(always)]

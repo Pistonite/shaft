@@ -30,13 +30,12 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
         "tar.exe is bundled in Windows; your Windows version might be too low"
     )?;
     let which_info = check_installed_with_cargo!("which");
-    if Version(&which_info.version).lt(metadata::shellutils::which::VERSION) {
-        return Ok(Verified::NotUpToDate);
-    }
+    check_outdated!(&which_info.version, metadata::shellutils::which::VERSION);
     let coreutils_info = check_installed_with_cargo!("coreutils");
-    if Version(&coreutils_info.version).lt(metadata::coreutils::uutils::VERSION) {
-        return Ok(Verified::NotUpToDate);
-    }
+    check_outdated!(
+        &coreutils_info.version,
+        metadata::coreutils::uutils::VERSION
+    );
     Ok(Verified::is_uptodate(common::ALIAS_VERSION.is_uptodate()?))
 }
 

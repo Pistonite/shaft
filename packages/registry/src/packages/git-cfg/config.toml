@@ -1,9 +1,21 @@
-# Whether to set core.editor to 'viopen', which picks editor automatically based on what's installed
-editor = true
+[[section]]
+comment = """
+Whether to set core.editor to 'viopen', which picks editor automatically based on what's installed
+"""
+key = []
+children = [{ key = ["editor"], value = true }]
 
-# Only affects Windows, setting core.autocrlf to 'true'
-# On other platforms, or when `false`, core.autocrlf will be set to false
-autocrlf = true
+[[section]]
+comment = """
+Only affects Windows, setting core.autocrlf to 'true'
+On other platforms, or when `false`, core.autocrlf will be set to false
+"""
+key = []
+children = [{ key = ["autocrlf"], value = true }]
 
-# Configure git to use delta as diff
-delta = true
+[[section]]
+comment = """
+Configure git to use delta as diff (delta is still installed even when set to false)
+"""
+key = []
+children = [{ key = ["delta"], value = true }]

@@ -78,13 +78,11 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         volta_home.join(bin_name!("volta-shim")).into_utf8()?,
     ))?;
 
-    let config_file = ctx.load_config_file_or_default(include_str!("config.toml"))?;
+    let config = ctx.load_config(CONFIG)?;
+    let default_version = &config.default_version;
     {
         let mut package = "node".to_string();
-        let version = config_file
-            .get("node-version")
-            .and_then(|x| x.as_str())
-            .unwrap_or_default();
+        let version = &default_version.node;
         if !version.is_empty() {
             cu::warn!("node version is pinned to {version}");
             package.push('@');
@@ -102,10 +100,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     }
     {
         let mut package = "pnpm".to_string();
-        let version = config_file
-            .get("pnpm-version")
-            .and_then(|x| x.as_str())
-            .unwrap_or_default();
+        let version = &default_version.pnpm;
         if !version.is_empty() {
             cu::warn!("pnpm version is pinned to {version}");
             package.push('@');
@@ -123,10 +118,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     }
     {
         let mut package = "yarn".to_string();
-        let version = config_file
-            .get("yarn-version")
-            .and_then(|x| x.as_str())
-            .unwrap_or_default();
+        let version = &default_version.yarn;
         if !version.is_empty() {
             cu::warn!("yarn version is pinned to {version}");
             package.push('@');
@@ -189,4 +181,26 @@ fn volta_url() -> cu::Result<String> {
     };
     let repo = metadata::volta::REPO;
     Ok(format!("{repo}/releases/download/v{version}/{artifact}"))
+}
+
+static CONFIG: ConfigDef<Config> = ConfigDef::new(
+    include_str!("config.toml"),
+    &[include_str!("migrate_v0.js")],
+);
+test_config!(CONFIG);
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
+struct Config {
+    #[serde(default)]
+    pub default_version: ConfigDefaultVersion,
+}
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+struct ConfigDefaultVersion {
+    #[serde(default)]
+    pub node: String,
+    #[serde(default)]
+    pub pnpm: String,
+    #[serde(default)]
+    pub yarn: String,
 }

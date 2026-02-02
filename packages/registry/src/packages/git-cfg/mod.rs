@@ -12,9 +12,7 @@ pub fn binary_dependencies() -> EnumSet<BinId> {
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     let v = check_installed_with_cargo!("delta", "git-delta");
-    if Version(&v.version).lt(metadata::git::delta::VERSION) {
-        return Ok(Verified::NotUpToDate);
-    }
+    check_outdated!(&v.version, metadata::git::delta::VERSION);
     Ok(Verified::is_uptodate(VERSION.is_uptodate()?))
 }
 pub fn install(ctx: &Context) -> cu::Result<()> {
@@ -27,24 +25,13 @@ pub fn uninstall(_: &Context) -> cu::Result<()> {
 }
 
 pub fn configure(ctx: &Context) -> cu::Result<()> {
-    let config = ctx.load_config_file_or_default(include_str!("config.toml"))?;
-    let cfg_editor = config
-        .get("editor")
-        .and_then(|x| x.as_bool())
-        .unwrap_or(true);
+    let config = ctx.load_config(CONFIG)?;
     let cfg_autocrlf = if cfg!(windows) {
-        config
-            .get("autocrlf")
-            .and_then(|x| x.as_bool())
-            .unwrap_or(true)
+        config.autocrlf
     } else {
         false
     };
-    let cfg_delta = config
-        .get("delta")
-        .and_then(|x| x.as_bool())
-        .unwrap_or(true);
-    if cfg_editor {
+    if config.editor {
         command_output!("git", ["config", "--global", "core.editor", "viopen"]);
     } else {
         command_output!("git", ["config", "unset", "--global", "core.editor"]);
@@ -58,7 +45,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
             &cfg_autocrlf.to_string()
         ]
     );
-    if cfg_delta {
+    if config.delta {
         command_output!("git", ["config", "--global", "core.pager", "delta"]);
         command_output!(
             "git",
@@ -96,4 +83,19 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
 
 pub fn config_location(ctx: &Context) -> cu::Result<Option<PathBuf>> {
     Ok(Some(ctx.config_file()))
+}
+static CONFIG: ConfigDef<Config> = ConfigDef::new(include_str!("config.toml"), &[]);
+test_config!(CONFIG);
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
+struct Config {
+    #[serde(default = "default_true")]
+    pub editor: bool,
+    #[serde(default = "default_true")]
+    pub autocrlf: bool,
+    #[serde(default = "default_true")]
+    pub delta: bool,
+}
+fn default_true() -> bool {
+    true
 }

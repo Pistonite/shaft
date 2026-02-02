@@ -43,11 +43,12 @@ pub(crate) mod pre {
     #[allow(unused)]
     pub(crate) use crate::{
         BinId, Context, PkgId, Verified, check_bin_in_path, check_bin_in_path_and_shaft,
-        check_installed_with_cargo, metadata, register_binaries,
+        check_installed_with_cargo, check_outdated, metadata, register_binaries, test_config,
     };
     #[cfg(target_os = "linux")]
     pub(crate) use crate::{check_installed_pacman_package, check_installed_with_pacman};
     pub(crate) use corelib::hmgr::Item;
+    pub(crate) use corelib::hmgr::config::ConfigDef;
     #[allow(unused)]
     pub(crate) use corelib::{
         Version, VersionCache, bin_name, command_output, epkg, hmgr, if_arm, jsexe, opfs,

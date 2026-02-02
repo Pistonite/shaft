@@ -3,13 +3,16 @@ use crate::pre::*;
 pub fn verify(ctx: &Context) -> cu::Result<Verified> {
     if cfg!(windows) {
         check_bin_in_path_and_shaft!("gcc", "system-cctools");
-        check_bin_in_path_and_shaft!("gcc++", "system-cctools");
+        check_bin_in_path_and_shaft!("g++", "system-cctools");
         check_bin_in_path_and_shaft!("clang", "system-cctools");
         check_bin_in_path_and_shaft!("clang++", "system-cctools");
         check_bin_in_path_and_shaft!("clang-format", "system-cctools");
         check_bin_in_path_and_shaft!("clang-tidy", "system-cctools");
     } else {
+        check_bin_in_path!("gcc");
+        check_bin_in_path!("g++");
         check_bin_in_path!("clang");
+        check_bin_in_path!("clang++");
         check_bin_in_path!("clang-format");
         check_bin_in_path!("clang-tidy");
     }
@@ -20,7 +23,7 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
         return Ok(Verified::NotUpToDate);
     }
     if cfg!(windows) {
-        let expected_install_dir = ctx.install_dir().join("bin");
+        let expected_install_dir = ctx.install_dir().join("llvm\\bin");
         let actual_install_dir = Path::new(&info.install_dir).normalize()?;
         if expected_install_dir != actual_install_dir {
             cu::bail!(
@@ -28,9 +31,7 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
             );
         }
     }
-    if Version(&info.version).lt(metadata::clang::LLVM_VERSION) {
-        return Ok(Verified::NotUpToDate);
-    }
+    check_outdated!(&info.version, metadata::clang::LLVM_VERSION);
     Ok(Verified::UpToDate)
 }
 

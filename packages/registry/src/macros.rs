@@ -4,6 +4,20 @@ macro_rules! register_binaries {
 }
 pub(crate) use register_binaries;
 
+macro_rules! test_config {
+    ($IDENT:ident) => {
+        #[cfg(test)]
+        mod test_config {
+            #[test]
+            fn parse_default_config() -> cu::Result<()> {
+                super::$IDENT.load_default()?;
+                Ok(())
+            }
+        }
+    };
+}
+pub(crate) use test_config;
+
 macro_rules! check_bin_in_path {
     ($l:literal) => {
         if cu::which($l).is_err() {
@@ -102,3 +116,12 @@ macro_rules! check_installed_with_cargo {
     }};
 }
 pub(crate) use check_installed_with_cargo;
+
+macro_rules! check_outdated {
+    ($actual:expr , $expected:expr) => {
+        if Version($actual).lt($expected) {
+            return Ok(Verified::NotUpToDate);
+        }
+    };
+}
+pub(crate) use check_outdated;

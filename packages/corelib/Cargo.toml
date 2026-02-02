@@ -5,9 +5,10 @@ edition = "2024"
 publish = false
 
 [dependencies]
-boa_engine = "0.21.0"
-cu = { workspace = true, features = ["process", "json", "derive", "prompt"] }
+cu = { workspace = true, features = ["process", "json", "derive", "prompt", "toml-preserve-order", "parse-impl"] }
+shaftim-build = { path = "../tools/shaftim-build", default-features = false }
 enumset.workspace = true
+boa_engine = "0.21.0"
 fs2 = "0.4.3"
 fxhash = "0.2.1"
 reqwest = { version = "0.13.1", features = ["blocking", "gzip"] }
@@ -19,7 +20,7 @@ tokio = "1"
 flate2.workspace = true
 tar.workspace = true
 zip.workspace = true
-shaftim-build = { path = "../tools/shaftim-build", default-features = false }
+xz2.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 win-envedit.workspace = true

@@ -15,20 +15,85 @@ register_binaries!(
 mod clang;
 
 pub fn binary_dependencies() -> EnumSet<BinId> {
-    enum_set! { BinId::Scalar }
+    enum_set! { BinId::Scalar | BinId::Python }
+}
+pub fn verify(ctx: &Context) -> cu::Result<Verified> {
+    let v = clang::verify(ctx)?;
+    if v != Verified::UpToDate {
+        return Ok(v);
+    }
+
+    check_bin_in_path_and_shaft!("cmake", "system-cctools");
+    let v = command_output!("cmake", ["--version"]);
+    let mut v = v.split_whitespace();
+    if v.next() != Some("cmake") {
+        cu::warn!("failed to parse cmake version");
+        return Ok(Verified::NotUpToDate);
+    }
+    if v.next() != Some("version") {
+        cu::warn!("failed to parse cmake version");
+        return Ok(Verified::NotUpToDate);
+    }
+    let Some(v) = v.next() else {
+        cu::warn!("failed to parse cmake version");
+        return Ok(Verified::NotUpToDate);
+    };
+    check_outdated!(v, metadata::cmake::VERSION);
+
+    check_bin_in_path_and_shaft!("ninja", "system-cctools");
+    let v = command_output!("ninja", ["--version"]);
+    check_outdated!(&v, metadata::ninja::VERSION);
+
+    Ok(Verified::UpToDate)
 }
 
-pub use clang::verify;
-
 pub fn download(ctx: &Context) -> cu::Result<()> {
-    hmgr::download_file("llvm-mingw.zip", url(), metadata::clang::SHA, ctx.bar())?;
+    hmgr::download_file(
+        "llvm-mingw.zip",
+        llvm_url(),
+        metadata::clang::SHA,
+        ctx.bar(),
+    )?;
+    hmgr::download_file("cmake.zip", cmake_url(), metadata::cmake::SHA, ctx.bar())?;
+    hmgr::download_file("ninja.zip", ninja_url(), metadata::ninja::SHA, ctx.bar())?;
     Ok(())
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
     ctx.move_install_to_old_if_exists()?;
-    let clang_zip = hmgr::paths::download("llvm-mingw.zip", url());
-    opfs::unarchive(&clang_zip, ctx.install_dir(), true)?;
+    let install_dir = ctx.install_dir();
+
+    {
+        let bar = cu::progress("unpacking llvm-mingw")
+            .keep(true)
+            .parent(ctx.bar())
+            .spawn();
+        let llvm_dir = install_dir.join("llvm");
+        let clang_zip = hmgr::paths::download("llvm-mingw.zip", llvm_url());
+        opfs::unarchive(&clang_zip, llvm_dir, true)?;
+        bar.done();
+    }
+    {
+        let bar = cu::progress("unpacking cmake")
+            .keep(true)
+            .parent(ctx.bar())
+            .spawn();
+        let cmake_dir = install_dir.join("cmake");
+        let cmake_zip = hmgr::paths::download("cmake.zip", cmake_url());
+        opfs::unarchive(&cmake_zip, cmake_dir, true)?;
+        bar.done();
+    }
+    {
+        let bar = cu::progress("unpacking ninja")
+            .keep(true)
+            .parent(ctx.bar())
+            .spawn();
+        let ninja_dir = install_dir.join("ninja");
+        let ninja_zip = hmgr::paths::download("ninja.zip", ninja_url());
+        opfs::unarchive(&ninja_zip, ninja_dir, true)?;
+        bar.done();
+    }
+
     Ok(())
 }
 
@@ -37,8 +102,11 @@ pub fn uninstall(_: &Context) -> cu::Result<()> {
 }
 
 pub fn configure(ctx: &Context) -> cu::Result<()> {
+    configure_cmake(ctx)?;
+    configure_ninja(ctx)?;
     let install_dir = ctx.install_dir();
-    let bin_dir = install_dir.join("bin");
+    let llvm_dir = install_dir.join("llvm");
+    let bin_dir = llvm_dir.join("bin");
     let bin_dir_str = bin_dir.as_utf8()?;
 
     let mut link_files = vec![];
@@ -144,106 +212,130 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         bash_wrap_files.push(bash_executable.to_owned());
     }
 
-    let config = ctx.load_config_file_or_default(include_str!("config.toml"))?;
-    if let Some(link_extra_files) = config
-        .get("windows-link-extra-files")
-        .and_then(|x| x.as_array())
-    {
-        for value in link_extra_files {
-            let Some(value) = value.as_str() else {
-                cu::warn!("ignoring bad file in windows-link-extra-files: {value} (not a string)");
-                continue;
-            };
-            if !files.contains(value) {
-                cu::warn!("ignoring non-existing file in windows-link-extra-files: {value}");
-                continue;
-            }
-            if will_install_files.contains(value) {
-                cu::warn!(
-                    "ignoring file in windows-link-extra-files that is already included: {value}"
-                );
-                continue;
-            }
-            will_install_files.insert(value.to_owned());
-            link_files.push(value.to_owned());
-        }
-    }
-    if let Some(shim_extra_files) = config
-        .get("windows-shim-extra-files")
-        .and_then(|x| x.as_array())
-    {
-        for value in shim_extra_files {
-            let Some(value) = value.as_str() else {
-                cu::warn!("ignoring bad file in windows-shim-extra-files: {value} (not a string)");
-                continue;
-            };
-            if !files.contains(value) {
-                cu::warn!("ignoring non-existing file in windows-shim-extra-files: {value}");
-                continue;
-            }
-            if will_install_files.contains(value) {
-                cu::warn!(
-                    "ignoring file in windows-shim-extra-files that is already included: {value}"
-                );
-                continue;
-            }
-            will_install_files.insert(value.to_owned());
-            shim_files.push(value.to_owned());
-        }
-    }
-    if let Some(bash_wrap_extra_files) = config
-        .get("windows-bash-wrap-extra-files")
-        .and_then(|x| x.as_array())
-    {
-        for value in bash_wrap_extra_files {
-            let Some(value) = value.as_str() else {
-                cu::warn!(
-                    "ignoring bad file in windows-bash-wrap-extra-files: {value} (not a string)"
-                );
-                continue;
-            };
-            if !files.contains(value) {
-                cu::warn!("ignoring non-existing file in windows-bash-wrap-extra-files: {value}");
-                continue;
-            }
-            if will_install_files.contains(value) {
-                cu::warn!(
-                    "ignoring file in windows-bash-wrap-extra-files that is already included: {value}"
-                );
-                continue;
-            }
-            will_install_files.insert(value.to_owned());
-            bash_wrap_files.push(value.to_owned());
-        }
-    }
+    todo!()
 
-    for file in link_files {
-        let to = bin_dir.join(&file).into_utf8()?;
-        let from = hmgr::paths::binary(file).into_utf8()?;
+    // let config = ctx.load_config_file_or_default(include_str!("config.toml"))?;
+    // if let Some(link_extra_files) = config
+    //     .get("windows-link-extra-files")
+    //     .and_then(|x| x.as_array())
+    // {
+    //     for value in link_extra_files {
+    //         let Some(value) = value.as_str() else {
+    //             cu::warn!("ignoring bad file in windows-link-extra-files: {value} (not a string)");
+    //             continue;
+    //         };
+    //         if !files.contains(value) {
+    //             cu::warn!("ignoring non-existing file in windows-link-extra-files: {value}");
+    //             continue;
+    //         }
+    //         if will_install_files.contains(value) {
+    //             cu::warn!(
+    //                 "ignoring file in windows-link-extra-files that is already included: {value}"
+    //             );
+    //             continue;
+    //         }
+    //         will_install_files.insert(value.to_owned());
+    //         link_files.push(value.to_owned());
+    //     }
+    // }
+    // if let Some(shim_extra_files) = config
+    //     .get("windows-shim-extra-files")
+    //     .and_then(|x| x.as_array())
+    // {
+    //     for value in shim_extra_files {
+    //         let Some(value) = value.as_str() else {
+    //             cu::warn!("ignoring bad file in windows-shim-extra-files: {value} (not a string)");
+    //             continue;
+    //         };
+    //         if !files.contains(value) {
+    //             cu::warn!("ignoring non-existing file in windows-shim-extra-files: {value}");
+    //             continue;
+    //         }
+    //         if will_install_files.contains(value) {
+    //             cu::warn!(
+    //                 "ignoring file in windows-shim-extra-files that is already included: {value}"
+    //             );
+    //             continue;
+    //         }
+    //         will_install_files.insert(value.to_owned());
+    //         shim_files.push(value.to_owned());
+    //     }
+    // }
+    // if let Some(bash_wrap_extra_files) = config
+    //     .get("windows-bash-wrap-extra-files")
+    //     .and_then(|x| x.as_array())
+    // {
+    //     for value in bash_wrap_extra_files {
+    //         let Some(value) = value.as_str() else {
+    //             cu::warn!(
+    //                 "ignoring bad file in windows-bash-wrap-extra-files: {value} (not a string)"
+    //             );
+    //             continue;
+    //         };
+    //         if !files.contains(value) {
+    //             cu::warn!("ignoring non-existing file in windows-bash-wrap-extra-files: {value}");
+    //             continue;
+    //         }
+    //         if will_install_files.contains(value) {
+    //             cu::warn!(
+    //                 "ignoring file in windows-bash-wrap-extra-files that is already included: {value}"
+    //             );
+    //             continue;
+    //         }
+    //         will_install_files.insert(value.to_owned());
+    //         bash_wrap_files.push(value.to_owned());
+    //     }
+    // }
+
+    // for file in link_files {
+    //     let to = bin_dir.join(&file).into_utf8()?;
+    //     let from = hmgr::paths::binary(file).into_utf8()?;
+    //     ctx.add_item(Item::link_bin(from, to))?;
+    // }
+    // for file in shim_files {
+    //     let to = bin_dir.join(&file).into_utf8()?;
+    //     ctx.add_item(Item::shim_bin(
+    //         file,
+    //         ShimCommand::target_paths(to, [bin_dir_str]),
+    //     ))?;
+    // }
+    // for (file, rename) in shim_rename_files {
+    //     let to = bin_dir.join(&file).into_utf8()?;
+    //     ctx.add_item(Item::shim_bin(
+    //         rename,
+    //         ShimCommand::target_paths(to, [bin_dir_str]),
+    //     ))?;
+    // }
+    // for file in bash_wrap_files {
+    //     let to = bin_dir.join(&file).into_utf8()?;
+    //     ctx.add_item(Item::shim_bin(
+    //         bin_name!(file),
+    //         ShimCommand::target_bash_paths(to, [bin_dir_str]),
+    //     ))?;
+    // }
+    //
+    // Ok(())
+}
+
+fn configure_cmake(ctx: &Context) -> cu::Result<()> {
+    let install_dir = ctx.install_dir();
+    let cmake_dir = install_dir.join("cmake");
+    let cmake_bin_dir = cmake_dir.join("bin");
+    for file_name in ["cmake", "cmcldeps", "cpack", "ctest", "cmake-gui"] {
+        let file_name = bin_name!(file_name);
+        let from = hmgr::paths::binary(&file_name).into_utf8()?;
+        let to = cmake_bin_dir.join(file_name).into_utf8()?;
         ctx.add_item(Item::link_bin(from, to))?;
     }
-    for file in shim_files {
-        let to = bin_dir.join(&file).into_utf8()?;
-        ctx.add_item(Item::shim_bin(
-            file,
-            ShimCommand::target_paths(to, [bin_dir_str]),
-        ))?;
-    }
-    for (file, rename) in shim_rename_files {
-        let to = bin_dir.join(&file).into_utf8()?;
-        ctx.add_item(Item::shim_bin(
-            rename,
-            ShimCommand::target_paths(to, [bin_dir_str]),
-        ))?;
-    }
-    for file in bash_wrap_files {
-        let to = bin_dir.join(&file).into_utf8()?;
-        ctx.add_item(Item::shim_bin(
-            bin_name!(file),
-            ShimCommand::target_bash_paths(to, [bin_dir_str]),
-        ))?;
-    }
+    Ok(())
+}
 
+fn configure_ninja(ctx: &Context) -> cu::Result<()> {
+    let install_dir = ctx.install_dir();
+    let ninja_dir = install_dir.join("ninja");
+    let from = hmgr::paths::binary("ninja.exe").into_utf8()?;
+    let to = ninja_dir.join("ninja.exe").into_utf8()?;
+    ctx.add_item(Item::link_bin(from, to))?;
     Ok(())
 }
 
@@ -251,9 +343,77 @@ pub fn config_location(ctx: &Context) -> cu::Result<Option<PathBuf>> {
     Ok(Some(ctx.config_file()))
 }
 
-fn url() -> String {
+fn llvm_url() -> String {
     let repo = metadata::clang::REPO;
-    let tag = metadata::clang::TAG;
+    let version = metadata::clang::LLVM_VERSION;
+    let arch = if_arm!("aarch64", else "x86_64");
+    format!(
+        "{repo}/releases/download/llvmorg-{version}/clang+llvm-{version}-{arch}-pc-windows-msvc.tar.xz"
+    )
+}
+
+fn llvm_mingw_url() -> String {
+    let repo = metadata::llvm_mingw::REPO;
+    let tag = metadata::llvm_mingw::TAG;
     let arch = if_arm!("aarch64", else "x86_64");
     format!("{repo}/releases/download/{tag}/llvm-mingw-{tag}-ucrt-{arch}.zip")
+}
+
+fn cmake_url() -> String {
+    let repo = metadata::cmake::REPO;
+    let version = metadata::cmake::VERSION;
+    let arch = if_arm!("arm64", else "x86_64");
+    format!("{repo}/releases/download/v{version}/cmake-{version}-windows-{arch}.zip")
+}
+
+fn ninja_url() -> String {
+    let repo = metadata::ninja::REPO;
+    let version = metadata::ninja::VERSION;
+    let arch = if_arm!("winarm64", else "win");
+    format!("{repo}/releases/download/v{version}/ninja-{arch}.zip")
+}
+
+static CONFIG: ConfigDef<Config> = ConfigDef::new(include_str!("config.toml"), &[]);
+test_config!(CONFIG);
+
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
+struct Config {
+    pub windows: ConfigWindows,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
+struct ConfigWindows {
+    pub llvm_target: LlvmTargetOption,
+    pub libclang: LibClangOption,
+    pub gnu: ExtraFileOptions,
+    pub msvc: ExtraFileOptions,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum LlvmTargetOption {
+    MSVC,
+    GNU,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum LibClangOption {
+    MSVC,
+    Always,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
+struct ExtraFileOptions {
+    #[serde(default)]
+    pub extra_links: Vec<String>,
+    #[serde(default)]
+    pub extra_shims: Vec<String>,
+    #[serde(default)]
+    pub extra_bash_wrapped: Vec<String>,
+    #[serde(default)]
+    pub extra_python_wrapped: Vec<String>,
 }

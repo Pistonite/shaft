@@ -203,7 +203,7 @@ fn build_internal(config_path: &Path) -> cu::Result<pm::TokenStream2> {
                     #match_patterns => { #match_blocks }
                 )*
                 _ => {
-                    eprintln!("invalid executable");
+                    eprintln!("shaft-shim: invalid executable");
                     return ExitCode::FAILURE;
                 }
             };

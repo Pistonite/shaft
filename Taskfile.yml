@@ -30,6 +30,8 @@ tasks:
     - task: registry:fix
     - cargo fmt
     - lfmt
+  test:
+    - task: corelib:test
     
   clean:
     - task: registry:clean

@@ -188,6 +188,24 @@ export const pkg_uv = default_cratesio_fetcher("uv");
 export const pkg_clang: PackageFn = (meta) => [
     fetch_from_github_release({
         repo: meta.repo(),
+        artifacts: (tag) => {
+            if (!tag.startsWith("llvmorg-")) { throw new Error("invalid llvm release tag: "+tag); }
+            tag = tag.substring(8);
+            return [ `clang+llvm-${tag}-aarch64-pc-windows-msvc.tar.xz`, `clang+llvm-${tag}-x86_64-pc-windows-msvc.tar.xz`];
+        },
+        query: (_, tag, [arm, x64]) => {
+            return {
+                [cfg_windows("LLVM_VERSION")]: tag.substring(8),
+                [cfg_windows_arm64("SHA")]: arm.sha,
+                [cfg_windows_x64("SHA")]: x64.sha,
+            };
+        }
+    }),
+    fetch_from_arch_linux({ package: "clang", query: (v) => ({ [cfg_linux("LLVM_VERSION")]: v }) })
+];
+export const pkg_llvm_mingw: PackageFn = (meta) =>
+    fetch_from_github_release({
+        repo: meta.repo(),
         artifacts: (tag) => [
             `llvm-mingw-${tag}-ucrt-aarch64.zip`,
             `llvm-mingw-${tag}-ucrt-x86_64.zip`,
@@ -205,9 +223,7 @@ export const pkg_clang: PackageFn = (meta) => [
                 [cfg_windows_x64("SHA")]: x64.sha,
             };
         }
-    }),
-    fetch_from_arch_linux({ package: "clang", query: (v) => ({ [cfg_linux("LLVM_VERSION")]: v }) })
-];
+    });
 export const pkg_cmake: PackageFn = (meta) => [
     fetch_from_github_release({
         repo: meta.repo(),
@@ -215,7 +231,7 @@ export const pkg_cmake: PackageFn = (meta) => [
             tag = strip_v(tag);
             return [`cmake-${tag}-windows-arm64.zip`, `cmake-${tag}-windows-x86_64.zip` ]
         },
-        query: async (_, tag, [arm, x64]) => ({
+        query: (_, tag, [arm, x64]) => ({
             [cfg_windows("VERSION")]: strip_v(tag),
             [cfg_windows_arm64("SHA")]: arm.sha,
             [cfg_windows_x64("SHA")]: x64.sha,
@@ -223,3 +239,15 @@ export const pkg_cmake: PackageFn = (meta) => [
     }),
     fetch_from_arch_linux({ package: "cmake", query: (v) => ({ [cfg_linux("VERSION")]: v }) })
 ];
+export const pkg_ninja: PackageFn = (meta) => [
+    fetch_from_github_release({
+        repo: meta.repo(),
+        artifacts: () => ["ninja-winarm64.zip", "ninja-win.zip"],
+        query: (_, tag, [arm, x64]) => ({
+            [cfg_windows("VERSION")]: strip_v(tag),
+            [cfg_windows_arm64("SHA")]: arm.sha,
+            [cfg_windows_x64("SHA")]: x64.sha,
+        })
+    }),
+    fetch_from_arch_linux({ package: "ninja", query: (v) => ({ [cfg_linux("VERSION")]: v }) })
+]
