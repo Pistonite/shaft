@@ -7,8 +7,8 @@ mod version;
 register_binaries!("git");
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
-    check_installed_with_pacman!("git", "git", "system-git");
-    version::verify(metadata::git::VERSION)
+    check_pacman!("git");
+    version::verify()
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {

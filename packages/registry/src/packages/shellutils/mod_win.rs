@@ -34,36 +34,36 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_shaft!("fzf");
     let v = command_output!("fzf", ["--version"]);
     let v = v.split_once(' ').map(|x| x.0).unwrap_or(&v);
-    check_outdated!(v, metadata::fzf::VERSION);
+    check_outdated!(v, metadata[fzf]::VERSION);
 
     check_in_shaft!("jq");
     let v = command_output!("jq", ["--version"]);
     let v = v.strip_prefix("jq-").unwrap_or(&v);
-    check_outdated!(v, metadata::jq::VERSION);
+    check_outdated!(v, metadata[jq]::VERSION);
 
     check_in_shaft!("task");
     check_in_shaft!("x");
     let v = command_output!("task", ["--version"]);
-    check_outdated!(&v, metadata::task::VERSION);
+    check_outdated!(&v, metadata[task]::VERSION);
 
     let v = check_cargo!("bat");
-    check_outdated!(&v.version, metadata::bat::VERSION);
+    check_outdated!(&v.version, metadata[bat]::VERSION);
     let v = check_cargo!("dust" in crate "du-dust");
-    check_outdated!(&v.version, metadata::dust::VERSION);
+    check_outdated!(&v.version, metadata[dust]::VERSION);
     let v = check_cargo!("find" in crate "fd-find");
-    check_outdated!(&v.version, metadata::fd::VERSION);
+    check_outdated!(&v.version, metadata[fd]::VERSION);
     let v = check_cargo!("websocat");
-    check_outdated!(&v.version, metadata::websocat::VERSION);
+    check_outdated!(&v.version, metadata[websocat]::VERSION);
     let v = check_cargo!("zoxide");
-    check_outdated!(&v.version, metadata::zoxide::VERSION);
+    check_outdated!(&v.version, metadata[zoxide]::VERSION);
     let v = check_cargo!("viopen");
-    check_outdated!(&v.version, metadata::shellutils::viopen::VERSION);
+    check_outdated!(&v.version, metadata[shellutils::viopen]::VERSION);
     let v = check_cargo!("n");
-    check_outdated!(&v.version, metadata::shellutils::n::VERSION);
+    check_outdated!(&v.version, metadata[shellutils::n]::VERSION);
     let v = check_cargo!("wsclip");
-    check_outdated!(&v.version, metadata::shellutils::wsclip::VERSION);
+    check_outdated!(&v.version, metadata[shellutils::wsclip]::VERSION);
     let v = check_cargo!("vipath");
-    check_outdated!(&v.version, metadata::shellutils::vipath::VERSION);
+    check_outdated!(&v.version, metadata[shellutils::vipath]::VERSION);
 
     check_version_cache!(common::ALIAS_VERSION);
     Ok(Verified::UpToDate)

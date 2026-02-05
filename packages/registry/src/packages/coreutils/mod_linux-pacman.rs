@@ -20,24 +20,25 @@ register_binaries!(
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     eza::verify()?;
-    check_bin_in_path_and_shaft!("update-mirrors");
-    check_installed_pacman_package!("base");
+    check_in_shaft!("update-mirrors");
+    check_pacman!("base");
 
-    let v = check_installed_pacman_package!("bash");
-    check_outdated!(&v, metadata::coreutils::bash::VERSION);
-    let v = check_installed_pacman_package!("bash-completion");
-    check_outdated!(&v, metadata::coreutils::bash_cmp::VERSION);
+    let v = check_pacman!("bash");
+    check_outdated!(&v, metadata[coreutils::bash]::VERSION);
+    let v = check_pacman!("bash-completion");
+    check_outdated!(&v, metadata[coreutils::bash_cmp]::VERSION);
 
-    let v = check_installed_pacman_package!("zip");
-    check_outdated!(&v, metadata::coreutils::zip::VERSION);
-    let v = check_installed_pacman_package!("unzip");
-    check_outdated!(&v, metadata::coreutils::unzip::VERSION);
-    let v = check_installed_pacman_package!("tar");
-    check_outdated!(&v, metadata::coreutils::tar::VERSION);
-    let v = check_installed_pacman_package!("which");
-    check_outdated!(&v, metadata::coreutils::which::VERSION);
+    let v = check_pacman!("zip");
+    check_outdated!(&v, metadata[coreutils::zip]::VERSION);
+    let v = check_pacman!("unzip");
+    check_outdated!(&v, metadata[coreutils::unzip]::VERSION);
+    let v = check_pacman!("tar");
+    check_outdated!(&v, metadata[coreutils::tar]::VERSION);
+    let v = check_pacman!("which");
+    check_outdated!(&v, metadata[coreutils::which]::VERSION);
 
-    Ok(Verified::is_uptodate(common::ALIAS_VERSION.is_uptodate()?))
+    check_version_cache!(common::ALIAS_VERSION);
+    Ok(Verified::UpToDate)
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {

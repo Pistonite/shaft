@@ -11,7 +11,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
         check_in_path!("python");
     }
     let v = check_cargo!("uv");
-    check_outdated!(&v.version, metadata::uv::VERSION);
+    check_outdated!(&v.version, metadata[uv]::VERSION);
     Ok(Verified::UpToDate)
 }
 

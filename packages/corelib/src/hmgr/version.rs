@@ -74,6 +74,10 @@ impl VersionCache {
     pub fn id(self) -> &'static str {
         self.id
     }
+    /// Get the expected version
+    pub fn version(self) -> &'static str {
+        self.expected
+    }
     /// Check if the cached version is the same as expected.
     /// Returns None if not found in version cache
     pub fn is_uptodate(self) -> cu::Result<Option<bool>> {

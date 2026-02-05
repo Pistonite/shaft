@@ -2,7 +2,7 @@ use crate::pre::*;
 
 pub fn verify() -> cu::Result<Verified> {
     let v = check_cargo!("eza");
-    check_outdated!(&v.version, metadata::coreutils::eza::VERSION);
+    check_outdated!(&v.version, metadata[coreutils::eza]::VERSION);
     Ok(Verified::UpToDate)
 }
 

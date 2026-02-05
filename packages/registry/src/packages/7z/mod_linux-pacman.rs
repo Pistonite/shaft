@@ -6,8 +6,8 @@ mod version;
 register_binaries!("7z");
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
-    check_installed_with_pacman!("7z", "7zip");
-    version::check(metadata::_7z::VERSION)
+    check_pacman!("7zip");
+    version::check()
 }
 pub fn install(ctx: &Context) -> cu::Result<()> {
     opfs::ensure_terminated("7z")?;

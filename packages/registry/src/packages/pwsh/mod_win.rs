@@ -36,7 +36,7 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
         cu::debug!("preview version of pwsh is required for tilde expansion");
         return Ok(Verified::NotUpToDate);
     }
-    check_outdated!(&version, metadata::pwsh::VERSION);
+    check_outdated!(&version, metadata[pwsh]::VERSION);
     Ok(Verified::UpToDate)
 }
 

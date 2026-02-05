@@ -10,7 +10,7 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
     }
     let clink_bat = clink_bat.into_utf8()?;
     let v = command_output!("cmd", ["/c", &clink_bat, "--version"]);
-    check_outdated!(&v, metadata::terminal::clink::VERSION);
+    check_outdated!(&v, metadata[terminal::clink]::VERSION);
 
     check_version_cache!(WRAPPER_VERSION);
     Ok(Verified::UpToDate)

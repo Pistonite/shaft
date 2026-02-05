@@ -31,7 +31,7 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
             );
         }
     }
-    check_outdated!(&info.version, metadata::clang::LLVM_VERSION);
+    check_outdated!(&info.version, metadata[clang]::LLVM_VERSION);
     Ok(Verified::UpToDate)
 }
 

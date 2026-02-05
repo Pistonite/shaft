@@ -56,7 +56,7 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
 
     check_in_shaft!("ninja" || "system-cctools");
     let v = command_output!("ninja", ["--version"]);
-    check_outdated!(&v, metadata::ninja::VERSION);
+    check_outdated!(&v, metadata[ninja]::VERSION);
 
     Ok(Verified::UpToDate)
 }

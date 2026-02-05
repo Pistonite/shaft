@@ -14,46 +14,44 @@ mod common;
 mod perl;
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
-    check_installed_pacman_package!("perl");
-    let v = perl::version_check()?;
-    if v != Verified::UpToDate {
-        return Ok(v);
-    }
+    check_pacman!("perl");
+    check_verified!(perl::version_check()?);
     cu::check!(
         cu::which("gpg"),
         "gnupg is a dependency of Arch Linux and is not found"
     )?;
 
-    let v = check_installed_pacman_package!("curl");
-    check_outdated!(&v, metadata::curl::VERSION);
-    let v = check_installed_pacman_package!("wget");
-    check_outdated!(&v, metadata::wget::VERSION);
-    let v = check_installed_pacman_package!("fzf");
-    check_outdated!(&v, metadata::fzf::VERSION);
-    let v = check_installed_pacman_package!("jq");
-    check_outdated!(&v, metadata::jq::VERSION);
+    let v = check_pacman!("curl");
+    check_outdated!(&v, metadata[curl]::VERSION);
+    let v = check_pacman!("wget");
+    check_outdated!(&v, metadata[wget]::VERSION);
+    let v = check_pacman!("fzf");
+    check_outdated!(&v, metadata[fzf]::VERSION);
+    let v = check_pacman!("jq");
+    check_outdated!(&v, metadata[jq]::VERSION);
 
-    check_bin_in_path_and_shaft!("task");
-    check_bin_in_path_and_shaft!("x");
+    check_in_shaft!("task");
+    check_in_shaft!("x");
     let v = command_output!("task", ["--version"]);
-    check_outdated!(&v, metadata::task::VERSION);
+    check_outdated!(&v, metadata[task]::VERSION);
 
-    let v = check_installed_with_cargo!("bat");
-    check_outdated!(&v.version, metadata::bat::VERSION);
-    let v = check_installed_with_cargo!("dust", "du-dust");
-    check_outdated!(&v.version, metadata::dust::VERSION);
-    let v = check_installed_with_cargo!("find", "fd-find");
-    check_outdated!(&v.version, metadata::fd::VERSION);
-    let v = check_installed_with_cargo!("websocat");
-    check_outdated!(&v.version, metadata::websocat::VERSION);
-    let v = check_installed_with_cargo!("zoxide");
-    check_outdated!(&v.version, metadata::zoxide::VERSION);
-    let v = check_installed_with_cargo!("viopen");
-    check_outdated!(&v.version, metadata::shellutils::viopen::VERSION);
-    let v = check_installed_with_cargo!("n");
-    check_outdated!(&v.version, metadata::shellutils::n::VERSION);
+    let v = check_cargo!("bat");
+    check_outdated!(&v.version, metadata[bat]::VERSION);
+    let v = check_cargo!("dust" in crate "du-dust");
+    check_outdated!(&v.version, metadata[dust]::VERSION);
+    let v = check_cargo!("find" in crate "fd-find");
+    check_outdated!(&v.version, metadata[fd]::VERSION);
+    let v = check_cargo!("websocat");
+    check_outdated!(&v.version, metadata[websocat]::VERSION);
+    let v = check_cargo!("zoxide");
+    check_outdated!(&v.version, metadata[zoxide]::VERSION);
+    let v = check_cargo!("viopen");
+    check_outdated!(&v.version, metadata[shellutils::viopen]::VERSION);
+    let v = check_cargo!("n");
+    check_outdated!(&v.version, metadata[shellutils::n]::VERSION);
 
-    Ok(Verified::is_uptodate(common::ALIAS_VERSION.is_uptodate()?))
+    check_version_cache!(common::ALIAS_VERSION);
+    Ok(Verified::UpToDate)
 }
 
 pub fn download(ctx: &Context) -> cu::Result<()> {

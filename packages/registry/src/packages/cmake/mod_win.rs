@@ -19,7 +19,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
         cu::warn!("failed to parse cmake version");
         return Ok(Verified::NotUpToDate);
     };
-    check_outdated!(v, metadata::cmake::VERSION);
+    check_outdated!(v, metadata[cmake]::VERSION);
 
     Ok(Verified::UpToDate)
 }

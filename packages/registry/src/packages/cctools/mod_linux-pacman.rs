@@ -16,24 +16,24 @@ pub fn binary_dependencies() -> EnumSet<BinId> {
 }
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
-    let v = check_installed_pacman_package!("gcc");
+    let v = check_pacman!("gcc");
     let v = v.split_once('+').map(|x| x.0).unwrap_or(&v);
-    check_outdated!(v, metadata::gnucc::gcc::VERSION);
+    check_outdated!(v, metadata[gnucc::gcc]::VERSION);
 
-    let v = check_installed_pacman_package!("binutils");
+    let v = check_pacman!("binutils");
     let v = v.split_once('+').map(|x| x.0).unwrap_or(&v);
-    check_outdated!(v, metadata::gnucc::binutils::VERSION);
+    check_outdated!(v, metadata[gnucc::binutils]::VERSION);
 
-    let v = check_installed_pacman_package!("gdb");
-    check_outdated!(&v, metadata::gnucc::gdb::VERSION);
-    let v = check_installed_pacman_package!("clang");
-    check_outdated!(&v, metadata::clang::LLVM_VERSION);
-    let v = check_installed_pacman_package!("llvm");
-    check_outdated!(&v, metadata::clang::LLVM_VERSION);
-    let v = check_installed_pacman_package!("lldb");
-    check_outdated!(&v, metadata::clang::LLVM_VERSION);
-    let v = check_installed_pacman_package!("ninja");
-    check_outdated!(&v, metadata::ninja::VERSION);
+    let v = check_pacman!("gdb");
+    check_outdated!(&v, metadata[gnucc::gdb]::VERSION);
+    let v = check_pacman!("clang");
+    check_outdated!(&v, metadata[clang]::LLVM_VERSION);
+    let v = check_pacman!("llvm");
+    check_outdated!(&v, metadata[clang]::LLVM_VERSION);
+    let v = check_pacman!("lldb");
+    check_outdated!(&v, metadata[clang]::LLVM_VERSION);
+    let v = check_pacman!("ninja");
+    check_outdated!(&v, metadata[ninja]::VERSION);
     Ok(Verified::UpToDate)
 }
 
