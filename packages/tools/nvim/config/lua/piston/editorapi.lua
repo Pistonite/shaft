@@ -561,10 +561,18 @@ end
 
 -- VIEW CHANGE / AI Coder =====================================================================
 
+local is_aicoder_installed = nil
 local was_aicoder_focused_when_aidiff_open = false
 local just_accepted_aidiff = false
 ---Switch to EDIT and open AI Coder
 function M.editview_aicoder_open()
+    if is_aicoder_installed == nil then
+        is_aicoder_installed = vim.fn.executable("claude") == 1
+    end
+    if not is_aicoder_installed then
+        M.warn("aicoder is not installed on this system")
+        return
+    end
     local wint = M.query_wint()
     if wint == M.wint.NTERM then return end
     if wint == M.wint.SPECIAL then return end
@@ -1019,6 +1027,63 @@ function M.fix_buffer_issues(restart_lsp)
     end
     M.warn("buffer reset")
 end
+
+---Yank to Host
+local _ = (function()
+    local yank_file = vim.fn.stdpath('data') .. '/.yank'
+    local yank_file_quoted = vim.fn.shellescape(yank_file)
+    local cmd
+    local check_cmd
+    local desc = "yanking to host is not supported on the current setup"
+    local check_desc
+
+    if vim.fn.has("win32") ~= 0 then
+        cmd = '(Get-Content ' .. yank_file_quoted .. ') -replace "`0","`n" | set-clipboard'
+        desc = "yanked to host clipboard with powershell"
+    elseif vim.env.SSH_CLIENT then
+        if vim.fn.executable("websocat") == 0 then
+            desc = "websocat is needed for yanking to ssh client over websocket"
+        else
+            local host_ip = vim.env.SSH_CLIENT:match("^(%d+%.%d+%.%d+%.%d+)")
+            if not host_ip then
+                desc = "SSH_CLIENT does not contain a valid IPv4 address"
+            else
+                local host_port = require("piston.config_gen").editorapi_ssh_wsclip_port
+                check_cmd = 'timeout 2 bash -c "echo < /dev/tcp/' .. host_ip .. '/' .. host_port .. '"'
+                check_desc = "ssh client port "..host_port.." is not reachable. please ensure wsclip is running"
+                cmd = 'bash -c "cat ' .. yank_file_quoted .. ' | websocat -1 -t -u ws://' .. host_ip .. ':'..host_port..'"'
+                desc = "yanked to ssh client wsclip"
+            end
+        end
+    elseif vim.fn.executable("wl-copy") ~= 0 then
+        cmd = 'bash -c "cat ' .. yank_file_quoted .. " | tr '\\0' '\\n' | wl-copy -n\""
+            desc = "yanked to wayland"
+    end
+
+    vim.api.nvim_create_autocmd("TextYankPost", {
+        callback = function()
+            if vim.v.register ~= 'a' then
+                return
+            end
+            if not cmd then
+                M.warn(desc)
+                return
+            end
+            if check_cmd then
+                vim.fn.system(check_cmd)
+                M.warn("yanking to host...")
+                if vim.v.shell_error ~= 0 then
+                    M.warn(check_desc)
+                    return
+                end
+            end
+            vim.fn.writefile({ vim.fn.getreg('a') }, yank_file)
+            vim.fn.system(cmd)
+            vim.cmd('redraw!')
+            M.warn(desc)
+        end,
+    })
+end)()
 
 -- HELPERS =============================================================================
 

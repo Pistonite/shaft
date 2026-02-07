@@ -5,11 +5,11 @@ local function on_attach_nvim_tree(bufnr)
     require("config.lualine")
     require("piston.keymaps").setup_nvim_tree(bufnr)
 end
-local integration = require("integration")
+local config_gen = require("piston.config_gen")
 require("nvim-tree").setup({
     on_attach = on_attach_nvim_tree,
     git = {
-        enable = integration.git
+        enable = config_gen.git
     },
     renderer = {
         icons = {

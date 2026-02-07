@@ -6,7 +6,7 @@ local cached_fts = {}
 if vim.uv.fs_stat(cache_lua)~=nil then
     cached_fts = require("piston.cache.tree-sitter-installed")
 end
-local install_dir = vim.fn.stdpath('data')..'/tree-sitter-install'
+local install_dir = vim.fn.stdpath('data')..'/piston/tree-sitter-install'
 require('nvim-treesitter').setup({
     install_dir = install_dir,
 })

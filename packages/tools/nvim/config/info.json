@@ -4,7 +4,22 @@
             "lazy",
             "piston/aicoder",
             "piston/undodir"
-        ]
+        ],
+        "clean": {
+            "data": [
+                "log",
+                "lsp.log",
+                "mason.log",
+                "luasnip.log",
+                "telescope_history",
+                "shada/main.shada.tmp.*",
+                "tree-sitter-*",
+                "piston/aicoder/*",
+                "piston/aicoder*"
+            ],
+            "undodata": "piston/undodir",
+            "config": []
+        }
     },
     "lazy": {
         "data-path": "lazy/lazy.nvim",

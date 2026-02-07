@@ -1,5 +1,17 @@
 -- All of global options
 
+-- windows shell options
+if vim.fn.has("win32") ~= 0 then
+    local win_shell = "pwsh"
+    if vim.fn.executable("pwsh.exe") == 0 then
+        win_shell = "powershell"
+    end
+    vim.o.shell = win_shell
+    vim.o.shellcmdflag = "-Nologo -command"
+    vim.o.shellquote = '"'
+    vim.o.shellxquote = ""
+end
+
 -- line numbers
 vim.opt.number = true    -- Enable line numbers
 vim.opt.rnu = true       -- Relative line numbers by default
