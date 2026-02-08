@@ -14,7 +14,7 @@ jobs:
           - image: windows-latest
     runs-on: ${{ matrix.image }}
     steps:
-      - git config --global core.autocrlf false
+      - run: git config --global core.autocrlf false
       - uses: Pistonight/mono-dev/actions/setup@main
         with:
           mono-dev: packages
