@@ -6,7 +6,7 @@ includes:
     flatten: true
     optional: true
 
-  # cli:            { taskfile: ./packages/cli,             dir: ./packages/cli,            internal: true }
+  cli:            { taskfile: ./packages/cli,             dir: ./packages/cli,            internal: true }
   corelib:        { taskfile: ./packages/corelib,         dir: ./packages/corelib,        internal: true }
   registry:       { taskfile: ./packages/registry,        dir: ./packages/registry,       internal: true }
   registry-build: { taskfile: ./packages/registry-build,  dir: ./packages/registry-build, internal: true }
@@ -24,7 +24,7 @@ tasks:
     - task: corelib:check
     - task: registry-build:check
     - task: registry:check
-    # - task: cli:check
+    - task: cli:check
     - lfmt -c
   fix:
     - task: registry:fix
@@ -32,6 +32,7 @@ tasks:
     - lfmt
   test:
     - task: corelib:test
+    - task: registry:test
     
   clean:
     - task: registry:clean

@@ -62,7 +62,7 @@ pub fn config_dirty_all() -> cu::Result<()> {
 
 pub fn config_location(package: &str) -> cu::Result<String> {
     let pkg = cu::check!(PkgId::from_str(package), "cannot find package '{package}'")?;
-    Ok(config_location_path(pkg)?.into_utf8()?)
+    config_location_path(pkg)?.into_utf8()
 }
 
 pub fn config_location_path(pkg: PkgId) -> cu::Result<PathBuf> {

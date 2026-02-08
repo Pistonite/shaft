@@ -30,3 +30,6 @@ tasks:
   fix:
     - rustfmt $(find src/packages -name '*.rs') --edition 2024
     - task: cargo:fmt-fix
+
+  test:
+    - cargo test

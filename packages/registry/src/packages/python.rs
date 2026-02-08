@@ -2,6 +2,7 @@
 use crate::pre::*;
 
 register_binaries!("uv", "uvx", "python");
+binary_dependencies!(CargoBinstall);
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     if cfg!(windows) {

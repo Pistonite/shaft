@@ -1,6 +1,6 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-use corelib::hmgr;
+use corelib::epkg;
 use cu::pre::*;
 
 pub fn upgrade(path: Option<&Path>) -> cu::Result<()> {
@@ -19,23 +19,45 @@ fn install_from_path(path: &Path) -> cu::Result<()> {
     )?;
     cu::info!("installing shaft from local path...");
     {
-        let (child, _) = cargo
+        let (child, bar) = cargo
             .command()
             .current_dir(path)
             .add(cu::args!["install", "shaft-cli", "--path", "."])
-            .preset(cu::pio::cargo("cargo build"))
+            .preset(cu::pio::cargo("building shaft"))
             .spawn()?;
         cu::check!(child.wait_nz(), "failed to build new binary")?;
+        bar.done();
     }
     Ok(())
 }
 
 fn install_from_release() -> cu::Result<()> {
-    // TODO: cargo-binstall and fallback to cargo install --git
-    // ...
-    todo!()
-}
-
-pub async fn get_latest_version() -> cu::Result<String> {
-    Ok(String::new())
+    cu::info!("installing shaft from github...");
+    let has_binstall = cu::which("cargo-binstall").is_ok();
+    if !has_binstall {
+        cu::hint!(
+            "cargo-binstall is not installed, continuing will compile shaft from source, which will be slow."
+        );
+        cu::hint!("you can install cargo-binstall with `shaft sync cargo-binstall`");
+        if !cu::yesno!("continue to compile from source?")? {
+            cu::bail!("cancelled");
+        }
+    }
+    let bar = cu::progress("installing shaft").spawn();
+    if has_binstall {
+        epkg::cargo::binstall_git(
+            "shaft-cli",
+            "https://github.com/Pistonite/shaft",
+            Some(&bar),
+        )?;
+    } else {
+        epkg::cargo::install_git_commit(
+            "shaft-cli",
+            "https://github.com/Pistonite/shaft",
+            "main",
+            Some(&bar),
+        )?;
+    }
+    bar.done();
+    Ok(())
 }

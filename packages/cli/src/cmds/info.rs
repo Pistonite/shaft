@@ -59,16 +59,7 @@ pub fn info(
         let pkg = PkgId::from_str(query);
         let exact_bin = BinId::from_str(query);
         let mut pkgs = exact_bin.map(|x| x.providers()).unwrap_or_default();
-        let exact_pkg = match pkg {
-            Some(the_pkg) => {
-                if !pkgs.contains(the_pkg) {
-                    None
-                } else {
-                    Some(the_pkg)
-                }
-            }
-            _ => None,
-        };
+        let exact_pkg = pkg.filter(|x| pkgs.contains(*x));
         for bin in EnumSet::<BinId>::all() {
             if !query_mode.matches(bin.to_str()) {
                 continue;
@@ -203,7 +194,7 @@ fn show_results(
                 exact_pkg = None;
             }
         }
-        for pkg in rest_pkgs.clone() {
+        for pkg in rest_pkgs {
             if !installed.pkgs.contains(pkg) {
                 rest_pkgs.remove(pkg);
             }

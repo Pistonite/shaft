@@ -9,6 +9,7 @@ register_binaries!(
     "bat", "dust", "fd", "rg", "websocat", "zoxide", "c", "ci",
     "viopen", "vibash", "vihosts", "n"
 );
+binary_dependencies!(CargoBinstall);
 
 mod common;
 mod perl;

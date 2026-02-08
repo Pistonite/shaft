@@ -1,3 +1,4 @@
+//! Neovim (with configuration)
 use enumset::EnumSet;
 
 use crate::pre::*;

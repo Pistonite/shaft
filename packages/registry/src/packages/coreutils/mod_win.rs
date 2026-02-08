@@ -8,10 +8,7 @@ mod eza;
 register_binaries!(
     "ls", "diff", "find", "gzip", "sed", "grep", "zip", "unzip", "tar"
 );
-
-pub fn binary_dependencies() -> EnumSet<BinId> {
-    enum_set! { BinId::Git | BinId::CargoBinstall }
-}
+binary_dependencies!(Git, CargoBinstall);
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     eza::verify()?;

@@ -74,7 +74,7 @@ pub fn build_sync_graph(
             "failed to collect dependencies"
         )?;
     }
-    let sync_pkgs = resolve_config_pkgs(sync_pkgs, EnumSet::new(), &installed);
+    let sync_pkgs = resolve_config_pkgs(sync_pkgs, EnumSet::new(), installed);
 
     // check if newly installed will cause conflict
     let new_pkgs = sync_pkgs.difference(installed.pkgs);
@@ -83,7 +83,7 @@ pub fn build_sync_graph(
         "there are conflicts in new package(s) to install"
     )?;
 
-    let graph = resolve_sync_order(sync_pkgs, &provider_selection)?;
+    let graph = resolve_sync_order(sync_pkgs, provider_selection)?;
     Ok(graph)
 }
 
@@ -252,7 +252,7 @@ pub fn select_provider(
     let mut pkg_id = PkgId::Core;
     cu::prompt(prompt)
         .validate_with(|answer| {
-            let Ok(answer) = cu::parse::<usize>(&answer) else {
+            let Ok(answer) = cu::parse::<usize>(answer) else {
                 cu::error!("please enter a number for the provider");
                 return Ok(false);
             };
@@ -260,7 +260,7 @@ pub fn select_provider(
                 cu::error!("number to small!");
                 return Ok(false);
             }
-            let pkg = providers.iter().skip(answer - 1).next();
+            let pkg = providers.iter().nth(answer - 1);
             let Some(pkg) = pkg else {
                 cu::error!("number too large: {answer} (max {})", providers.len());
                 return Ok(false);

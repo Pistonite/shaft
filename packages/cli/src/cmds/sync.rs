@@ -58,7 +58,7 @@ pub fn sync_pkgs(pkgs: EnumSet<PkgId>, installed: &mut InstallCache) -> cu::Resu
             ItemMgr::load()?
         }
     };
-    let graph = graph::build_sync_graph(pkgs, &installed, &mut Default::default())?;
+    let graph = graph::build_sync_graph(pkgs, installed, &mut Default::default())?;
     match graph.len() {
         1 => cu::info!("syncing 1 package..."),
         x => cu::info!("syncing {x} packages..."),
