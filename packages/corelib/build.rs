@@ -31,13 +31,13 @@ fn make_tools_targz() -> cu::Result<()> {
         path.push("tools");
         path
     };
+    println!("cargo::rerun-if-changed={}", tools_path.as_utf8()?);
 
     // Create a Cargo.toml for tools that inherit dependencies versions
     // from shaft itself
     let workspace_cargo_toml = {
         let mut path = crate_path.parent_abs_times(2)?;
         path.push("Cargo.toml");
-        println!("cargo::rerun-if-changed={}", path.as_utf8()?);
         cu::toml::parse::<cu::toml::Table>(&cu::fs::read_string(&path)?)?
     };
 
@@ -79,10 +79,6 @@ members = [
         if entry.file_type().is_none_or(|x| !x.is_dir()) {
             return true;
         }
-        println!(
-            "cargo::rerun-if-changed={}",
-            entry.path().as_utf8().unwrap()
-        );
         cfg!(windows) || entry.file_name() != "__windows__"
     });
     builder.add_custom_ignore_filename(".corelibignore");
@@ -100,7 +96,6 @@ members = [
             "failed to open '{}'",
             entry_path.display()
         )?;
-        println!("cargo::rerun-if-changed={}", entry_path.as_utf8()?);
         tar_builder.append_file(&rel_path, &mut file)?;
     }
 

@@ -10,10 +10,15 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
-
-
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ubuntu-latest
+          - image: windows-latest
+    runs-on: ${{ matrix.image }}
     steps:
+      - run: git config --global core.autocrlf false
       - uses: Pistonight/mono-dev/actions/setup@main
         with:
           mono-dev: packages

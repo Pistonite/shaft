@@ -116,7 +116,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     }
     // not sure what's going on with mkdir and why it's a function now instead of alias of New-Item
     // just patching it now (probably bad Windows update or something)
-    ctx.add_item(Item::pwsh(format!("Remove-Item Function:mkdir -Force")))?;
+    ctx.add_item(Item::pwsh("Remove-Item Function:mkdir -Force"))?;
     // configure utils from mingw
     let exe_path = opfs::find_in_wingit("usr/bin/grep.exe")?;
     ctx.add_item(Item::shim_bin(
