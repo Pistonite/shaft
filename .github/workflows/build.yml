@@ -11,8 +11,6 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-
-
     steps:
       - uses: Pistonight/mono-dev/actions/setup@main
         with:
