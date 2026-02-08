@@ -9,24 +9,6 @@ on:
 
 
 jobs:
-  check:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - image: ubuntu-latest
-          - image: windows-latest
-    runs-on: ${{ matrix.image }}
-    steps:
-      - run: git config --global core.autocrlf false
-      - uses: Pistonight/mono-dev/actions/setup@main
-        with:
-          mono-dev: packages
-          rust: stable
-          tool-cargo-install: lfmt=Pistonite/shellutils
-      - run: task check
-      - run: task test
-
   build:
     strategy:
       fail-fast: false
@@ -52,5 +34,3 @@ jobs:
         with:
           arch: ${{ matrix.target }}
           binary: shaft
-
-

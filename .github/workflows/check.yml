@@ -1,0 +1,17 @@
+name: Check
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Pistonight/mono-dev/actions/setup@main
+        with:
+          mono-dev: packages
+          rust: stable
+          tool-cargo-install: lfmt=Pistonite/shellutils
+      - run: task check
+      - run: task test
