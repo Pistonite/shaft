@@ -14,6 +14,25 @@ use zip::ZipArchive;
 #[cfg(windows)]
 use crate::opfs;
 
+/// Set the file at path to be executable
+#[cfg(windows)]
+pub fn set_executable(_: &Path) -> cu::Result<()> {
+    Ok(())
+}
+
+/// Set the file at path to be executable
+#[cfg(not(windows))]
+pub fn set_executable(path: &Path) -> cu::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    let metadata = path.metadata()?;
+    let mut perms = metadata.permissions();
+    let mode = perms.mode();
+    // Add execute permission for each role that has read permission
+    perms.set_mode(mode | ((mode & 0o444) >> 2));
+    std::fs::set_permissions(path, perms)?;
+    Ok(())
+}
+
 /// Create a Windows symbolic link (requires sudo).
 /// `from` is where the link will be
 #[cfg(windows)]
@@ -274,12 +293,8 @@ fn unarchive_impl(archive_path: &Path, out_dir: &Path, clean: bool) -> cu::Resul
                     format!("-o{out_dir}")
                 ])
             };
-            let file_name = archive_path.file_name_str().unwrap_or("(unknown)");
             let (child, bar, _) = command
-                .stdoe(
-                    cu::pio::spinner(format!("extracting {file_name} with 7z"))
-                        .configure_spinner(|x| x.keep(false)),
-                )
+                .stdoe(cu::pio::spinner("7z").configure_spinner(|x| x.keep(false)))
                 .stdin_null()
                 .spawn()?;
             child.wait_nz()?;
@@ -317,6 +332,15 @@ pub fn unzip_bytes(archive_bytes: &[u8], out_dir: &Path, clean: bool) -> cu::Res
     let mut archive = ZipArchive::new(Cursor::new(archive_bytes))?;
     archive.extract(out_dir)?; // to be consistent with 7z, we do not unwrap root dir
     Ok(())
+}
+
+/// Decompress GZ bytes into a file
+#[cu::context("failed to unpack gzip bytes")]
+pub fn ungz_bytes(bytes: &[u8], out_path: &Path) -> cu::Result<()> {
+    let mut decoder = GzDecoder::new(bytes);
+    let mut buf = Vec::new();
+    decoder.read_to_end(&mut buf)?;
+    cu::fs::write(out_path, buf)
 }
 
 /// Ensure nothing weird happens when the path is quoted

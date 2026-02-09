@@ -287,5 +287,20 @@ export const pkg_nvim: PackageFn = (meta) => [
             [cfg_windows_x64("SHA")]: x64.sha,
         })
     }),
-    fetch_from_cratesio({ crate: "tree-sitter-cli", query: (v) => ({ "treesitter_cli.VERSION": v })})
+];
+export const pkg_tree_sitter: PackageFn = (meta) => [
+    fetch_from_github_release({
+        repo: meta.repo(),
+        artifacts: () => [
+            "tree-sitter-linux-x64.gz",
+            "tree-sitter-windows-arm64.gz",
+            "tree-sitter-windows-x64.gz",
+        ],
+        query: (_, tag, [linux, arm, x64]) => ({
+            "VERSION": strip_v(tag),
+            [cfg_linux("SHA")]: linux.sha,
+            [cfg_windows_arm64("SHA")]: arm.sha,
+            [cfg_windows_x64("SHA")]: x64.sha,
+        })
+    }),
 ];

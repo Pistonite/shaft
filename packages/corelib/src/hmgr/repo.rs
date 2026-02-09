@@ -1,6 +1,6 @@
 use cu::pre::*;
 
-use crate::{bin_name, hmgr};
+use crate::hmgr;
 
 static SHAFT_REPO: &str = "https://github.com/Pistonite/shaft";
 
@@ -61,12 +61,6 @@ pub fn local_update() -> cu::Result<()> {
     child.wait_nz()?;
     bar.done();
 
-    let mut built_binary = repo_path.clone();
-    built_binary.extend(["target", "release", bin_name!("shaft")]);
-    if !built_binary.exists() {
-        cu::bail!("built binary not found at: {}", built_binary.display());
-    }
-
     let current_exe = std::env::current_exe()?;
     let exe_old = current_exe.with_extension(if cfg!(windows) { "old.exe" } else { "old" });
 
@@ -79,7 +73,6 @@ pub fn local_update() -> cu::Result<()> {
     }
 
     std::fs::rename(&current_exe, &exe_old)?;
-    cu::fs::copy(&built_binary, &current_exe)?;
 
     let package_path = repo_path.join("packages/cli");
     cu::which("cargo")?

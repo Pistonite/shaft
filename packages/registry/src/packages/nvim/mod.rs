@@ -1,11 +1,9 @@
 //! Neovim (with configuration)
-use enumset::EnumSet;
-
 use crate::pre::*;
 
-register_binaries!("tree-sitter", "vi", "vim", "nvim");
+register_binaries!("vi", "vim", "nvim");
 binary_dependencies!(
-    Git,      // various
+    TreeSitter, Git,      // various
     Clang,    // compile tree sitter
     Diff,     // undo tree
     Websocat, // yank to host
@@ -19,8 +17,6 @@ config_dependencies!(Shellutils); // vinvim
 version_cache!(static CFG = metadata::nvim::NVIM_CFG);
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
-    let v = check_cargo!("tree-sitter" in crate "tree-sitter-cli");
-    check_outdated!(&v.version, metadata[nvim::treesitter_cli]::VERSION);
     check_in_shaft!("nvim");
     let stdout = command_output!("nvim", ["--version"]);
     let version_line = stdout.lines().next().unwrap_or("");
@@ -40,8 +36,6 @@ pub fn download(ctx: &Context) -> cu::Result<()> {
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
-    epkg::cargo::install("tree-sitter-cli", ctx.bar_ref())?;
-
     opfs::ensure_terminated(bin_name!("nvim"))?;
     let file_name = nvim_file_name()?;
     let file_stem = cu::check!(
@@ -152,7 +146,6 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
 }
 
 pub fn uninstall(_: &Context) -> cu::Result<()> {
-    epkg::cargo::uninstall("tree-sitter-cli")?;
     Ok(())
 }
 

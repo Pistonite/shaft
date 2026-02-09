@@ -171,5 +171,11 @@ VERSION = "0.11.6"
 'cfg(all(windows,target_arch="aarch64"))'.SHA = "67a4e1da1f0d99e71c5e7b2dfd95f8c34721bd8c139eec99bb3e9034c2766301"
 'cfg(all(windows,target_arch="x86_64"))'.SHA = "90fc6d7cdf3d3388737caab1e2c554aa24b468f3a5cc38ef63857ddf1103513c"
 'cfg(target_os="linux")'.SHA = "2fc90b962327f73a78afbfb8203fd19db8db9cdf4ee5e2bef84704339add89cc"
-treesitter_cli.VERSION = "0.26.5"
 NVIM_CFG = "5"
+
+[tree_sitter]
+VERSION = "0.26.5"
+REPO = "https://github.com/tree-sitter/tree-sitter"
+'cfg(all(windows,target_arch="aarch64"))'.SHA = "493701ef90ec27bec29a9b53f4d6a49b753d79d534d07351f85a2af4b71ac9dc"
+'cfg(all(windows,target_arch="x86_64"))'.SHA = "0adfa6a81fd94d3a8eda9d9c89333bf1263bc112c7797dc90bea80b519fe2181"
+'cfg(target_os="linux")'.SHA = "d38d9a22ef398489e1eb291b2dea41467487020fe8280c2311dbbad9ba663a34"
