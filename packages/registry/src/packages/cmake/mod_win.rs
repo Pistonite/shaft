@@ -3,6 +3,8 @@
 use crate::pre::*;
 
 register_binaries!("cmake");
+binary_dependencies!(_7z);
+
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_shaft!("cmake" || "system-cctools");
     let v = command_output!("cmake", ["--version"]);

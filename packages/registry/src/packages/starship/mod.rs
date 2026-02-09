@@ -4,6 +4,7 @@ use crate::pre::*;
 
 register_binaries!("starship");
 version_cache!(static CFG_VERSION = metadata::starship::CFG_VERSION);
+binary_dependencies!(CargoBinstall);
 config_dependencies!(Terminal); // for clink
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {

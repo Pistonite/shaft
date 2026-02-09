@@ -69,8 +69,21 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     let utils: Vec<_> = list_output
         .lines()
         .map(|s| s.trim())
-        .filter(|s| !s.is_empty() && s.chars().all(|c| c.is_alphanumeric()))
+        .filter(|s| {
+            if s.is_empty() {
+                return false;
+            }
+            if !s.chars().all(|c| c.is_alphanumeric()) {
+                return false;
+            }
+            // link conflicts with MSVC
+            if *s == "link" {
+                return false;
+            }
+            true
+        })
         .collect();
+
     {
         let bar = cu::progress("configuring coreutils")
             .total(utils.len())
