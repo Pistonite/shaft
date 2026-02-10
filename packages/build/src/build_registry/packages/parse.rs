@@ -5,7 +5,8 @@ use cu::pre::*;
 use itertools::Itertools as _;
 use pm::pre::*;
 
-use crate::util::{self, Platform};
+use super::kebab;
+use super::platform::Platform;
 
 pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleFileStructure>> {
     // allowed structures: (assuming foo-bar is the name of the package)
@@ -29,7 +30,7 @@ pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleF
             "unable to determine package name from file: '{top_path_str}'"
         )?;
         cu::ensure!(!package_name.is_empty(), "in file: '{top_path_str}'")?;
-        cu::ensure!(util::is_kebab(package_name), "in file: '{top_path_str}'")?;
+        cu::ensure!(kebab::is_kebab(package_name), "in file: '{top_path_str}'")?;
         let platform = match parts.next() {
             None => Platform::Any,
             Some(x) => cu::check!(
@@ -58,7 +59,7 @@ pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleF
 
     let package_name = file_name;
     cu::ensure!(!package_name.is_empty(), "in path: '{top_path_str}'")?;
-    cu::ensure!(util::is_kebab(package_name), "in path: '{top_path_str}'")?;
+    cu::ensure!(kebab::is_kebab(package_name), "in path: '{top_path_str}'")?;
     let mut structure = ModuleFileStructure::new(package_name.to_string());
     for entry in cu::fs::read_dir(top_path)? {
         let entry = entry?;
@@ -88,7 +89,7 @@ pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleF
     }
 
     if structure.files.is_empty() {
-        println!("cargo::warning=empty package file structure for package '{package_name}'");
+        cu::warn!("empty package file structure for package '{package_name}'");
         return Ok(None);
     }
 

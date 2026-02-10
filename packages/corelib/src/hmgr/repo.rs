@@ -1,14 +1,8 @@
 use cu::pre::*;
 
-use crate::hmgr;
+use crate::{bin_name, hmgr};
 
 static SHAFT_REPO: &str = "https://github.com/Pistonite/shaft";
-
-/// Files to remove before building
-static FILES_TO_REMOVE: &[&str] = &[
-    "packages/corelib/src/hmgr/tools_targz.gen.rs",
-    "packages/corelib/src/hmgr/tools.tar.gz",
-];
 
 /// Build shaft from source locally and update the current executable
 pub fn local_update() -> cu::Result<()> {
@@ -43,27 +37,35 @@ pub fn local_update() -> cu::Result<()> {
         .stdin_null()
         .wait_nz()?;
 
-    for file in FILES_TO_REMOVE {
-        let file_path = repo_path.join(file);
-        if file_path.exists() {
-            cu::debug!("removing: {}", file_path.display());
-            cu::fs::remove(&file_path)?;
-        }
+    {
+        let (child, bar) = cu::which("cargo")?
+            .command()
+            .current_dir(&repo_path)
+            .add(cu::args!["build", "--bin", "shaft-build", "--locked"])
+            .preset(cu::pio::cargo("running pre-build script"))
+            .spawn()?;
+        child.wait_nz()?;
+        bar.done();
     }
-
-    let corelib_path = repo_path.join("packages/corelib");
-    let (child, bar) = cu::which("cargo")?
-        .command()
-        .current_dir(&corelib_path)
-        .add(cu::args!["build", "--release", "--locked"])
-        .preset(cu::pio::cargo("ensure successful corelib build"))
-        .spawn()?;
-    child.wait_nz()?;
-    bar.done();
+    {
+        let (child, bar) = cu::which("cargo")?
+            .command()
+            .current_dir(&repo_path)
+            .add(cu::args![
+                "build",
+                "--bin",
+                "shaft",
+                "--release",
+                "--locked"
+            ])
+            .preset(cu::pio::cargo("building"))
+            .spawn()?;
+        child.wait_nz()?;
+        bar.done();
+    }
 
     let current_exe = std::env::current_exe()?;
     let exe_old = current_exe.with_extension(if cfg!(windows) { "old.exe" } else { "old" });
-
     if exe_old.exists() {
         cu::check!(
             cu::fs::remove(&exe_old),
@@ -71,18 +73,24 @@ pub fn local_update() -> cu::Result<()> {
             exe_old.display()
         )?;
     }
-
     std::fs::rename(&current_exe, &exe_old)?;
 
-    let package_path = repo_path.join("packages/cli");
-    cu::which("cargo")?
-        .command()
-        .add(cu::args!["install", "--path", &package_path, "--locked"])
-        .stdout(cu::lv::P)
-        .stderr(cu::lv::P)
-        .stdin_null()
-        .wait_nz()?;
-
-    cu::info!("update successful");
+    let output_path = repo_path
+        .join("target")
+        .join("release")
+        .join(bin_name!("shaft"));
+    let expected_path = hmgr::paths::binary(bin_name!("shaft"));
+    cu::check!(
+        cu::fs::copy(output_path, &expected_path),
+        "failed to copy build output to bin"
+    )?;
+    cu::info!("copied build output to $SHAFT_HOME/bin");
+    let current_exe_norm = current_exe.normalize()?.to_string_lossy().to_lowercase();
+    let expected_exe_norm = expected_path.to_string_lossy().to_lowercase();
+    if current_exe_norm != expected_exe_norm {
+        cu::hint!("you should remove the existing installtion (e.g cargo uninstall shaft-cli)");
+    } else {
+        cu::info!("update successful");
+    }
     Ok(())
 }

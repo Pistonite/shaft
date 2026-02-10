@@ -4,17 +4,18 @@ use std::path::{Path, PathBuf};
 use cu::pre::*;
 use itertools::Itertools as _;
 
-use crate::parse::{ModuleData, ModuleFileStructure, ParsedModule};
-use crate::util::{self, Platform};
+use super::kebab;
+use super::parse::{ModuleData, ModuleFileStructure, ParsedModule};
+use super::platform::Platform;
 
 pub struct RegistryBuilder {
-    registry_path: PathBuf,
+    registry_src_path: PathBuf,
     packages: BTreeMap<String, ModuleFileStructure>,
 }
 impl RegistryBuilder {
     pub fn new(path: PathBuf) -> Self {
         Self {
-            registry_path: path,
+            registry_src_path: path,
             packages: Default::default(),
         }
     }
@@ -46,7 +47,7 @@ impl RegistryBuilder {
         writeln!(out, "#![allow(clippy::non_minimal_cfg)]")?;
         writeln!(out, "use enumset::{{EnumSetType, EnumSet, enum_set}};")?;
         writeln!(out, "use enum_map::Enum;")?;
-        writeln!(out, "mod _stub {{ {} }}", include_str!("./package_stub.rs"))?;
+        writeln!(out, "mod _stub {{ {} }}", include_str!("./stub_impl.rs"))?;
 
         // if the package name contains invalid character,
         // there will be build error in the generated code.
@@ -54,7 +55,7 @@ impl RegistryBuilder {
         // (it should be rare since the registry is fully controlled by me)
 
         let kebab_pkgs = self.packages.keys().collect::<Vec<_>>();
-        let (pascal_pkgs, snake_pkgs) = util::generate_casings_from_kebab(&kebab_pkgs);
+        let (pascal_pkgs, snake_pkgs) = kebab::generate_casings_from_kebab(&kebab_pkgs);
         cu::check!(
             generate_id_enum(&mut out, "Pkg", &kebab_pkgs, &pascal_pkgs),
             "failed to generate PkgId enum"
@@ -70,7 +71,7 @@ impl RegistryBuilder {
         }
 
         let kebab_bins = all_binaries.iter().collect::<Vec<_>>();
-        let (pascal_bins, _) = util::generate_casings_from_kebab(&kebab_bins);
+        let (pascal_bins, _) = kebab::generate_casings_from_kebab(&kebab_bins);
         cu::check!(
             generate_id_enum(&mut out, "Bin", &kebab_bins, &pascal_bins),
             "failed to generate BinId enum"
@@ -101,7 +102,7 @@ impl RegistryBuilder {
             &self.packages,
             &snake_pkgs,
             &modules,
-            &self.registry_path,
+            &self.registry_src_path,
             &mut out,
         )?;
 
@@ -208,7 +209,7 @@ fn build_metadata_for_module(
         let binaries = data
             .kebab_binaries
             .iter()
-            .map(|x| format!("BinId::{}", util::kebab_to_pascal(x)))
+            .map(|x| format!("BinId::{}", kebab::kebab_to_pascal(x)))
             .join(" | ");
         writeln!(out, "        binaries_fn: || enum_set!{{ {binaries} }},")?;
     }
@@ -377,7 +378,7 @@ fn build_package_modules(
     packages: &BTreeMap<String, ModuleFileStructure>,
     snake_pkgs: &[String],
     modules: &[ParsedModule],
-    registry_path: &Path,
+    registry_src_path: &Path,
     out: &mut String,
 ) -> cu::Result<()> {
     use std::fmt::Write as _;
@@ -389,7 +390,7 @@ fn build_package_modules(
                 linux_flavors.push(*platform);
             }
             let path = path.normalize()?;
-            let path = path.try_to_rel_from(registry_path);
+            let path = path.try_to_rel_from(registry_src_path);
             // relative path ensures the output is consistent throughout
             // build environments
             cu::ensure!(path.is_relative(), "'{}'", path.display())?;
@@ -426,7 +427,7 @@ fn build_package_modules(
                     let binaries = data
                         .kebab_binaries
                         .iter()
-                        .map(|x| format!("super::BinId::{}", util::kebab_to_pascal(x)))
+                        .map(|x| format!("super::BinId::{}", kebab::kebab_to_pascal(x)))
                         .join(" | ");
                     writeln!(
                         out,

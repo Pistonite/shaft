@@ -1,9 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
+    "packages/build",
     "packages/procname-checker",
     "packages/corelib",
-    "packages/registry-build",
     "packages/cli",
     "packages/registry",
 ]

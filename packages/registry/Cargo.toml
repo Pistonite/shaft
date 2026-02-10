@@ -13,7 +13,3 @@ enumset.workspace = true
 serde = "1"
 phf = { version = "0.13.1", features = ["macros"] }
 shaftim-build = { path = "../tools/shaftim-build", default-features = false }
-
-[build-dependencies]
-cu = { workspace = true, features = ["toml"] }
-shaft-registry-build = { path = "../registry-build" }
