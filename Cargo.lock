@@ -2501,10 +2501,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "shaft-build"
+version = "0.0.0"
+dependencies = [
+ "flate2",
+ "ignore",
+ "itertools",
+ "pistonite-cu",
+ "pistonite-pm",
+ "sha2",
+ "tar",
+]
+
+[[package]]
 name = "shaft-cli"
 version = "0.2.4"
 dependencies = [
- "clap",
  "enum-map",
  "enumset",
  "itertools",
@@ -2525,7 +2537,6 @@ dependencies = [
  "flate2",
  "fs2",
  "fxhash",
- "ignore",
  "libc",
  "pistonite-cu",
  "reqwest",
@@ -2552,17 +2563,7 @@ dependencies = [
  "pistonite-cu",
  "serde",
  "shaft-corelib",
- "shaft-registry-build",
  "shaftim-build",
-]
-
-[[package]]
-name = "shaft-registry-build"
-version = "0.0.0"
-dependencies = [
- "itertools",
- "pistonite-cu",
- "pistonite-pm",
 ]
 
 [[package]]

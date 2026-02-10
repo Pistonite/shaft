@@ -1,0 +1,15 @@
+[package]
+name = "shaft-build"
+description = "build script for the repo"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+cu = { workspace = true, features = ["cli", "fs", "json", "derive", "toml"] }
+pm = { workspace = true, features = ["full"] }
+itertools.workspace = true
+flate2.workspace = true
+ignore.workspace = true
+tar.workspace = true
+sha2.workspace = true

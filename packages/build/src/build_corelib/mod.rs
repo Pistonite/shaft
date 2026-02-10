@@ -1,6 +1,5 @@
 use std::fs::File;
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use cu::pre::*;
 use flate2::Compression;
@@ -9,38 +8,32 @@ use ignore::WalkBuilder;
 use sha2::{Digest, Sha256};
 use tar::{Builder as TarBuilder, HeaderMode};
 
-fn main() -> cu::Result<()> {
-    let crate_path = PathBuf::from(cu::env_var("CARGO_MANIFEST_DIR")?);
-    make_tools_targz(&crate_path)?;
-    hash_tools_targz(&crate_path)
+use crate::util;
+
+pub fn build_tools() -> cu::Result<()> {
+    let bytes = make_tools_targz()?;
+    hash_tools_targz(&bytes)
 }
 
 /// Pack the tools directory into a .tar.gz at hmgr/tools.tar.gz
-fn make_tools_targz(crate_path: &Path) -> cu::Result<()> {
+fn make_tools_targz() -> cu::Result<Vec<u8>> {
+    let mut out_bytes = Vec::new();
     let mut tar_builder = {
-        let file = cu::fs::writer(tools_targz_path(crate_path))?;
-        let gz_encoder = GzEncoder::new(file, Compression::default());
+        let gz_encoder = GzEncoder::new(&mut out_bytes, Compression::default());
         let mut builder = TarBuilder::new(gz_encoder);
         builder.mode(HeaderMode::Deterministic);
         builder.follow_symlinks(false);
         builder
     };
 
-    let tools_path = {
-        let mut path = crate_path.parent_abs()?;
-        path.push("tools");
-        path
-    };
-    println!("cargo::rerun-if-changed={}", tools_path.as_utf8()?);
+    let tools_path = util::tools_dir()?;
+    let repo_root = util::repo_root_dir()?;
+    let workspace_cargo_toml = repo_root.join("Cargo.toml");
+    let workspace_cargo_toml =
+        cu::toml::parse::<cu::toml::Table>(&cu::fs::read_string(&workspace_cargo_toml)?)?;
 
     // Create a Cargo.toml for tools that inherit dependencies versions
     // from shaft itself
-    let workspace_cargo_toml = {
-        let mut path = crate_path.parent_abs_times(2)?;
-        path.push("Cargo.toml");
-        cu::toml::parse::<cu::toml::Table>(&cu::fs::read_string(&path)?)?
-    };
-
     let tools_cargo_content = {
         let mut out = r#"
 [workspace]
@@ -62,26 +55,9 @@ members = [
         out.push_str(&cu::toml::stringify_pretty(&new_table)?);
         out
     };
-    let mut need_to_write_cargo_toml = true;
-    if let Ok(content) = cu::fs::read_string(tools_path.join("Cargo.toml")) {
-        let c2 = content
-            .lines()
-            .map(|x| x.trim())
-            .collect::<Vec<_>>()
-            .join("\n");
-        let new_one = tools_cargo_content
-            .lines()
-            .map(|x| x.trim())
-            .collect::<Vec<_>>()
-            .join("\n");
-        if c2 == new_one {
-            need_to_write_cargo_toml = false;
-        }
-    }
-    if need_to_write_cargo_toml {
-        cu::fs::write(tools_path.join("Cargo.toml"), &tools_cargo_content)?;
-    }
+    cu::fs::write(tools_path.join("Cargo.toml"), &tools_cargo_content)?;
 
+    // cargo.toml is gitignored so we need to add it specifically
     {
         let bytes = tools_cargo_content.as_bytes();
         let mut header = tar::Header::new_gnu();
@@ -117,14 +93,17 @@ members = [
         tar_builder.append_file(&rel_path, &mut file)?;
     }
 
-    tar_builder.into_inner()?.finish()?.flush()?;
-    Ok(())
+    tar_builder.into_inner()?.finish()?;
+
+    let output_path = tools_targz_path()?;
+    cu::info!("saving tools to {}", output_path.display());
+    util::write_bin_if_modified("tools.tar.gz", &output_path, &out_bytes)?;
+    Ok(out_bytes)
 }
 
-fn hash_tools_targz(crate_path: &Path) -> cu::Result<()> {
-    let bytes = cu::fs::read(tools_targz_path(crate_path))?;
+fn hash_tools_targz(bytes: &[u8]) -> cu::Result<()> {
     let mut hasher = Sha256::new();
-    hasher.update(&bytes);
+    hasher.update(bytes);
     let result = hasher.finalize();
     let mut out = String::with_capacity(64);
     let digits = b"0123456789abcdef";
@@ -140,17 +119,21 @@ use crate::VersionCache;
 pub static TOOLS_VERSION: VersionCache = VersionCache::new("corelib::TOOLS_VERSION", "{out}");
     "##
     );
-    cu::fs::write(tools_genrs_path(crate_path), gen_code)
+
+    let output_path = tools_genrs_path()?;
+    cu::info!("saving tools hash to {}", output_path.display());
+    util::write_str_if_modified("tools.gen.rs", &output_path, &gen_code)?;
+    Ok(())
 }
 
-fn tools_targz_path(crate_path: &Path) -> PathBuf {
-    let mut path = crate_path.to_path_buf();
+fn tools_targz_path() -> cu::Result<PathBuf> {
+    let mut path = util::corelib_dir()?;
     path.extend(["src", "hmgr", "tools.tar.gz"]);
-    path
+    Ok(path)
 }
 
-fn tools_genrs_path(crate_path: &Path) -> PathBuf {
-    let mut path = crate_path.to_path_buf();
+fn tools_genrs_path() -> cu::Result<PathBuf> {
+    let mut path = util::corelib_dir()?;
     path.extend(["src", "hmgr", "tools_targz.gen.rs"]);
-    path
+    Ok(path)
 }

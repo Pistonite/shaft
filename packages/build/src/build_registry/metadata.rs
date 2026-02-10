@@ -1,22 +1,18 @@
-use std::path::Path;
+use std::fmt::Write as _;
 
 use cu::pre::*;
 
-fn main() -> cu::Result<()> {
-    let crate_path = cu::env_var("CARGO_MANIFEST_DIR")?;
-    shaft_registry_build::run_build(Path::new(&crate_path));
-    build_metadata(&crate_path)?;
-    Ok(())
-}
+use crate::util;
 
-fn build_metadata(crate_path: &str) -> cu::Result<()> {
-    use std::fmt::Write as _;
+/// Build registry metadata file from metadata.toml
+pub fn build_metadata() -> cu::Result<()> {
+    let registry_path = util::registry_dir()?;
+    let metadata_toml_path = registry_path.join("metadata.toml");
+    let metadata_output_path = registry_path.join("src").join("metadata.gen.rs");
 
-    let metadata_path = Path::new(crate_path).join("metadata.toml");
-    println!("cargo:rerun-if-changed={}", metadata_path.as_utf8()?);
-    let output_path = Path::new(crate_path).join("src").join("metadata.gen.rs");
+    cu::info!("saving metadata to {}", metadata_output_path.display());
 
-    let table = toml::parse::<toml::Table>(&cu::fs::read_string(metadata_path)?)?;
+    let table = toml::parse::<toml::Table>(&cu::fs::read_string(metadata_toml_path)?)?;
 
     let mut out = String::new();
     let _ = writeln!(out, "#![allow(unused)]");
@@ -28,8 +24,7 @@ fn build_metadata(crate_path: &str) -> cu::Result<()> {
         path.pop();
     }
 
-    cu::fs::write(output_path, out)?;
-
+    util::write_str_if_modified("registry metadata", &metadata_output_path, &out)?;
     Ok(())
 }
 
@@ -58,13 +53,13 @@ fn build_metadata_module(
         path.push(key);
         if key.starts_with("cfg(") {
             let toml::Value::Table(value) = value else {
-                println!("cargo:error=cfg attribute must be a table, at: {path}.{key}");
-                cu::bail!("cfg but not table found");
+                cu::bail!("cargo:error=cfg attribute must be a table, at: {path}.{key}");
             };
             for (cfg_key, cfg_value) in value {
                 if cfg_key.starts_with("cfg(") {
-                    println!("cargo:error=consecutive cfg not allowed, at: {path}.{key}.{cfg_key}");
-                    cu::bail!("consecutive cfg found");
+                    cu::bail!(
+                        "cargo:error=consecutive cfg not allowed, at: {path}.{key}.{cfg_key}"
+                    );
                 }
                 let cfg_attr = format!("#[{key}]");
                 path.push(cfg_key);
@@ -129,21 +124,17 @@ fn build_metadata_item(
             }
         }
         toml::Value::Integer(x) => {
-            println!("cargo:error=use a literal to specify numbers (e.g \"{x}i64\"), at: {path}");
-            cu::bail!("integer found");
+            cu::bail!("cargo:error=use a literal to specify numbers (e.g \"{x}i64\"), at: {path}");
         }
         toml::Value::Float(x) => {
-            println!("cargo:error=use a literal to specify numbers (e.g. \"{x}f64\"), at: {path}");
-            cu::bail!("float found");
+            cu::bail!("cargo:error=use a literal to specify numbers (e.g. \"{x}f64\"), at: {path}");
         }
         toml::Value::Boolean(s) => ("bool", format!("{s}")),
         toml::Value::Datetime(_) => {
-            println!("cargo:error=datetime is not supported, at: {path}");
-            cu::bail!("datetime found");
+            cu::bail!("cargo:error=datetime is not supported, at: {path}");
         }
         toml::Value::Array(_) => {
-            println!("cargo:error=array is not supported, at: {path}");
-            cu::bail!("array found");
+            cu::bail!("cargo:error=array is not supported, at: {path}");
         }
         toml::Value::Table(table) => {
             return build_metadata_module(out, depth, name, path, cfg_attr, table);

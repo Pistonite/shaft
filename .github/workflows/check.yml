@@ -20,5 +20,6 @@ jobs:
           mono-dev: packages
           rust: stable
           tool-cargo-install: lfmt=Pistonite/shellutils
+      - run: task run-build
       - run: task check
       - run: task test

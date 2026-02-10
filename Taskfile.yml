@@ -6,10 +6,10 @@ includes:
     flatten: true
     optional: true
 
+  build:          { taskfile: ./packages/build,           dir: ./packages/build,          internal: true }
   cli:            { taskfile: ./packages/cli,             dir: ./packages/cli,            internal: true }
   corelib:        { taskfile: ./packages/corelib,         dir: ./packages/corelib,        internal: true }
   registry:       { taskfile: ./packages/registry,        dir: ./packages/registry,       internal: true }
-  registry-build: { taskfile: ./packages/registry-build,  dir: ./packages/registry-build, internal: true }
 
 tasks:
   install:
@@ -22,7 +22,6 @@ tasks:
       - cargo install lfmt --git https://github.com/Pistonite/shellutils
   check:
     - task: corelib:check
-    - task: registry-build:check
     - task: registry:check
     - task: cli:check
     - lfmt -c
@@ -37,3 +36,11 @@ tasks:
   clean:
     - task: registry:clean
     - cargo clean
+    - cd packages/tools && cargo clean
+
+  shaft:
+    - task: run-build
+    - cargo run --bin shaft -- {{.CLI_ARGS}}
+
+  run-build:
+    - cargo run --bin shaft-build
