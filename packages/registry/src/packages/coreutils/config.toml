@@ -1,0 +1,33 @@
+[[section]]
+key = ["windows"]
+comment = "Options for Windows-specific settings"
+children = [
+    {
+        key = ["exclude-coreutils"],
+        value = [],
+        comment = """
+Exclude creating shim executables for coreutils listed.
+You would have to run coreutils <util> to run the util.
+Set it to the following to avoid conflicts with CMD and
+native Windows utilities with the same names:
+exclude-coreutils = [
+    # System32
+    'expand',
+    'hostname',
+    'more',
+    'whoami',
+    'sort',
+    'find',
+    # CMD
+    'rmdir',
+    'dir',
+    'type',
+]
+
+The following utils are usually not used, and often conflicts,
+so they are always removed:
+- `link.exe` - conflicts with MSVC
+
+"""
+    },
+]

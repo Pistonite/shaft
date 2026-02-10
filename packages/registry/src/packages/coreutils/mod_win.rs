@@ -58,12 +58,15 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     eza::configure(ctx)?;
     // configure coreutils
     // we need to copy installed coreutils to bin to ensure
-    // it's on the same drive
-    let coreutils_path = hmgr::paths::binary(bin_name!("coreutils"));
-    cu::fs::remove(&coreutils_path)?;
+    // it's on the same drive, so it can be hardlinked
+    let old_coreutils_path = hmgr::paths::binary(bin_name!("coreutils"));
+    cu::fs::remove(&old_coreutils_path)?;
+    let coreutils_path = ctx.install_dir().join(bin_name!("coreutils"));
     let coreutils_src = cu::which("coreutils")?;
     cu::fs::copy(&coreutils_src, &coreutils_path)?;
     let coreutils_path = coreutils_path.into_utf8()?;
+
+    let config = ctx.load
 
     let list_output = command_output!("coreutils", ["--list"]);
     let utils: Vec<_> = list_output
@@ -191,4 +194,20 @@ async fn shell_has_binary(shell: &str, util: &str) -> cu::Result<bool> {
         .co_wait()
         .await
         .map(|s| s.success())
+}
+
+config_file! {
+    static CONFIG: Config = {
+        template: include_str!("config.toml"),
+        migration: []
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct Config {
+    windows: ConfigWindows
+}
+#[derive(Debug, Deserialize)]
+struct ConfigWindows {
+    exclude_coreutils: Vec<String>
 }

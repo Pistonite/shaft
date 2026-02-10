@@ -19,7 +19,7 @@ VERSION = "7.6.0-preview.6"
 VERSION = "1.17.4"
 
 [coreutils]
-ALIAS_VERSION = "8"
+ALIAS_VERSION = "9"
 eza.VERSION = "0.23.4"
 uutils.VERSION = "0.6.0"
 zip.VERSION = "3.0"
