@@ -194,11 +194,14 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     let zoxide_ci_cmd = install_dir.join("zoxide_ci.cmd");
     cu::fs::write(&zoxide_c_cmd, include_bytes!("./zoxide_c.cmd"))?;
     cu::fs::write(&zoxide_ci_cmd, include_bytes!("./zoxide_ci.cmd"))?;
-    ctx.add_item(Item::cmd(format!(
-        "doskey c=call \"{}\" $1\r\ndoskey ci=call \"{}\" $1",
-        zoxide_c_cmd.into_utf8()?,
-        zoxide_ci_cmd.into_utf8()?
-    )))?;
+
+    // currently, doing this would allow c/ci to work to jump to directory,
+    // but regular cd won't update zoxide database, so it's not really useful
+    // ctx.add_item(Item::cmd(format!(
+    //     "doskey c=call \"{}\" $1\r\ndoskey ci=call \"{}\" $1",
+    //     zoxide_c_cmd.into_utf8()?,
+    //     zoxide_ci_cmd.into_utf8()?
+    // )))?;
 
     ctx.add_item(Item::shim_bin(
         "vihosts",

@@ -9,7 +9,10 @@ static LOGO: &str = r" ______ __  __ ______ ______ ______
 
 /// The component that keeps the machine running
 #[derive(clap::Parser, Debug, AsRef)]
-#[clap(before_help = LOGO)]
+#[clap(
+    before_help = LOGO,
+    bin_name = "shaft"
+)]
 pub struct CliApi {
     #[clap(subcommand)]
     pub command: Option<CliCommand>,

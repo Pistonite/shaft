@@ -107,20 +107,30 @@ fn ninja_url() -> String {
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
-    ctx.move_install_to_old_if_exists()?;
     let install_dir = ctx.install_dir();
+    let verify_result = verify(ctx)?;
 
-    {
+    let llvm_dir = install_dir.join("llvm");
+    let mut should_unpack = true;
+    if llvm_dir.exists() {
+        if verify_result != Verified::NotUpToDate {
+            should_unpack = cu::yesno!(
+                "detected existing llvm installation in shaft, enter 'n' to save time by skipping unpack if you believe this is a good installation; enter 'y' to continue to unpack"
+            )?;
+        }
+        if should_unpack {
+            let bar = cu::progress("cleaning existing llvm directory")
+                .parent(ctx.bar())
+                .spawn();
+            cu::fs::rec_remove(&llvm_dir)?;
+            bar.done();
+        }
+    }
+    if should_unpack {
         let bar = cu::progress("unpacking llvm")
             .keep(true)
             .parent(ctx.bar())
             .spawn();
-        let llvm_dir = install_dir.join("llvm");
-        if llvm_dir.exists() {
-            let bar = bar.child("cleaning existing llvm directory").spawn();
-            cu::fs::rec_remove(&llvm_dir)?;
-            bar.done();
-        }
         let clang_zip = hmgr::paths::download("llvm.txz", llvm_url());
         opfs::unarchive(&clang_zip, &install_dir, true)?;
         let dir_name = install_dir.join(llvm_release_name());
@@ -129,8 +139,26 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
             "failed to rename directory when unpacking llvm"
         )?;
         bar.done();
+    } else {
+        cu::warn!("skipping unpacking llvm");
     }
-    {
+
+    let llvm_dir = install_dir.join("llvm-mingw");
+    if llvm_dir.exists() {
+        if verify_result != Verified::NotUpToDate {
+            should_unpack = cu::yesno!(
+                "detected existing llvm-mingw installation in shaft, enter 'n' to save time by skipping unpack if you believe this is a good installation; enter 'y' to continue to unpack"
+            )?;
+        }
+        if should_unpack {
+            let bar = cu::progress("cleaning existing llvm-mingw directory")
+                .parent(ctx.bar())
+                .spawn();
+            cu::fs::rec_remove(&llvm_dir)?;
+            bar.done();
+        }
+    }
+    if should_unpack {
         let bar = cu::progress("unpacking llvm-mingw")
             .keep(true)
             .parent(ctx.bar())
@@ -140,7 +168,11 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
         let llvm_dir = install_dir.join("llvm-mingw");
         cu::fs::rename(install_dir.join(llvm_mingw_release_name()), llvm_dir)?;
         bar.done();
+    } else {
+        cu::warn!("skipping unpacking llvm-mingw");
     }
+
+    // ninja is small and unlikely to fail so just unpack anyway
     {
         let bar = cu::progress("unpacking ninja")
             .keep(true)
