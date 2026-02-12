@@ -13,7 +13,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     Ok(Verified::UpToDate)
 }
 pub fn install(ctx: &Context) -> cu::Result<()> {
-    epkg::cargo::binstall("git-delta", ctx.bar_ref())?;
+    epkg::cargo::install("git-delta", ctx.bar_ref())?;
     Ok(())
 }
 pub fn uninstall(_: &Context) -> cu::Result<()> {

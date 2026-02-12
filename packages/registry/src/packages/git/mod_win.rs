@@ -10,9 +10,6 @@ register_binaries!("git", "scalar", "bash");
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_path!("git");
-    // we don't check if the bash is in shaft, because WSL
-    // litters a bash.exe into PATH (bruh)
-    check_in_path!("bash");
     let version = command_output!("git", ["--version"]);
     if !version.contains("vfs") {
         cu::bail!(

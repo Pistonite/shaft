@@ -95,7 +95,18 @@ export const pkg_git: PackageFn = async () => [
             tag = strip_v(tag);
             const i = tag.indexOf(".vfs");
             if (i===-1) { throw new Error("latest microsoft/git is not vfs"); }
-            return { [cfg_windows("VERSION")]: tag.substring(0, i) }
+            // lower 1 minor version for the requirement
+            let version = tag.substring(0, i);
+            const i_dot = version.indexOf(".");
+            if (i_dot===-1) { throw new Error("failed to parse git version"); }
+            const i_dot2 = version.indexOf(".", i_dot+1);
+            if (i_dot2===-1) { throw new Error("failed to parse git version"); }
+            let minor_version = parseInt(version.substring(i_dot+1,i_dot2));
+            if (minor_version !== 0) {
+                if (!Number.isInteger(minor_version)) {throw new Error("failed to parse git version")}
+                version = version.substring(0,i_dot+1) + (minor_version-1) + version.substring(i_dot2);
+            }
+            return { [cfg_windows("VERSION")]: version }
         }
     }),
     fetch_from_arch_linux({ package: "git", query: (version) => ({ [cfg_linux("VERSION")]: version }) }),

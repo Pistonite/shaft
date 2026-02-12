@@ -163,7 +163,7 @@ REPO = "https://github.com/ninja-build/ninja"
 
 [starship]
 VERSION = "1.24.2"
-CFG_VERSION = "9"
+CFG_VERSION = "10"
 
 [nvim]
 REPO = "https://github.com/neovim/neovim"

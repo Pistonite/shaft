@@ -63,6 +63,7 @@ format = "[$symbol$branch]($style)"
 truncation_length = 50
 symbol = " "
 style = "bright-purple"
+only_attached = true
 
 [git_commit]
 format = '[ $hash]($style)'
