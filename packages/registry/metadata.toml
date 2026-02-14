@@ -19,7 +19,7 @@ VERSION = "7.6.0-preview.6"
 VERSION = "1.17.4"
 
 [coreutils]
-ALIAS_VERSION = "10"
+ALIAS_VERSION = "12"
 eza.VERSION = "0.23.4"
 uutils.VERSION = "0.6.0"
 zip.VERSION = "3.0"
@@ -28,9 +28,10 @@ tar.VERSION = "1.35"
 which.VERSION = "2.23"
 bash.VERSION = "5.3.9"
 bash_cmp.VERSION = "2.17.0"
+yay.VERSION = "12.5.7"
 
 [shellutils]
-ALIAS_VERSION = "7"
+ALIAS_VERSION = "8"
 REPO = "https://github.com/Pistonite/shellutils"
 COMMIT = "b714fd6b2ed7308e1ed9e5dae989667a0f7a7164"
 which.VERSION = "0.1.3"

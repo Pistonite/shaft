@@ -77,7 +77,7 @@ impl ItemMgr {
             Item::UserPath(_) => {
                 self.set_all_shells_dirty();
             }
-            Item::LinkBin(_, _) => {}
+            Item::LinkBin(_, _, _) => {}
             Item::ShimBin(_, _) => self.shim_dirty = true,
             Item::Pwsh(_) => self.pwsh_dirty = true,
             Item::Bash(_) => self.bash_dirty = true,
@@ -124,7 +124,7 @@ impl ItemMgr {
                     _path_to_remove.insert(path.to_string());
                     self.set_all_shells_dirty();
                 }
-                Item::LinkBin(bin, _) => bin_to_remove.push(bin.to_string()),
+                Item::LinkBin(bin, _, _) => bin_to_remove.push(bin.to_string()),
                 Item::ShimBin(bin, _) => {
                     bin_to_remove.push(bin.to_string());
                     self.shim_dirty = true;
@@ -283,7 +283,7 @@ impl ItemMgr {
         cu::fs::make_dir(&bin_root)?;
         let mut link_paths = vec![];
         for entry in &self.items {
-            let Item::LinkBin(from, to) = &entry.item else {
+            let Item::LinkBin(from, to, non_exe) = &entry.item else {
                 continue;
             };
             let link_path = bin_root.join(from);
@@ -291,14 +291,23 @@ impl ItemMgr {
                 // assume existing file is from linking previously
                 continue;
             }
-            link_paths.push((link_path, to));
+            link_paths.push((link_path, to, non_exe));
         }
-        let link_paths: Vec<(&Path, &Path)> = link_paths
+        let link_paths2: Vec<(&Path, &Path)> = link_paths
             .iter()
-            .map(|(x, y)| (x.as_path(), y.as_ref()))
+            .map(|(x, y, _)| (x.as_path(), y.as_ref()))
             .collect();
 
-        opfs::hardlink_files(&link_paths)?;
+        opfs::hardlink_files(&link_paths2)?;
+
+        #[cfg(not(windows))]
+        {
+            for (from, _, non_exe) in link_paths {
+                if !non_exe {
+                    opfs::set_executable(&from)?;
+                }
+            }
+        }
         Ok(())
     }
 
@@ -641,7 +650,7 @@ pub enum Item {
 
     /// Link a binary (in the HOME/bin directory) to a location
     /// in the install directory.
-    LinkBin(String, String),
+    LinkBin(String, String, bool /* non_executable */),
 
     /// Create a shim binary that invokes a command.
     ///
@@ -684,7 +693,13 @@ impl Item {
 
     #[inline(always)]
     pub fn link_bin(name: impl Into<String>, target: impl Into<String>) -> Self {
-        Self::LinkBin(name.into(), target.into())
+        Self::LinkBin(name.into(), target.into(), false)
+    }
+
+    #[inline(always)]
+    #[cfg(not(windows))]
+    pub fn link_non_exe(name: impl Into<String>, target: impl Into<String>) -> Self {
+        Self::LinkBin(name.into(), target.into(), true)
     }
 
     #[inline(always)]

@@ -2,7 +2,7 @@ import type { MetafilePkg, MetaKeyValues } from "./metafile.mts"
 
 import { fetch_from_github_release } from "./fetch/github_release.mts";
 import { fetch_from_cratesio } from "./fetch/cratesio.mts";
-import { fetch_from_arch_linux } from "./fetch/arch_linux.mts";
+import { fetch_from_arch_linux, fetch_from_aur } from "./fetch/arch_linux.mts";
 import { fetch_from_cargo_toml } from "./fetch/github_cargo_toml.mts";
 import { fetch_latest_commit } from "./fetch/latest_commit.mts";
 import { fetch_release_name } from "./fetch/release_description.mts";
@@ -51,7 +51,7 @@ export const pkg_pwsh: PackageFn = (meta) =>
         })
     });
 export const pkg_cargo_binstall = default_cratesio_fetcher("cargo-binstall");
-export const pkg_coreutils: PackageFn = () => [
+export const pkg_coreutils: PackageFn = (meta) => [
     fetch_from_cratesio({ crate: "eza", query: (v) => ({ "eza.VERSION": v }) }),
     fetch_from_cratesio({ crate: "coreutils", query: (v) => ({ "uutils.VERSION": v }) }),
     fetch_from_arch_linux({ package: "zip", query: (version) => ({ "zip.VERSION": version }) }),
@@ -60,6 +60,7 @@ export const pkg_coreutils: PackageFn = () => [
     fetch_from_arch_linux({ package: "which", query: (version) => ({ "which.VERSION": version }) }),
     fetch_from_arch_linux({ package: "bash", query: (version) => ({ "bash.VERSION": version }) }),
     fetch_from_arch_linux({ package: "bash-completion", query: (version) => ({ "bash_cmp.VERSION": version }) }),
+    fetch_from_aur({ package: "yay-bin", query: (version) => ({ "yay.VERSION": version })}),
 ];
 export const pkg_shellutils: PackageFn = async (meta) => {
     const repo = meta.repo();

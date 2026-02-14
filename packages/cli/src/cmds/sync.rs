@@ -33,11 +33,8 @@ pub fn sync_pkgs(pkgs: EnumSet<PkgId>, installed: &mut InstallCache) -> cu::Resu
     };
     let core_version_cache = VersionCache::new("registry::CORE_VERSION", registry::CORE_VERSION);
     if let Some(items2) = &mut items {
-        if !core_version_cache
-            .is_uptodate()
-            .unwrap_or_default()
-            .unwrap_or_default()
-        {
+        let core_version_uptodate = core_version_cache.is_uptodate()?;
+        if let Some(false) = core_version_uptodate {
             cu::warn!("core version was bumped - all installed packages will be re-configured");
             let bar = cu::progress("removing all config items").spawn();
             items2.remove_all(Some(&bar))?;

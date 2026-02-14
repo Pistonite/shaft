@@ -204,7 +204,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     // )))?;
 
     ctx.add_item(Item::shim_bin(
-        "vihosts",
+        bin_name!("vihosts"),
         ShimCommand::target(cu::which("cmd")?.into_utf8()?).args([
             "/c",
             "viopen %SystemDrive%\\Windows\\System32\\drivers\\etc\\hosts",

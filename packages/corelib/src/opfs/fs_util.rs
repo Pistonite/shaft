@@ -23,6 +23,7 @@ pub fn set_executable(_: &Path) -> cu::Result<()> {
 /// Set the file at path to be executable
 #[cfg(not(windows))]
 pub fn set_executable(path: &Path) -> cu::Result<()> {
+    cu::trace!("setting executable bit for: '{}'", path.display());
     use std::os::unix::fs::PermissionsExt;
     let metadata = path.metadata()?;
     let mut perms = metadata.permissions();

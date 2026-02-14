@@ -7,6 +7,7 @@ import { execSync } from "node:child_process";
 export const GITHUB_API = "https://api.github.com/";
 export const CRATESIO_API = "https://crates.io/api/v1/";
 export const ARCHLINUX_API = "https://archlinux.org/packages/search/json/";
+export const AUR_API = "https://aur.archlinux.org/rpc/v5/info";
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const TEMP_DIR = path.join(SCRIPT_DIR, "temp");
 export const METADATA_TOML = path.join(path.dirname(SCRIPT_DIR), "metadata.toml");

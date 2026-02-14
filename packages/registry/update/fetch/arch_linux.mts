@@ -1,5 +1,5 @@
 import type { MetaKeyValues } from "../metafile.mts";
-import { ARCHLINUX_API, fetch_with_retry } from "../util.mts";
+import { ARCHLINUX_API, AUR_API, fetch_with_retry } from "../util.mts";
 
 export type ArchLinuxArgs = {
     package: string;
@@ -17,5 +17,25 @@ export const fetch_from_arch_linux = async ({ package: pkg, query }: ArchLinuxAr
     const pkgver = match.pkgver;
     const pkgrel = match.pkgrel;
     console.log(`-- -- latest version of ${pkg} on arch linux: ${pkgver}-${pkgrel}`);
+    return await query(pkgver, pkgrel);
+};
+
+export type AURArgs = {
+    package: string;
+    query: (pkgver: string, pkgrel: string) => Promise<MetaKeyValues> | MetaKeyValues;
+};
+type AURResponse = { resultcount: number; results: { Name: string; Version: string }[] };
+/** Fetch package version from the Arch User Repository (AUR) */
+export const fetch_from_aur = async ({ package: pkg, query }: AURArgs): Promise<MetaKeyValues> => {
+    console.log(`-- fetching from aur: ${pkg}`);
+    const response = await fetch_with_retry(`${AUR_API}?arg[]=${encodeURIComponent(pkg)}`);
+    if (!response.ok) { throw new Error(`failed to fetch aur package ${pkg}: ${response.status}`); }
+    const data = await response.json() as AURResponse;
+    const match = data.results.find(r => r.Name === pkg);
+    if (!match) { throw new Error(`aur package not found: ${pkg}`); }
+    const version_parts = match.Version.split("-");
+    const pkgrel = version_parts.pop()!;
+    const pkgver = version_parts.join("-");
+    console.log(`-- -- latest version of ${pkg} on aur: ${pkgver}-${pkgrel}`);
     return await query(pkgver, pkgrel);
 };

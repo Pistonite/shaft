@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -54,9 +55,10 @@ pub fn installed_version(package_name: &str) -> cu::Result<Option<String>> {
 
 #[cu::context("failed to install '{package_name}' with pacman")]
 pub fn install(package_name: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
-    sync_database(bar)?;
+    let reason = format!("installing {package_name}");
+    sync_database(bar, &reason)?;
     let mut state = pacman::instance()?;
-    let (child, bar) = opfs::sudo("pacman", &format!("install {package_name}"))?
+    let (child, bar) = opfs::sudo("pacman", &reason)?
         .add(cu::args!["-S", package_name, "--noconfirm", "--needed"])
         .stdout(
             cu::pio::spinner(format!("pacman install '{package_name}'"))
@@ -72,14 +74,31 @@ pub fn install(package_name: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Re
     Ok(())
 }
 
+#[cu::context("failed to install '{}' with pacman -U", path.display())]
+pub fn install_file(path: &Path, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
+    let reason = format!("installing package file '{}'", path.display());
+    sync_database(bar, &reason)?;
+    let mut state = pacman::instance()?;
+    let child = opfs::sudo("pacman", &reason)?
+        .add(cu::args!["-U", path, "--noconfirm"])
+        .stdout(cu::lv::D)
+        .stderr(cu::lv::W)
+        .stdin_null()
+        .spawn()?;
+    child.wait_nz()?;
+    cu::info!("installed '{}' with pacman -U", path.display());
+    state.installed_packages.clear();
+    Ok(())
+}
+
 #[cu::context("failed to sync pacman database")]
-fn sync_database(bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
+fn sync_database(bar: Option<&Arc<cu::ProgressBar>>, reason: &str) -> cu::Result<()> {
     let mut state = pacman::instance()?;
     if state
         .db_synced_time
         .is_none_or(|x| x.elapsed() > Duration::from_mins(10))
     {
-        let (child, bar, _) = opfs::sudo("pacman", "sync pacman database")?
+        let (child, bar, _) = opfs::sudo("pacman", reason)?
             .args(["-Syy", "--noconfirm"])
             .stdoe(
                 cu::pio::spinner("sync pacman database")

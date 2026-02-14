@@ -159,3 +159,17 @@ macro_rules! check_version_cache {
     }};
 }
 pub(crate) use check_version_cache;
+
+/// Create a scope where any verification failure (NotUpToDate or NotInstalled) will be turned into NeedsConfig
+#[allow(unused)]
+macro_rules! verify_config {
+    ($($s:tt)*) => {{
+        match (|| -> cu::Result<Verified> { $($s)* })() {
+            Ok(Verified::UpToDate) => Ok(Verified::UpToDate),
+            Ok(_) => Ok(Verified::NeedsConfig),
+            Err(x) => Err(x)
+        }
+    }}
+}
+#[allow(unused)]
+pub(crate) use verify_config;
