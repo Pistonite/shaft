@@ -202,6 +202,9 @@ REPO = "https://github.com/tree-sitter/tree-sitter"
 [hyprland]
 kitty.CFG_VERSION = "1"
 kitty.VERSION = "0.46.2"
+VERSION = "0.54.2"
+CFG_VERSION = "3"
+hyprshutdown.VERSION = "0.1.0"
 
 [framework16]
 kbd_uleds.REPO = "https://github.com/paco3346/fw16-kbd-uleds"

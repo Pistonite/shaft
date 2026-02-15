@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+items=(
+  "Lock Screen" "loginctl lock-session"
+  "Sleep" "systemctl suspend"
+  "Shutdown" 'hyprshutdownw shutdown now'
+  "Reboot" 'hyprshutdownw reboot'
+)
+
+escape_markup() {
+  sed -e 's/&/\&amp;/g' \
+      -e 's/</\&lt;/g' \
+      -e 's/>/\&gt;/g'
+}
+
+menu_items=()
+
+for ((i=0; i<${#items[@]}; i+=2)); do
+    label=$(printf "%s" "${items[i]}" | escape_markup)
+    cmd=$(printf "%s" "${items[i+1]}" | escape_markup)
+
+  display="<b>$label</b> <span size='small' style='italic'>($cmd)</span>"
+  menu_items+=("$display")
+done
+
+selected=$(printf "%s\n" "${menu_items[@]}" | rofi -i -no-case-sensitive -dmenu -markup-rows -p "Hyprmenu")
+
+[[ -z "$selected" ]] && exit 0
+
+for ((i=0; i<${#menu_items[@]}; i++)); do
+  if [[ "${menu_items[i]}" == "$selected" ]]; then
+    cmd_index=$((i * 2 + 1))
+    sleep 0.2 # animation
+    eval "${items[cmd_index]}"
+    break
+  fi
+done
