@@ -1,0 +1,38 @@
+[[section]]
+comment = """
+SDDM configurations
+"""
+key = ["sddm"]
+children = [{ 
+    comment = "User for the auto login",
+    key = ["autologin", "user"],
+    value = "piston",
+}]
+
+[[section]]
+comment = """
+Hyprland monitor configuration
+Use `hyprctl monitors all` to get the information
+"""
+key = ["hyprland", "monitor"]
+children = [
+    { 
+        comment = "Name of the monitor (look for \"Monitor XXX\" line)",
+        key = ["name"],
+        value = "",
+    },
+    { 
+        comment = "Mode (WidthxHeight@Refresh)",
+        key = ["mode"],
+        value = "preferred",
+    },
+    { 
+        comment = "Position of the output",
+        key = ["position"],
+        value = "0x0",
+    },
+    { 
+        key = ["scale"],
+        value = "1.25",
+    },
+]

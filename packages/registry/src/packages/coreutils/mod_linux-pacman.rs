@@ -15,7 +15,8 @@ register_binaries!(
     "zip",
     "unzip",
     "tar",
-    "pacman-update"
+    "pacman-update",
+    "yay"
 );
 binary_dependencies!(Git);
 
@@ -52,55 +53,13 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     let update_sh = install_dir.join("pacman-update.sh");
     cu::fs::write(update_sh, include_bytes!("./pacman-update.sh"))?;
 
-    // manually install yay-bin
-    {
-        let bar = cu::progress("installing yay-bin").parent(ctx.bar()).spawn();
-        let yay_dir = install_dir.join("yay-bin");
-        cu::fs::make_dir_absent_or_empty(&yay_dir)?;
-        cu::which("git")?
-            .command()
-            .add(cu::args![
-                "-C",
-                &install_dir,
-                "clone",
-                "https://aur.archlinux.org/yay-bin.git"
-            ])
-            .stdoe(cu::lv::D)
-            .stdin_null()
-            .wait_nz()?;
-        cu::which("makepkg")?
-            .command()
-            .current_dir(&yay_dir)
-            .stdoe(cu::lv::D)
-            .stdin_null()
-            .wait_nz()?;
-        let pkg_file = cu::fs::read_dir(&yay_dir)?
-            .filter_map(|entry| {
-                let Ok(entry) = entry else {
-                    return None;
-                };
-                let Ok(file_name) = entry.file_name().into_utf8() else {
-                    return None;
-                };
-                if !file_name.ends_with(".pkg.tar.zst") {
-                    return None;
-                }
-                if file_name.contains("debug") {
-                    return None;
-                }
-                Some(entry.path())
-            })
-            .next();
-        let pkg_file = cu::check!(pkg_file, "failed to find pkg file in yay-bin after makepkg")?;
-        epkg::pacman::install_file(&pkg_file, Some(&bar))?;
-        bar.done();
-    }
-
     epkg::pacman::install("base", ctx.bar_ref())?;
     epkg::pacman::install("bash-completion", ctx.bar_ref())?;
     epkg::pacman::install("which", ctx.bar_ref())?;
     epkg::pacman::install("zip", ctx.bar_ref())?;
     epkg::pacman::install("unzip", ctx.bar_ref())?;
+    epkg::pacman::install_aur(
+        "yay-bin", "https://aur.archlinux.org/yay-bin.git", &install_dir,ctx.bar_ref())?;
     Ok(())
 }
 

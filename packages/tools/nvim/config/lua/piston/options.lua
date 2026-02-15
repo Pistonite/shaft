@@ -6,8 +6,8 @@ if vim.fn.has("win32") ~= 0 then
     if vim.fn.executable("pwsh.exe") == 0 then
         win_shell = "powershell"
     end
-    vim.o.shell = win_shell
-    vim.o.shellcmdflag = "-Nologo -command"
+    vim.o.shell = win_shell .. " -NoLogo"
+    vim.o.shellcmdflag = "-command"
     vim.o.shellquote = '"'
     vim.o.shellxquote = ""
 end

@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::ffi::OsStr;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -59,7 +60,7 @@ pub fn install(package_name: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Re
     sync_database(bar, &reason)?;
     let mut state = pacman::instance()?;
     let (child, bar) = opfs::sudo("pacman", &reason)?
-        .add(cu::args!["-S", package_name, "--noconfirm", "--needed"])
+        .args(["-S", package_name, "--noconfirm", "--needed"])
         .stdout(
             cu::pio::spinner(format!("pacman install '{package_name}'"))
                 .configure_spinner(|builder| builder.keep(true).parent(bar.cloned())),
@@ -70,6 +71,23 @@ pub fn install(package_name: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Re
     child.wait_nz()?;
     bar.done();
     cu::info!("installed '{package_name}' with pacman");
+    state.installed_packages.clear();
+    Ok(())
+}
+
+#[cu::context("failed to install packages with pacman")]
+pub fn install_many(package_names: &[impl AsRef<OsStr>], bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
+    let reason = "installing multiple packages";
+    sync_database(bar, &reason)?;
+    let mut state = pacman::instance()?;
+    let child = opfs::sudo("pacman", &reason)?
+        .args(["-S", "--noconfirm", "--needed"])
+        .args(package_names)
+        .stdout(cu::lv::P)
+        .stderr(cu::lv::P)
+        .stdin_null()
+        .spawn()?;
+    child.wait_nz()?;
     state.installed_packages.clear();
     Ok(())
 }
@@ -88,6 +106,53 @@ pub fn install_file(path: &Path, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Resu
     child.wait_nz()?;
     cu::info!("installed '{}' with pacman -U", path.display());
     state.installed_packages.clear();
+    Ok(())
+}
+
+#[cu::context("failed to install '{package}' from AUR repo {repo}")]
+pub fn install_aur(package: &str, repo: &str, clone_root: &Path, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
+    let reason = format!("installing from AUR: {repo}");
+        let bar = cu::progress(&reason).parent(bar.cloned()).spawn();
+        let clone_dir = clone_root.join(package);
+        cu::fs::make_dir_absent_or_empty(&clone_dir)?;
+        cu::which("git")?
+            .command()
+            .add(cu::args![
+                "-C",
+                clone_root,
+                "clone",
+                repo
+            ])
+            .stdoe(cu::lv::D)
+            .stdin_null()
+            .wait_nz()?;
+        cu::which("makepkg")?
+            .command()
+            .current_dir(&clone_dir)
+            .stdoe(cu::lv::D)
+            .stdin_null()
+            .wait_nz()?;
+        // find the pkg file (.pkg.tar.zst)
+        let pkg_file = cu::fs::read_dir(&clone_dir)?
+            .filter_map(|entry| {
+                let Ok(entry) = entry else {
+                    return None;
+                };
+                let Ok(file_name) = entry.file_name().into_utf8() else {
+                    return None;
+                };
+                if !file_name.ends_with(".pkg.tar.zst") {
+                    return None;
+                }
+                if file_name.contains("debug") {
+                    return None;
+                }
+                Some(entry.path())
+            })
+            .next();
+        let pkg_file = cu::check!(pkg_file, "failed to find pkg file after makepkg")?;
+        install_file(&pkg_file, Some(&bar))?;
+        bar.done();
     Ok(())
 }
 

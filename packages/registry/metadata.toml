@@ -197,3 +197,9 @@ REPO = "https://github.com/tree-sitter/tree-sitter"
 'cfg(target_os="linux")'.SHA.__match__ = "opfs::cpu_arch()"
 'cfg(target_os="linux")'.SHA.'opfs::CpuArch::Arm64' = "<unsupported>"
 'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "4367a46bc8abbb8328d6efbeb26e86807af0a3a7e462548a3924f87289ee1e9c"
+
+[hyprland]
+VERSION = "0.54.2"
+CFG_VERSION = "3"
+kitty.CFG_VERSION = "1"
+hyprshutdown.VERSION = "0.1.0"
