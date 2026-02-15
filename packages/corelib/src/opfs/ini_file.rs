@@ -67,28 +67,13 @@ impl IniFile {
         })
     }
 
+    pub fn set_path(&mut self, path: impl AsRef<Path>) {
+        self.path = path.as_ref().to_path_buf();
+    }
+
     /// Write the INI file back to disk.
     pub fn write(&self) -> cu::Result<()> {
-        let mut output = String::new();
-        for section in &self.sections {
-            if let Some(name) = &section.name {
-                output.push('[');
-                output.push_str(name);
-                output.push_str("]\n");
-            }
-            for line in &section.lines {
-                match line {
-                    Line::Other(s) => output.push_str(s),
-                    Line::KeyValue { key, value } => {
-                        output.push_str(key);
-                        output.push('=');
-                        output.push_str(value);
-                    }
-                }
-                output.push('\n');
-            }
-        }
-        cu::fs::write(&self.path, output)
+        cu::fs::write(&self.path, self.to_string())
     }
 
     /// Get an immutable reference to a section. Returns `None` if the section does not exist.
@@ -114,6 +99,23 @@ impl IniFile {
                 self.sections.last_mut().unwrap()
             }
         }
+    }
+}
+
+impl std::fmt::Display for IniFile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for section in &self.sections {
+            if let Some(name) = &section.name {
+                writeln!(f, "[{name}]")?;
+            }
+            for line in &section.lines {
+                match line {
+                    Line::Other(s) => writeln!(f, "{s}")?,
+                    Line::KeyValue { key, value } => writeln!(f, "{key}={value}")?,
+                }
+            }
+        }
+        Ok(())
     }
 }
 
