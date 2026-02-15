@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::ffi::OsStr;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -59,7 +60,7 @@ pub fn install(package_name: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Re
     sync_database(bar, &reason)?;
     let mut state = pacman::instance()?;
     let (child, bar) = opfs::sudo("pacman", &reason)?
-        .add(cu::args!["-S", package_name, "--noconfirm", "--needed"])
+        .args(["-S", package_name, "--noconfirm", "--needed"])
         .stdout(
             cu::pio::spinner(format!("pacman install '{package_name}'"))
                 .configure_spinner(|builder| builder.keep(true).parent(bar.cloned())),
@@ -70,6 +71,27 @@ pub fn install(package_name: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Re
     child.wait_nz()?;
     bar.done();
     cu::info!("installed '{package_name}' with pacman");
+    state.installed_packages.clear();
+    Ok(())
+}
+
+#[cu::context("failed to install packages with pacman")]
+pub fn install_many(package_names: &[impl AsRef<OsStr>], bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
+    let reason = "installing multiple packages";
+    sync_database(bar, &reason)?;
+    let mut state = pacman::instance()?;
+    let (child, bar) = opfs::sudo("pacman", &reason)?
+        .args(["-S", "--noconfirm", "--needed"])
+        .args(package_names)
+        .stdout(
+            cu::pio::spinner("pacman install")
+                .configure_spinner(|builder| builder.keep(true).parent(bar.cloned())),
+        )
+        .stderr(cu::lv::W)
+        .stdin_null()
+        .spawn()?;
+    child.wait_nz()?;
+    bar.done();
     state.installed_packages.clear();
     Ok(())
 }

@@ -316,3 +316,5 @@ export const pkg_tree_sitter: PackageFn = (meta) => [
         })
     }),
 ];
+export const pkg_hyprland: PackageFn = () => 
+    fetch_from_arch_linux({ package: "hyprland", query: (v) => ({ "VERSION": v })})

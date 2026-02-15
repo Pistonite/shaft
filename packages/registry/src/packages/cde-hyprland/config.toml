@@ -1,0 +1,10 @@
+[[section]]
+comment = """
+SDDM configurations
+"""
+key = ["sddm"]
+children = [{ 
+    comment = "User for the auto login",
+    key = ["autologin.user"],
+    value = "piston",
+}]
