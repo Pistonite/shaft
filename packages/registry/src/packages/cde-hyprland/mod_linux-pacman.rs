@@ -81,6 +81,7 @@ explorer() {
 }
     "#))?;
 
+    CFG_VERSION.update()?;
 
     Ok(())
 }
