@@ -5,6 +5,6 @@ SDDM configurations
 key = ["sddm"]
 children = [{ 
     comment = "User for the auto login",
-    key = ["autologin.user"],
+    key = ["autologin", "user"],
     value = "piston",
 }]
