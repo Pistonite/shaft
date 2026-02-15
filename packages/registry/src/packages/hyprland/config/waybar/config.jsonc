@@ -1,0 +1,121 @@
+// -*- mode: jsonc -*-
+{
+    "margin": "4px",
+    "output": ["eDP-1", "DP-2"],
+    // "output": "DP-2",
+    // "layer": "top", // Waybar at top layer
+    // "position": "bottom", // Waybar position (top|bottom|left|right)
+    "height": 30, // Waybar height (to be removed for auto height)
+    //"width": 600, // Waybar width
+    "spacing": 16, // Gaps between modules (4px)
+    // Choose the order of the modules
+ "modules-left": [
+
+        "custom/menu",
+        "hyprland/workspaces"
+    ],
+    "modules-center": [
+    ],
+    "modules-right": [
+        "temperature",
+        "cpu",
+        "memory",
+        "backlight",
+        "pulseaudio#speaker",
+        "pulseaudio#mic",
+        "network",
+        "battery",
+        "clock"
+    ],
+    "custom/menu": {
+        "format": "\uf359 HYPR",
+        "tooltip": false,
+        "on-click": "$HOME/.config/hypr/hyprmenu"
+    },
+    // Modules configuration
+    "temperature": {
+        "critical-threshold": 60,
+        "tooltip": false,
+        "format": " {temperatureC}°C"
+    },
+    "cpu": {
+        "format": " {usage:3}%",
+        "on-click": "kitty --title btop-hypr-piston-float btop",
+        "states": {
+            "normal": 4,
+            "critical": 80,
+        }
+    },
+    "memory": {
+        "format": " {percentage:3}%",
+        "tooltip-format": "{used}/{total} GB",
+        "on-click": "kitty --title btop-hypr-piston-float btop",
+        "states": {
+            "normal": 10,
+            "critical": 80,
+        }
+    },
+    "backlight": {
+        "format": "{icon}{percent:3}%",
+        "tooltip-format": "Brightness",
+        "format-icons": [" ", " ", " ", " ", " ", " ", " ", " ", " "]
+    },
+    "pulseaudio#speaker": {
+        "format": "{icon}{volume:3}%",
+        "format-bluetooth": "{icon}{volume:3}% ",
+        "states": {
+            "low": 0,
+            "normal": 40,
+            "warning": 70,
+        },
+        "format-icons": {
+            "default-muted": "\ueee8 ",
+            "default": [" ", " ", " "]
+        },
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+    },
+    "pulseaudio#mic": {
+        // format_source is needed because default is sink
+        "format": "{format_source}",
+        "format-muted": "{format_source}",
+        "format-source": "\ued03 {volume:3}%",
+        "format-source-muted": "\ued03 ----",
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
+        "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SOURCE@ 1%+",
+        "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 1%-"
+    },
+    "network": {
+        "format-wifi": " {signalStrength:3}%",
+        "tooltip-format": "{ifname}: {essid}\n{ipaddr}\nStrength: {signaldBm} dBm",
+        "format-disabled": "\udb80\udc1d  OFF",
+        "tooltip-format-disabled": "Wifi Disabled",
+        "format-ethernet": "\uef09  LAN",
+        "tooltip-format-ethernet": "{ifname}: Ethernet\n{ipaddr}",
+        "format-disconnected": "  ---",
+        "tooltip-format-disconnected": "Network Disconnected",
+        "states": {
+            "usable": 30,
+            "good": 40,
+        },
+        "on-click": "/usr/bin/python3 /usr/bin/networkmanager_dmenu"
+    },
+    "battery": {
+        "interval": 20,
+        "states": {
+            "critical": 15,
+            "warning": 40,
+            "normal": 79,
+        },
+        "format": "{icon}{capacity:3}%",
+        "tooltip-format": "Charging Complete",
+        "tooltip-format-normal": "{timeTo}\nPower Draw: {power}W",
+        "tooltip-format-critical": "Connect Charger\n{timeTo}\nPower Draw: {power}W",
+        "format-charging": " \udb85\udc0b{capacity:2}%",
+        "format-plugged": " {capacity:3}%",
+        "tooltip-format-charging": "Charging\n{timeTo}\nPower Draw: {power}W",
+        "format-icons": [" ", " ", " ", " ", " "]
+    },
+    "clock": {
+        "tooltip-format": "<big>{:%Y-%m-%d}</big>\n<tt><big>{calendar}</big></tt>"
+    }
+}

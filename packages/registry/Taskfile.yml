@@ -74,5 +74,20 @@ tasks:
           KEY: kitty\.CFG_VERSION
           KEYL: kitty.CFG_VERSION
 
+  copy-hypr:
+    desc: Copy config directory from this machine (~/.config/hypr) to shaft. Only works on Unix
+    vars:
+      TARGET: src/packages/hyprland/config/hypr
+    cmds:
+      - rm -rf {{.TARGET}}
+      - cp -R ~/.config/hypr {{.TARGET}}
+      - rm -f {{.TARGET}}/config_gen.lua
+      - rm -f {{.TARGET}}/hyprshutdownw
+      - task: bump
+        vars:
+          KEY: HYPR_CFG_VERSION
+          KEYL: HYPR_CFG_VERSION
+
   bump:
     - CURRENT=$(grep -oP '{{.KEY}} = "\K[0-9]+' metadata.toml) && sed -i "s/{{.KEY}} = \"$CURRENT\"/{{.KEYL}} = \"$((CURRENT+1))\"/" metadata.toml
+

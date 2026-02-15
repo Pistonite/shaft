@@ -1,0 +1,107 @@
+/*===================================
+ General
+===================================*/
+* {
+    font-family: Hack Nerd Font, Roboto, Helvetica, Arial, sans-serif;
+    font-size: 12px;
+}
+
+/* Color Codes */
+/* #111111; Module Background - #141414 0.85 opacity*/
+/* #242424; Module Border - #ffffff 0.08 on top of Background */
+/* #c6d0f5; Text (frappe/text) */
+/* #303446; Disabled Text (frappe/base) */
+/* #51576d; Idle Text (frappe/surface1) */
+/* #e78284; Red Text (frappe/red) - on top of normal background */
+/* #e5c890; Yellow Text (frappe/yellow) - on top of normal background */
+/* #a6d189; Green Text (frappe/green) - on top of normal background */
+
+window#waybar {
+    color: #c6d0f5;
+    background: transparent;
+  margin: 8px 12px;
+}
+
+
+
+/* button:hover { */
+/*     background: inherit; */
+/*      box-shadow: inset 0 -3px #ffffff; */
+/* } */
+
+/*===================================
+ Workspaces
+===================================*/
+
+#workspaces button {
+    padding: 0 5px;
+    /* background-color: transparent; */
+    color: #c6d0f5;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition-property: background-color, color, border;
+    transition-duration: .2s;
+}
+
+#workspaces button.active {
+    background-color: #292c3c;
+    color: #f2d5cf;
+    border-color: #f2d5cf;
+}
+
+#workspaces button:hover {
+    background-color: #414559;
+}
+
+/* === Modules === */
+
+/* Common */
+.module {
+    transition-property: background-color, color, border;
+    transition-duration: .2s;
+  border: 1px solid #242424;
+  border-radius: 16px;
+  background-color: #111111;
+    padding: 0 10px;
+}
+.module:hover {
+  border: 1px solid #303030;
+  background-color: #171717;
+}
+
+#custom-menu { color: #85c1dc; border-color: #85c1dc; }
+
+
+#temperature.critical { color: #e78284; border-color: #e78284 }
+#cpu { color: #51576d; }
+#cpu.normal { color: #c6d0f5; }
+#cpu.critical { color: #e78284; border-color: #e78284 }
+#memory { color: #51576d; }
+#memory.normal { color: #c6d0f5; }
+#memory.critical { color: #e78284; border-color: #e78284 }
+
+#pulseaudio.speaker.low { color: #51576d; border-color: #242424; }
+#pulseaudio.speaker.low:hover { border-color: #303030; }
+#pulseaudio.speaker.normal { color: #c6d0f5; border-color: #242424; }
+#pulseaudio.speaker.normal:hover { border-color: #303030; }
+#pulseaudio.speaker.warning { color: #e5c890; border-color: #e5c890; }
+#pulseaudio.speaker { color: #e78284; border-color: #e78284 }
+#pulseaudio.speaker.muted { color: #303446; border-color: #242424; }
+#pulseaudio.speaker.muted:hover { border-color: #303030; }
+#pulseaudio.mic.source-muted { color: #303446; }
+
+#network.wifi { color: #e78284; border-color: #e78284; }
+#network.wifi.usable { color: #e5c890; border-color: #e5c890; }
+#network.wifi.good { color: #c6d0f5; border-color: #242424; }
+#network.wifi.good:hover { border-color: #303030; }
+#network.disconnected { color: #303446; }
+#network.disabled { color: #303446; }
+#network.ethernet { color: #a6d189; border-color: #a6d189; }
+
+#battery.plugged:not(.normal):not(.warning):not(.critical) { color: #a6d189; border-color: #a6d189; }
+#battery.normal.charging { color: #c6d0f5; border-color: #242424; }
+#battery.normal.charging:hover { border-color: #303030; }
+#battery.normal:not(.charging) { color: #c6d0f5; border-color: #242424; }
+#battery.normal:not(.charging):hover { border-color: #303030; }
+#battery.critical:not(.charging) { color: #e78284; border-color: #e78284; }
+#battery.warning:not(.charging) { color: #e5c890; border-color: #e5c890; }

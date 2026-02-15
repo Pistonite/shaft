@@ -1,0 +1,93 @@
+[[section]]
+comment = """
+SDDM configurations
+"""
+key = ["sddm"]
+children = [{ 
+    comment = "User for the auto login",
+    key = ["autologin", "user"],
+    value = "piston",
+}]
+
+[[section]]
+comment = """
+Hyprland configuration variables
+"""
+key = ["hyprland", "variables"]
+children = [
+    { 
+        comment = "Name of monitor 1",
+        key = ["monitor1", "name"],
+        value = "CHANGEME",
+    },
+    { 
+        comment = "Mode (WidthxHeight@Refresh) of monitor 1",
+        key = ["monitor1", "mode"],
+        value = "preferred",
+    },
+    { 
+        comment = "Position of monitor 1",
+        key = ["monitor1", "position"],
+        value = "0x0",
+    },
+    { 
+        comment = "Scale of monitor 1",
+        key = ["monitor1", "scale"],
+        value = "1.25",
+    },
+    { 
+        comment = "Transform of monitor 1 (0-7)",
+        key = ["monitor1", "transform"],
+        value = "0",
+    },
+    { 
+        comment = "Name of monitor 2 (empty=disabled, wildcard(*) = anything goes)",
+        key = ["monitor2", "name"],
+        value = "*",
+    },
+    { 
+        comment = "Mode (WidthxHeight@Refresh) of monitor 2",
+        key = ["monitor2", "mode"],
+        value = "preferred",
+    },
+    { 
+        comment = "Position of monitor 2",
+        key = ["monitor2", "position"],
+        value = "auto",
+    },
+    { 
+        comment = "Scale of monitor 2",
+        key = ["monitor2", "scale"],
+        value = "1",
+    },
+    { 
+        comment = "Transform of monitor 2 (0-7)",
+        key = ["monitor2", "transform"],
+        value = "0",
+    },
+    { 
+        comment = "Name of monitor 3 (empty=disabled, wildcard(*) = anything goes)",
+        key = ["monitor3", "name"],
+        value = "*",
+    },
+    { 
+        comment = "Mode (WidthxHeight@Refresh) of monitor 3",
+        key = ["monitor3", "mode"],
+        value = "preferred",
+    },
+    { 
+        comment = "Position of monitor 3",
+        key = ["monitor3", "position"],
+        value = "auto",
+    },
+    { 
+        comment = "Scale of monitor 3",
+        key = ["monitor3", "scale"],
+        value = "1",
+    },
+    { 
+        comment = "Transform of monitor 3 (0-7)",
+        key = ["monitor3", "transform"],
+        value = "0",
+    },
+]
