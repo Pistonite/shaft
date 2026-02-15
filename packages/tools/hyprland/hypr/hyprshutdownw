@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+cmd="$*"
+if command -v hyprshutdown >/dev/null 2>&1; then
+    hyprshutdown -p "$cmd"
+else
+    eval "$cmd"
+fi

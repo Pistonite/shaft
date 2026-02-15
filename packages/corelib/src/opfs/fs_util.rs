@@ -362,6 +362,30 @@ fn quote_path_impl(path: &Path) -> cu::Result<String> {
     }
 }
 
+/// Write content to a file using sudo, creating parent directories if needed.
+#[inline(always)]
+pub fn sudo_write(path: impl AsRef<Path>, content: impl AsRef<[u8]>) -> cu::Result<()> {
+    sudo_write_impl(path.as_ref(), content.as_ref())
+}
+#[cu::context("failed to sudo write: '{}'", path.display())]
+fn sudo_write_impl(path: &Path, content: &[u8]) -> cu::Result<()> {
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            super::sudo("mkdir", "create parent directories")?
+                .args(["-p", parent.as_utf8()?])
+                .all_null()
+                .wait_nz()?;
+        }
+    }
+    super::sudo("tee", &format!("writing {}", path.display()))?
+        .arg(path)
+        .stdin(cu::pio::write(content.to_vec()))
+        .stdout(cu::lv::D)
+        .stderr(cu::lv::E)
+        .wait_nz()?;
+    Ok(())
+}
+
 /// Find a file in the Windows installation of Git
 #[cfg(windows)]
 #[inline(always)]
