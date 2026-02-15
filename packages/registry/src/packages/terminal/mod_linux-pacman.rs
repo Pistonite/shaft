@@ -17,6 +17,7 @@ pub fn configure(_: &Context) -> cu::Result<()> {
     let mut home = cu::check!(std::env::home_dir(), "failed to get home dir")?;
     home.extend([".config", "kitty", "kitty.conf"]);
     cu::fs::write(home, include_bytes!("kitty.conf"))?;
+    CFG_VERSION.update()?;
     Ok(())
 }
 pub fn uninstall(_: &Context) -> cu::Result<()> {
