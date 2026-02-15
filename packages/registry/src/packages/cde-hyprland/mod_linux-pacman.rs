@@ -28,12 +28,14 @@ static PACKAGES: &[&str] = &[
     // DE stuff
     "qt5-wayland",
     "qt6-wayland",
-    "hyprpaper",
-    "hyprlock",
-    "waybar",
-    "rofi",
-    "networkmanager-dmenu",
-    "swaync",
+    "hyprpaper", // wall paper
+    "hyprlock", // lock screen
+    "waybar", // status bar
+    "rofi", // menu
+    "networkmanager-dmenu", // wifi settings
+    "swaync", // notification
+    "cliphist", // clipboard
+    "nautilus", // file manager
 ];
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
@@ -64,6 +66,12 @@ pub fn uninstall(_: &Context) -> cu::Result<()> {
 pub fn configure(ctx: &Context) -> cu::Result<()> {
     let config = ctx.load_config(CONFIG)?;
     cu::check!(sddm::configure(&config.sddm), "failed to configure sddm")?;
+
+    ctx.add_item(Item::bash(r#"
+explorer() {
+    setsid nautilus "${1:-$HOME}" > /dev/null 2>&1 < /dev/null &
+}
+    "#))?;
 
     Ok(())
 }

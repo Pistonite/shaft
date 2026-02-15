@@ -182,5 +182,5 @@ REPO = "https://github.com/tree-sitter/tree-sitter"
 'cfg(target_os="linux")'.SHA = "d38d9a22ef398489e1eb291b2dea41467487020fe8280c2311dbbad9ba663a34"
 
 [hyprland]
-CFG_VERSION = "1"
+CFG_VERSION = "2"
 VERSION = "0.53.3"

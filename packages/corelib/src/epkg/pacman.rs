@@ -80,18 +80,14 @@ pub fn install_many(package_names: &[impl AsRef<OsStr>], bar: Option<&Arc<cu::Pr
     let reason = "installing multiple packages";
     sync_database(bar, &reason)?;
     let mut state = pacman::instance()?;
-    let (child, bar) = opfs::sudo("pacman", &reason)?
+    let child = opfs::sudo("pacman", &reason)?
         .args(["-S", "--noconfirm", "--needed"])
         .args(package_names)
-        .stdout(
-            cu::pio::spinner("pacman install")
-                .configure_spinner(|builder| builder.keep(true).parent(bar.cloned())),
-        )
-        .stderr(cu::lv::W)
+        .stdout(cu::lv::P)
+        .stderr(cu::lv::P)
         .stdin_null()
         .spawn()?;
     child.wait_nz()?;
-    bar.done();
     state.installed_packages.clear();
     Ok(())
 }
