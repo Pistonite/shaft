@@ -61,22 +61,38 @@ try {
         @{ Year = "2026"; Generator = "Visual Studio 18 2026" }
         @{ Year = "2022"; Generator = "Visual Studio 17 2022" }
     )
-    $vsBasePath = "${env:ProgramFiles}\Microsoft Visual Studio"
+    $vsBasePaths = @(
+        "${env:ProgramFiles}\Microsoft Visual Studio"
+        "${env:ProgramFiles(x86)}\Microsoft Visual Studio"
+    )
     $vsEditions = @("Community", "Professional", "Enterprise")
+    $vsBuildToolsEditions = @("18", "17")
     $generator = $null
     foreach ($vs in $vsVersions) {
-        foreach ($edition in $vsEditions) {
-            $vsPath = Join-Path $vsBasePath "$($vs.Year)\$edition"
-            if (Test-Path $vsPath) {
-                $generator = $vs.Generator
-                Write-Host "Found Visual Studio $($vs.Year) $edition"
-                break
+        foreach ($vsBasePath in $vsBasePaths) {
+            foreach ($edition in $vsEditions) {
+                $vsPath = Join-Path $vsBasePath "$($vs.Year)\$edition"
+                if (Test-Path $vsPath) {
+                    $generator = $vs.Generator
+                    Write-Host "Found Visual Studio $($vs.Year) $edition at $vsPath"
+                    break
+                }
             }
+            foreach ($edition in $vsBuildToolsEditions) {
+                $vsPath = Join-Path $vsBasePath "$edition\BuildTools"
+                if (Test-Path $vsPath) {
+                    $generator = $vs.Generator
+                    Write-Host "Found Visual Studio $($vs.Year) $edition at $vsPath"
+                    break
+                }
+            }
+            if ($generator) { break }
         }
         if ($generator) { break }
     }
     if (-not $generator) {
-        throw "No Visual Studio installation found in $vsBasePath"
+        $generator = $vsVersions[0].Generator
+        Write-Host "Could not determine VS version, assuming $generator"
     }
 
     cmake -S . -B build -G $generator -A $arch
