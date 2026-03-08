@@ -4,9 +4,9 @@ CONFIG_VERSION = "2"
 
 [_7z]
 REPO = "https://github.com/ip7z/7zip"
-VERSION = "25.01"
-'cfg(target_arch="aarch64")'.SHA = "6365c7c44e217b9c1009e065daf9f9aa37454e64315b4aaa263f7f8f060755dc"
-'cfg(target_arch="x86_64")'.SHA = "78afa2a1c773caf3cf7edf62f857d2a8a5da55fb0fff5da416074c0d28b2b55f"
+VERSION = "26.00"
+'cfg(target_arch="aarch64")'.SHA = "92fac666911336f3bbf3d99fdc48ec36fe20ac7a4200556936e61a8076ae6493"
+'cfg(target_arch="x86_64")'.SHA = "6fe18d5b3080e39678cabfa6cef12cfb25086377389b803a36a3c43236a8a82c"
 
 [pwsh]
 # using preview version to enable tilde (~) expansion
@@ -16,7 +16,7 @@ VERSION = "7.6.0-preview.6"
 'cfg(target_arch="x86_64")'.SHA = '481ce45bd9ebfab9a5b254a35f145fb6259bd452ae67d92ab1d231b6367987d9'
 
 [cargo_binstall]
-VERSION = "1.17.4"
+VERSION = "1.17.7"
 
 [coreutils]
 ALIAS_VERSION = "12"
@@ -33,12 +33,13 @@ yay.VERSION = "12.5.7"
 [shellutils]
 ALIAS_VERSION = "8"
 REPO = "https://github.com/Pistonite/shellutils"
-COMMIT = "b714fd6b2ed7308e1ed9e5dae989667a0f7a7164"
-which.VERSION = "0.1.3"
-viopen.VERSION = "0.1.4"
-vipath.VERSION = "0.1.6"
+COMMIT = "aa159e2c3347d25f6962beb466de61d38f4c0054"
+which.VERSION = "0.1.4"
+viopen.VERSION = "0.1.5"
+vipath.VERSION = "0.1.7"
 n.VERSION = "0.1.1"
-wsclip.VERSION = "0.1.6"
+wsclip.VERSION = "0.1.7"
+lfmt.VERSION = "0.1.6"
 
 [git]
 'cfg(windows)'.ALIAS_VERSION = "1"
@@ -63,9 +64,9 @@ CFG_VERSION = "2"
 
 [fzf]
 REPO = "https://github.com/junegunn/fzf"
-VERSION = "0.67.0"
-'cfg(all(windows,target_arch="aarch64"))'.SHA = "4a39934cc8f670048a7fb21dde09096adcbda7adc676010dd9cec90780d3b9df"
-'cfg(all(windows,target_arch="x86_64"))'.SHA = "cad95326ed416d14226a03425513b049f5bc9a41f30a355e5fe204a29e666867"
+VERSION = "0.70.0"
+'cfg(all(windows,target_arch="aarch64"))'.SHA = "eaa12ca2e072ef8e8f89ca3d961fd886e46fbbc254c0c85c4786d813416a95d5"
+'cfg(all(windows,target_arch="x86_64"))'.SHA = "7465a6738e2c844742df973459c7509aed2d10d7a72bfd6de201b867b4eda4cd"
 
 [jq]
 REPO = "https://github.com/jqlang/jq"
@@ -74,10 +75,10 @@ VERSION = "1.8.1"
 
 [task]
 REPO = "https://github.com/go-task/task"
-VERSION = "3.48.0"
-'cfg(all(windows,target_arch="aarch64"))'.SHA = "10409f9401bcac6a0b5a7928d0216f1818140ba4b685509694fdd4b580fa0f97"
-'cfg(all(windows,target_arch="x86_64"))'.SHA = "d6dd072d8b1c8131626cacd96af5edbc54470c437f747ec87f3fab32a15b3c74"
-'cfg(target_os="linux")'.SHA = "f4bfc4eef1b2557b262f3cc0a79976a421885cb7b9e71cfe75568a2ebe4d7ae5"
+VERSION = "3.49.1"
+'cfg(all(windows,target_arch="aarch64"))'.SHA = "bacbc74ee6a1402179b62966f3e3f5b9047b6a6c2688c4ad3c08946b5a4cf731"
+'cfg(all(windows,target_arch="x86_64"))'.SHA = "725c551f699d4d6c0dc57bd8148f72bef8d5b2fb650d9c985f271a61522fd521"
+'cfg(target_os="linux")'.SHA = "4e7d24f1bf38218aec8f244eb7ba671f898830f9f87b3c9b30ff1c09e3135576"
 
 [bat]
 VERSION = "0.26.1"
@@ -86,7 +87,7 @@ VERSION = "0.26.1"
 VERSION = "1.2.4"
 
 [fd]
-VERSION = "10.3.0"
+VERSION = "10.4.1"
 
 [rg]
 VERSION = "15.1.0"
@@ -106,9 +107,9 @@ SHA = "8ca33a60c791392d872b80d26c42f2bfa914a480f9eb2d7516d9f84373c36897"
 [terminal]
 'cfg(windows)'.CONFIG_VERSION = "8"
 clink.REPO = "https://github.com/chrisant996/clink"
-clink.VERSION = "1.9.13"
-clink.SHA = "b6d6de53ab7c60e22f8987fc2b688c9eb1cb998c08b4cfba330629a56cc6c3a2"
-clink.URL = "https://github.com/chrisant996/clink/releases/download/v1.9.13/clink.1.9.13.32d9d6.zip"
+clink.VERSION = "1.9.17"
+clink.SHA = "0f2e7b407b9e33d487b8f348a72310631a26db84c80ad8d25e617f953d976fa8"
+clink.URL = "https://github.com/chrisant996/clink/releases/download/v1.9.17/clink.1.9.17.36e2ca.zip"
 clink.WRAPPER_VERSION = "2"
 
 [volta]
@@ -119,32 +120,32 @@ VERSION = "2.0.2"
 'cfg(target_os="linux")'.SHA = "6cec054c911fb925b629a09455775af6e95dc0f5694a4c28b63979ab9ef18037"
 ALIAS_VERSION = "1"
 pnpm.REPO = "https://github.com/pnpm/pnpm"
-pnpm.VERSION = "10.29.2"
+pnpm.VERSION = "10.31.0"
 node.VERSION = "24"
 yarn.VERSION = "4"
 
 [uv]
 ALIAS_VERSION = "1"
-VERSION = "0.10.2"
+VERSION = "0.10.9"
 
 [gnucc]
 gcc.VERSION = "15.2.1"
-binutils.VERSION = "2.45.1"
+binutils.VERSION = "2.46"
 gdb.VERSION = "17.1"
 
 [clang]
 REPO = "https://github.com/llvm/llvm-project"
-'cfg(all(windows,target_arch="aarch64"))'.SHA = "f214b1226d8de005b5f691dd29d9dfea2b49e22d0de445429916173dbb626f7f"
-'cfg(all(windows,target_arch="x86_64"))'.SHA = "749d22f565fcd5718dbed06512572d0e5353b502c03fe1f7f17ee8b8aca21a47"
-'cfg(windows)'.LLVM_VERSION = "21.1.8"
-'cfg(target_os="linux")'.LLVM_VERSION = "21.1.6"
+'cfg(all(windows,target_arch="aarch64"))'.SHA = "446081c8bed99c74eae17b2274f99a2edf37256efbbffe8b8078ac1212efc132"
+'cfg(all(windows,target_arch="x86_64"))'.SHA = "2dd6a6c990865f98766dec58cce1cbfba48e5affc0098e5b1fff96c2f1d23e81"
+'cfg(windows)'.LLVM_VERSION = "22.1.0"
+'cfg(target_os="linux")'.LLVM_VERSION = "21.1.8"
 
 [llvm_mingw]
 REPO = "https://github.com/mstorsjo/llvm-mingw"
-TAG = "20251216"
-'cfg(all(windows,target_arch="aarch64"))'.SHA = "60c06bd255feb2ef1eb6fce7ee6b307d8f78ee6639660f49861c7c10a8a86164"
-'cfg(all(windows,target_arch="x86_64"))'.SHA = "2d96a4b758f7f8deaec5065833fe025aa53cfc5f704d0524002510984da0ccf4"
-'cfg(windows)'.LLVM_VERSION = "21.1.8"
+TAG = "20260224"
+'cfg(all(windows,target_arch="aarch64"))'.SHA = "026c4f0c0aa198056cd4670dc68126e5ca1cdd4ea2c73fab85667bf0881c6022"
+'cfg(all(windows,target_arch="x86_64"))'.SHA = "acbf018fc24e42c21c74bea1df83f77c1f3e23de7d69d7d73b1993b5954c97ba"
+'cfg(windows)'.LLVM_VERSION = "22.1.0"
 
 
 [cmake]
@@ -172,11 +173,11 @@ VERSION = "0.11.6"
 'cfg(all(windows,target_arch="aarch64"))'.SHA = "67a4e1da1f0d99e71c5e7b2dfd95f8c34721bd8c139eec99bb3e9034c2766301"
 'cfg(all(windows,target_arch="x86_64"))'.SHA = "90fc6d7cdf3d3388737caab1e2c554aa24b468f3a5cc38ef63857ddf1103513c"
 'cfg(target_os="linux")'.SHA = "2fc90b962327f73a78afbfb8203fd19db8db9cdf4ee5e2bef84704339add89cc"
-NVIM_CFG = "6"
+NVIM_CFG = "7"
 
 [tree_sitter]
-VERSION = "0.26.5"
+VERSION = "0.26.6"
 REPO = "https://github.com/tree-sitter/tree-sitter"
-'cfg(all(windows,target_arch="aarch64"))'.SHA = "493701ef90ec27bec29a9b53f4d6a49b753d79d534d07351f85a2af4b71ac9dc"
-'cfg(all(windows,target_arch="x86_64"))'.SHA = "0adfa6a81fd94d3a8eda9d9c89333bf1263bc112c7797dc90bea80b519fe2181"
-'cfg(target_os="linux")'.SHA = "d38d9a22ef398489e1eb291b2dea41467487020fe8280c2311dbbad9ba663a34"
+'cfg(all(windows,target_arch="aarch64"))'.SHA = "ce44f5b3c5ebc72c4b51a9214b61ebbf480f9bc596343a19375d9ddabc1cf42b"
+'cfg(all(windows,target_arch="x86_64"))'.SHA = "76d52345b1ef0d1f1b3f4357b42f39bc521c0bf7e87c9e18664bbb71da1577b8"
+'cfg(target_os="linux")'.SHA = "2b9595064a7d9dbe208c6f09f521d73061f8039e4ffcc2fd08979d249aeabb54"

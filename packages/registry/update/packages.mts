@@ -87,6 +87,10 @@ export const pkg_shellutils: PackageFn = async (meta) => {
             repo, ref: commit, path: "packages/wsclip/Cargo.toml",
             query: (v) => ({ "wsclip.VERSION": v })
         }),
+        fetch_from_cargo_toml({
+            repo, ref: commit, path: "packages/lfmt/Cargo.toml",
+            query: (v) => ({ "lfmt.VERSION": v })
+        }),
     ];
 }
 export const pkg_git: PackageFn = async () => [
