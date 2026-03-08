@@ -19,6 +19,7 @@ tasks:
   bump:
     - CURRENT=$(grep -oP 'NVIM_CFG = "\K[0-9]+' ../../registry/metadata.toml) && sed -i "s/NVIM_CFG = \"$CURRENT\"/NVIM_CFG = \"$((CURRENT+1))\"/" ../../registry/metadata.toml
     - rm -f ../../corelib/src/hmgr/tools.tar.gz
+    - cargo run --manifest-path ../../build/Cargo.toml
     - cargo build --manifest-path ../../corelib/Cargo.toml
     - cargo build --manifest-path ../../registry/Cargo.toml
 

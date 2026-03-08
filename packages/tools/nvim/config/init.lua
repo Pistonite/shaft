@@ -44,7 +44,9 @@ require("lazy").setup {
             "lazy/lazy.nvim", tag = "v11.17.5", lazy = false, priority = 9999
         },
         -- ## UI AND EDITOR FUNCTION
-        {
+        {   -- optimization for big files
+            'pteroctopus/faster.nvim',                 commit = "2e7a50f659711854b9a7fdc76d943b59b30d7852", lazy = false
+        }, {
             'nvim-tree/nvim-tree.lua',                 commit = "a0db8bf7d6488b1dcd9cb5b0dfd6684a1e14f769", lazy = false, priority = 2000, -- needs to be before cat for colors in tree to load properly
             config = function() require("config.nvim-tree") end
         }, {
@@ -82,12 +84,6 @@ require("lazy").setup {
             end
         }, { -- codediff dependency
             'MunifTanjim/nui.nvim',                    commit = "de740991c12411b663994b2860f1a4fd0937c130",
-        -- }, {
-        --     'nvim-treesitter/nvim-treesitter',         branch = 'master', pin = true, lazy = false,
-        --     build = ":TSUpdate",
-        --     config = function() require("config.nvim-treesitter")         end
-        --     -- L: their rewrite is broken
-        -- }, {
         }, {
             'nvim-treesitter/nvim-treesitter',         commit = '4967fa48b0fe7a7f92cee546c76bb4bb61bb14d5', lazy = false,
             build = ":TSUpdate",
