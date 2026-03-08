@@ -183,5 +183,5 @@ REPO = "https://github.com/tree-sitter/tree-sitter"
 
 [hyprland]
 VERSION = "0.53.3"
-CFG_VERSION = "2"
+CFG_VERSION = "3"
 kitty.CFG_VERSION = "1"

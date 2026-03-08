@@ -18,26 +18,29 @@ static PACKAGES: &[&str] = &[
     "sddm",
     "hyprland",
     "kitty",
-    // audio stuff
+    // audio/video/hardware stuff
     "pipewire",
     "wireplumber",
     "pipewire-pulse",
     "pipewire-jack",
-    // video stuff
     "xdg-desktop-portal-hyprland",
+    "brightnessctl",
     // DE stuff
+    "hyprpaper", // wall paper
+    "hyprlock", // lock screen
+    "hypridle", // idle management
     "qt5-wayland",
     "qt6-wayland",
     "polkit",
     "polkit-gnome", // authentication agent (password prompt)
-    "hyprpaper", // wall paper
-    "hyprlock", // lock screen
     "waybar", // status bar
     "rofi", // menu
     "networkmanager-dmenu", // wifi settings
     "swaync", // notification
     "cliphist", // clipboard
     "nautilus", // file manager
+    //
+    // TODO: hyprshutdown, https://github.com/paco3346/fw16-kbd-uleds
 ];
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
@@ -67,6 +70,11 @@ pub fn uninstall(_: &Context) -> cu::Result<()> {
 pub fn configure(ctx: &Context) -> cu::Result<()> {
     let config = ctx.load_config(CONFIG)?;
     cu::check!(sddm::configure(&config.sddm), "failed to configure sddm")?;
+
+    // CANDO: .config/hypr/hyprpaper.conf
+    // TODO: hyprlock
+    // TODO: .config/hypr
+    // TODO: .config/waybar
 
     if let Some(mut home) = std::env::home_dir() {
         home.extend([".config", "hypr"]);

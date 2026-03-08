@@ -26,8 +26,11 @@ pub fn configure(cfg: &SddmConfig) -> cu::Result<()> {
     let mut ini = opfs::IniFile::open(current_config)?;
     let section = ini.section_mut("Autologin");
     section.set("Relogin", "true");
-    section.set("Session", "wayland");
+    section.set("Session", "hyprland");
     section.set("User", &cfg.autologin.user);
+
+    let general = ini.section_mut("General");
+    general.set("DisplayServer", "wayland");
 
     cu::check!(opfs::sudo_write(target_config, ini.to_string()), "failed to save sddm config file")?;
 
