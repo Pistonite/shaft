@@ -108,6 +108,34 @@ fn ninja_url() -> String {
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
     let install_dir = ctx.install_dir();
+
+    let llvm_dir = install_dir.join("llvm");
+    {
+        let bar = cu::progress("cleaning existing llvm directory")
+            .parent(ctx.bar())
+            .spawn();
+        cu::fs::rec_remove(&llvm_dir)?;
+        bar.done();
+    }
+    {
+        let bar = cu::progress("unpacking llvm")
+            .keep(true)
+            .parent(ctx.bar())
+            .spawn();
+        let clang_zip = hmgr::paths::download("llvm.txz", llvm_url());
+        opfs::unarchive(&clang_zip, &install_dir, true)?;
+        let dir_name = install_dir.join(llvm_release_name());
+        // rename could fail after high disk usage - retry up to 3 times
+        for _ in 0..3 {
+        }
+        cu::check!(
+            cu::fs::rename(dir_name, llvm_dir),
+            "failed to rename directory when unpacking llvm"
+        )?;
+        bar.done();
+    }
+
+
     let verify_result = verify(ctx)?;
 
     let llvm_dir = install_dir.join("llvm");
