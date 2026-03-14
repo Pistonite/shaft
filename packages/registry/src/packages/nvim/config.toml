@@ -16,3 +16,13 @@ children = [{
     comment = "Port for wsclip (for yanking to host in a ssh session)",
     key = ["wsclip-host-port"], value = 8881
 }]
+
+[[section]]
+key = []
+children = [{ 
+    comment = """
+Command to launch AI coder. Empty string to use default.
+Setting this will also assume AI coder is installed.
+""",
+    key = ["aicoder-command"], value = ""
+}]

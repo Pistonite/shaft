@@ -567,7 +567,12 @@ local just_accepted_aidiff = false
 ---Switch to EDIT and open AI Coder
 function M.editview_aicoder_open()
     if is_aicoder_installed == nil then
-        is_aicoder_installed = vim.fn.executable("claude") == 1
+        local terminal_cmd = require("piston.config_gen").aicoder_command
+        if terminal_cmd == nil or terminal_cmd == "" then
+            is_aicoder_installed = vim.fn.executable("claude") == 1
+        else
+            is_aicoder_installed = true
+        end
     end
     if not is_aicoder_installed then
         M.warn("aicoder is not installed on this system")
