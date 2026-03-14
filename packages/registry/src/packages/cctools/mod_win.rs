@@ -1,5 +1,5 @@
 //! Windows GNU (via MinGW) and LLVM C/C++ Toolchain
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, time::Duration};
 
 use crate::pre::*;
 
@@ -108,69 +108,6 @@ fn ninja_url() -> String {
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
     let install_dir = ctx.install_dir();
-    let verify_result = verify(ctx)?;
-
-    let llvm_dir = install_dir.join("llvm");
-    let mut should_unpack = true;
-    if llvm_dir.exists() {
-        if verify_result != Verified::NotUpToDate {
-            should_unpack = cu::yesno!(
-                "detected existing llvm installation in shaft, enter 'n' to save time by skipping unpack if you believe this is a good installation; enter 'y' to continue to unpack"
-            )?;
-        }
-        if should_unpack {
-            let bar = cu::progress("cleaning existing llvm directory")
-                .parent(ctx.bar())
-                .spawn();
-            cu::fs::rec_remove(&llvm_dir)?;
-            bar.done();
-        }
-    }
-    if should_unpack {
-        let bar = cu::progress("unpacking llvm")
-            .keep(true)
-            .parent(ctx.bar())
-            .spawn();
-        let clang_zip = hmgr::paths::download("llvm.txz", llvm_url());
-        opfs::unarchive(&clang_zip, &install_dir, true)?;
-        let dir_name = install_dir.join(llvm_release_name());
-        cu::check!(
-            std::fs::rename(dir_name, llvm_dir),
-            "failed to rename directory when unpacking llvm"
-        )?;
-        bar.done();
-    } else {
-        cu::warn!("skipping unpacking llvm");
-    }
-
-    let llvm_dir = install_dir.join("llvm-mingw");
-    if llvm_dir.exists() {
-        if verify_result != Verified::NotUpToDate {
-            should_unpack = cu::yesno!(
-                "detected existing llvm-mingw installation in shaft, enter 'n' to save time by skipping unpack if you believe this is a good installation; enter 'y' to continue to unpack"
-            )?;
-        }
-        if should_unpack {
-            let bar = cu::progress("cleaning existing llvm-mingw directory")
-                .parent(ctx.bar())
-                .spawn();
-            cu::fs::rec_remove(&llvm_dir)?;
-            bar.done();
-        }
-    }
-    if should_unpack {
-        let bar = cu::progress("unpacking llvm-mingw")
-            .keep(true)
-            .parent(ctx.bar())
-            .spawn();
-        let clang_zip = hmgr::paths::download("llvm-mingw.zip", llvm_mingw_url());
-        opfs::unarchive(&clang_zip, &install_dir, true)?;
-        let llvm_dir = install_dir.join("llvm-mingw");
-        cu::fs::rename(install_dir.join(llvm_mingw_release_name()), llvm_dir)?;
-        bar.done();
-    } else {
-        cu::warn!("skipping unpacking llvm-mingw");
-    }
 
     // ninja is small and unlikely to fail so just unpack anyway
     {
@@ -181,6 +118,104 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
         let ninja_dir = install_dir.join("ninja");
         let ninja_zip = hmgr::paths::download("ninja.zip", ninja_url());
         opfs::unarchive(&ninja_zip, ninja_dir, true)?;
+        bar.done();
+    }
+
+    let llvm_dir = install_dir.join("llvm");
+    if llvm_dir.exists() {
+        let bar = cu::progress("cleaning existing llvm directory")
+            .parent(ctx.bar())
+            .spawn();
+        cu::fs::rec_remove(&llvm_dir)?;
+        bar.done();
+    }
+    {
+        let bar = cu::progress("unpacking llvm")
+            .keep(true)
+            .parent(ctx.bar())
+            .spawn();
+        let clang_zip = hmgr::paths::download("llvm.txz", llvm_url());
+        opfs::unarchive(&clang_zip, &install_dir, true)?;
+        let dir_name = install_dir.join(llvm_release_name());
+        // rename could fail after high disk usage - retry up to 3 times
+        if let Err(e) = cu::fs::rename(&dir_name, &llvm_dir) {
+            let mut success = false;
+            cu::warn!("rename after unpacking llvm failed: {e:?}");
+            for i in 1..=3 {
+                let retry_secs = i * 10;
+                let bar = bar
+                    .child(format!("retrying after {retry_secs} seconds"))
+                    .total(retry_secs)
+                    .eta(false)
+                    .percentage(false)
+                    .spawn();
+                for _ in 0..retry_secs {
+                    std::thread::sleep(Duration::from_secs(1));
+                    cu::progress!(bar += 1);
+                }
+                match cu::fs::rename(&dir_name, &llvm_dir) {
+                    Ok(_) => {
+                        success = true;
+                        break;
+                    }
+                    Err(e) => {
+                        cu::error!("[retry #{i}] rename after unpacking llvm failed: {e:?}");
+                    }
+                }
+            }
+            if !success {
+                cu::bail!("rename after unpacking llvm failed; please see errors above");
+            }
+        }
+        bar.done();
+    }
+
+    let llvm_dir = install_dir.join("llvm-mingw");
+    if llvm_dir.exists() {
+        let bar = cu::progress("cleaning existing llvm-mingw directory")
+            .parent(ctx.bar())
+            .spawn();
+        cu::fs::rec_remove(&llvm_dir)?;
+        bar.done();
+    }
+    {
+        let bar = cu::progress("unpacking llvm-mingw")
+            .keep(true)
+            .parent(ctx.bar())
+            .spawn();
+        let clang_zip = hmgr::paths::download("llvm-mingw.zip", llvm_mingw_url());
+        opfs::unarchive(&clang_zip, &install_dir, true)?;
+        let dir_name = install_dir.join(llvm_mingw_release_name());
+        // rename could fail after high disk usage - retry up to 3 times
+        if let Err(e) = cu::fs::rename(&dir_name, &llvm_dir) {
+            let mut success = false;
+            cu::warn!("rename after unpacking llvm-mingw failed: {e:?}");
+            for i in 1..=3 {
+                let retry_secs = i * 10;
+                let bar = bar
+                    .child(format!("retrying after {retry_secs} seconds"))
+                    .total(retry_secs)
+                    .eta(false)
+                    .percentage(false)
+                    .spawn();
+                for _ in 0..retry_secs {
+                    std::thread::sleep(Duration::from_secs(1));
+                    cu::progress!(bar += 1);
+                }
+                match cu::fs::rename(&dir_name, &llvm_dir) {
+                    Ok(_) => {
+                        success = true;
+                        break;
+                    }
+                    Err(e) => {
+                        cu::error!("[retry #{i}] rename after unpacking llvm-mingw failed: {e:?}");
+                    }
+                }
+            }
+            if !success {
+                cu::bail!("rename after unpacking llvm-mingw failed; please see errors above");
+            }
+        }
         bar.done();
     }
 
