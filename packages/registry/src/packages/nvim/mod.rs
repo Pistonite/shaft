@@ -178,7 +178,7 @@ fn nvim_config_dir() -> cu::Result<PathBuf> {
 config_file! {
     static CONFIG: Config = {
         template: include_str!("config.toml"),
-        migration: [],
+        migration: [""],
     }
 }
 
@@ -189,6 +189,8 @@ struct Config {
     pub nvim_tree_git: bool,
     #[serde(default = "default_wsclip_host_port")]
     pub wsclip_host_port: u16,
+    #[serde(default)]
+    pub aicoder_command: String,
 }
 fn default_wsclip_host_port() -> u16 {
     8881
@@ -201,11 +203,13 @@ impl Config {
 local M = {{
     nvim_tree_git = {nvim_tree_git},
     editorapi_ssh_wsclip_port = {wsclip_host_port},
+    aicoder_command = {aicoder_command:?},
 }}
 return M
         "##,
             nvim_tree_git = self.nvim_tree_git,
             wsclip_host_port = self.wsclip_host_port,
+            aicoder_command = self.aicoder_command,
         )
     }
 }

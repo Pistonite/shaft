@@ -1,7 +1,9 @@
+local terminal_cmd = require("piston.config_gen").aicoder_command
 require("claudecode").setup {
     log_level = "error",
     auto_start = true,
     focus_after_send = false,
+    terminal_cmd = terminal_cmd or "claude",
     terminal = {
         provider = "native",
         split_width_percentage = 0.8,
