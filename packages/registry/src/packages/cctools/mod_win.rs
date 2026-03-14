@@ -143,7 +143,12 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
             cu::warn!("rename after unpacking llvm failed: {e:?}");
             for i in 1..=3 {
                 let retry_secs = i * 10;
-                let bar = bar.child(format!("retrying after {retry_secs} seconds")).total(retry_secs).eta(false).percentage(false).spawn();
+                let bar = bar
+                    .child(format!("retrying after {retry_secs} seconds"))
+                    .total(retry_secs)
+                    .eta(false)
+                    .percentage(false)
+                    .spawn();
                 for _ in 0..retry_secs {
                     std::thread::sleep(Duration::from_secs(1));
                     cu::progress!(bar += 1);
@@ -152,7 +157,7 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
                     Ok(_) => {
                         success = true;
                         break;
-                    },
+                    }
                     Err(e) => {
                         cu::error!("[retry #{i}] rename after unpacking llvm failed: {e:?}");
                     }
@@ -187,7 +192,12 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
             cu::warn!("rename after unpacking llvm-mingw failed: {e:?}");
             for i in 1..=3 {
                 let retry_secs = i * 10;
-                let bar = bar.child(format!("retrying after {retry_secs} seconds")).total(retry_secs).eta(false).percentage(false).spawn();
+                let bar = bar
+                    .child(format!("retrying after {retry_secs} seconds"))
+                    .total(retry_secs)
+                    .eta(false)
+                    .percentage(false)
+                    .spawn();
                 for _ in 0..retry_secs {
                     std::thread::sleep(Duration::from_secs(1));
                     cu::progress!(bar += 1);
@@ -196,7 +206,7 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
                     Ok(_) => {
                         success = true;
                         break;
-                    },
+                    }
                     Err(e) => {
                         cu::error!("[retry #{i}] rename after unpacking llvm-mingw failed: {e:?}");
                     }
