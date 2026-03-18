@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use cu::pre::*;
 
-use crate::internal;
+use crate::{hmgr, internal};
 
 internal::main_thread_singleton! {
     const cargo = Cargo::new();
@@ -88,6 +88,9 @@ pub fn install_git_commit(
     let mut state = cargo::instance()?;
     let (child, bar) = cu::which("cargo")?
         .command()
+        // setting current dir in case the current directory the user is in has a
+        // rust-toolchain file, which will override the rust toolchain being used
+        .current_dir(hmgr::paths::home())
         .add(cu::args![
             "install", package, "--git", git, "--rev", rev, "--locked"
         ])
@@ -109,6 +112,7 @@ pub fn install(package: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<
     let mut state = cargo::instance()?;
     let (child, bar) = cu::which("cargo")?
         .command()
+        .current_dir(hmgr::paths::home())
         .add(cu::args!["install", package, "--locked"])
         .preset(
             cu::pio::cargo(format!("cargo install '{package}'"))
@@ -128,6 +132,7 @@ pub fn binstall(package: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result
     let mut state = cargo::instance()?;
     let (child, bar) = cu::which("cargo-binstall")?
         .command()
+        .current_dir(hmgr::paths::home())
         .add(cu::args![
             package,
             "--strategies",
@@ -159,6 +164,7 @@ pub fn binstall_git(
     let mut state = cargo::instance()?;
     let (child, bar) = cu::which("cargo-binstall")?
         .command()
+        .current_dir(hmgr::paths::home())
         .add(cu::args![
             package,
             "--strategies",
@@ -188,6 +194,7 @@ pub fn uninstall(package: &str) -> cu::Result<()> {
     let mut state = cargo::instance()?;
     cu::which("cargo")?
         .command()
+        .current_dir(hmgr::paths::home())
         .add(cu::args!["uninstall", package])
         .stdout(cu::lv::D)
         .stderr(cu::lv::D)
