@@ -6,6 +6,14 @@ binary_dependencies!(CargoBinstall);
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     if cfg!(windows) {
+        // ignore the python.exe stub that's usually in Windows
+        if let Ok(p) = cu::which("python") {
+            if let Ok(p) = p.normalize() {
+                if p.ends_with("Microsoft\\WindowsApps\\python.exe") {
+                    return Ok(Verified::NotInstalled);
+                }
+            }
+        }
         check_in_shaft!("python");
     } else {
         // python might be shipped with other OS
