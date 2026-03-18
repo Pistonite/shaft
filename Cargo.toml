@@ -25,7 +25,7 @@ git = "https://github.com/Pistonite/shellutils"
 branch = "main"
 
 [workspace.dependencies.viopen]
-version = "0.1.5"
+version = "0.2.0"
 git = "https://github.com/Pistonite/shellutils"
 branch = "main"
 

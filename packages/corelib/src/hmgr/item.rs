@@ -577,6 +577,9 @@ impl ItemMgr {
 
         let (child, bar) = cu::which("cargo")?
             .command()
+            // setting current dir in case the current directory the user is in has a
+            // rust-toolchain file, which will override the rust toolchain being used
+            .current_dir(&shim_path)
             .env("SHAFT_SHIM_BUILD_CONFIG", &config_path)
             .add(cu::args![
                 "build",

@@ -873,7 +873,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2132,7 +2132,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.60.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2315,7 +2315,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2372,7 +2372,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2562,7 +2562,7 @@ dependencies = [
 
 [[package]]
 name = "shaft-cli"
-version = "0.2.19"
+version = "0.2.20"
 dependencies = [
  "enum-map",
  "enumset",
@@ -3190,8 +3190,8 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "viopen"
-version = "0.1.5"
-source = "git+https://github.com/Pistonite/shellutils?branch=main#aa159e2c3347d25f6962beb466de61d38f4c0054"
+version = "0.2.0"
+source = "git+https://github.com/Pistonite/shellutils?branch=main#11ced9625f35ba68c4eb3197490d48ef284efb2d"
 dependencies = [
  "pistonite-cu",
  "shell-words",
@@ -3373,7 +3373,7 @@ dependencies = [
 [[package]]
 name = "win-envedit"
 version = "0.1.6"
-source = "git+https://github.com/Pistonite/shellutils?branch=main#aa159e2c3347d25f6962beb466de61d38f4c0054"
+source = "git+https://github.com/Pistonite/shellutils?branch=main#11ced9625f35ba68c4eb3197490d48ef284efb2d"
 dependencies = [
  "pistonite-cu",
  "winreg",
@@ -3401,7 +3401,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
