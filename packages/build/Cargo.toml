@@ -8,6 +8,7 @@ publish = false
 [dependencies]
 cu = { workspace = true, features = ["cli", "fs", "json", "derive", "toml"] }
 pm = { workspace = true, features = ["full"] }
+enumset.workspace = true
 itertools.workspace = true
 flate2.workspace = true
 ignore.workspace = true

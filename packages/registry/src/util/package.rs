@@ -27,6 +27,11 @@ pub struct Package {
     #[allow(unused)]
     pub(crate) linux_flavors: EnumSet<opfs::LinuxFlavor>,
 
+    /// Processor architecture supported by this package.
+    /// By default, all supported architectures for the OS are supported.
+    #[allow(unused)]
+    pub(crate) cpu_archs: EnumSet<opfs::CpuArch>,
+
     /// Short description. The first line of the doc comment
     pub short_desc: &'static str,
     /// Long description. Everything but the first line of the doc comment

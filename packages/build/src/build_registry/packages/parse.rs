@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 use cu::pre::*;
@@ -6,46 +6,26 @@ use itertools::Itertools as _;
 use pm::pre::*;
 
 use super::kebab;
-use super::platform::Platform;
+use super::platform::{Target, TargetSet};
 
 pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleFileStructure>> {
     // allowed structures: (assuming foo-bar is the name of the package)
     // /foo-bar.rs
-    // /foo-bar_platform.rs
+    // /foo-bar_target.rs
     // /foo-bar/mod.rs
-    // /foo-bar/mod_platform.rs
+    // /foo-bar/mod_target.rs
 
     let top_path_str = top_path.as_utf8()?;
     let file_name = cu::check!(
-        top_path.file_name(),
+        top_path.file_name_str(),
         "unable to determine file name for module file structure: '{top_path_str}'"
     )?;
-    // unwrap: checked path is utf-8 above
-    let file_name = file_name.to_str().unwrap();
 
     if let Some(file_name_stripped) = file_name.strip_suffix(".rs") {
-        let mut parts = file_name_stripped.split("_");
-        let package_name = cu::check!(
-            parts.next(),
-            "unable to determine package name from file: '{top_path_str}'"
-        )?;
-        cu::ensure!(!package_name.is_empty(), "in file: '{top_path_str}'")?;
+        let (package_name, targets) = 
+        cu::check!(Target::parse(file_name_stripped), "failed to parse target from filep path: '{top_path_str}'")?;
         cu::ensure!(kebab::is_kebab(package_name), "in file: '{top_path_str}'")?;
-        let platform = match parts.next() {
-            None => Platform::Any,
-            Some(x) => cu::check!(
-                cu::parse::<Platform>(x),
-                "unable to determine package platform: in file: '{top_path_str}'"
-            )?,
-        };
-        if parts.next().is_some() {
-            cu::bail!("package file should contains at most one '_': in file: '{top_path_str}'");
-        }
-        let files = std::iter::once((platform, top_path.to_path_buf())).collect();
-        let structure = ModuleFileStructure {
-            package_name: package_name.to_string(),
-            files,
-        };
+        let structure = ModuleFileStructure::single_file(package_name.to_string(), targets, top_path.to_path_buf());
         return Ok(Some(structure));
     }
 
@@ -57,6 +37,8 @@ pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleF
         return Ok(None);
     }
 
+    // /foo-bar/mod.rs
+    // /foo-bar/mod_target.rs
     let package_name = file_name;
     cu::ensure!(!package_name.is_empty(), "in path: '{top_path_str}'")?;
     cu::ensure!(kebab::is_kebab(package_name), "in path: '{top_path_str}'")?;
@@ -66,29 +48,20 @@ pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleF
         let path = entry.path();
         let path_str = path.as_utf8()?;
         let file_name = cu::check!(
-            path.file_name(),
+            path.file_name_str(),
             "unable to determine file name for module file structure: '{path_str}'"
         )?;
-        // unwrap: checked path is utf-8 above
-        let file_name = file_name.to_str().unwrap();
-        if file_name == "mod.rs" {
-            structure.add(Platform::Any, path)?;
-            continue;
-        }
         let Some(file_name_stripped) = file_name.strip_suffix(".rs") else {
             continue;
         };
-        let Some(platform) = file_name_stripped.strip_prefix("mod_") else {
+        let Ok((package_name, targets)) = Target::parse(file_name_stripped) else {
             continue;
         };
-        let platform = cu::check!(
-            cu::parse::<Platform>(platform),
-            "unable to determine package platform: in file: '{path_str}'"
-        )?;
-        structure.add(platform, path)?;
+        cu::ensure!(package_name == "mod", "in file: '{path_str}'");
+        structure.add(targets, path)?;
     }
 
-    if structure.files.is_empty() {
+    if structure.target_structure.is_empty() {
         cu::warn!("empty package file structure for package '{package_name}'");
         return Ok(None);
     }
@@ -98,66 +71,128 @@ pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleF
 
 pub struct ModuleFileStructure {
     pub package_name: String,
-    pub files: BTreeMap<Platform, PathBuf>,
+    pub target_structure: Vec<ModuleFileTarget>,
+}
+pub struct ModuleFileTarget {
+    pub file: PathBuf,
+    pub targets: TargetSet
 }
 impl ModuleFileStructure {
+    pub fn single_file(package_name: String, targets: TargetSet, file: PathBuf) -> Self {
+        Self {
+            package_name: package_name.to_string(),
+            target_structure: vec![
+                ModuleFileTarget {
+                    file,
+                    targets
+                }
+            ]
+        }
+    }
     pub fn new(package_name: String) -> Self {
         Self {
             package_name,
-            files: Default::default(),
+            target_structure: vec![],
         }
     }
-    pub fn extend(&mut self, other: BTreeMap<Platform, PathBuf>) -> cu::Result<()> {
-        for (platform, path) in other {
-            self.add(platform, path)?;
-        }
-        Ok(())
-    }
-    pub fn add(&mut self, platform: Platform, path: PathBuf) -> cu::Result<()> {
-        if let Some(existing_platform) = platform.find_conflict(self.files.keys().copied()) {
-            let existing_path = self
-                .files
-                .get(&existing_platform)
-                .expect("should find existing platform");
-            cu::bail!(
-                "conflicting platform '{}' (file: '{}') and '{}' (file: '{}')",
-                existing_platform,
-                existing_path.display(),
-                platform,
-                path.display()
+    pub fn add(&mut self, targets: TargetSet, file: PathBuf) -> cu::Result<()> {
+        for s in &self.target_structure {
+            let conflict = s.targets.intersection(targets);
+            if !conflict.is_empty() {
+                cu::bail!("conflicting targets '{:?}' in files '{}' and '{}'",
+                    conflict,
+                    s.file.display(),
+                    file.display()
             );
+            }
         }
-        self.files.insert(platform, path);
+        self.target_structure.push(ModuleFileTarget{file,targets});
         Ok(())
     }
 }
 
 pub struct ParsedModule {
-    pub platform_data: BTreeMap<Platform, ModuleData>,
+    pub data: Vec<ModuleData>,
 }
 impl ParsedModule {
     pub fn parse(structure: &ModuleFileStructure) -> cu::Result<Self> {
-        let mut platform_data = BTreeMap::default();
-        for (platform, path) in &structure.files {
-            let content = cu::fs::read_string(path)?;
-            let data = cu::check!(
+        let mut data = Vec::with_capacity(structure.target_structure.len());
+        for s in &structure.target_structure {
+            let content = cu::fs::read_string(&s.file)?;
+            let mut module_data = cu::check!(
                 cu::parse::<ModuleData>(&content),
                 "failed to parse file: '{}'",
-                path.display()
+                s.file.display()
             )?;
-            platform_data.insert(*platform, data);
+            module_data.targets = s.targets;
+            data.push(module_data);
         }
-        Ok(Self { platform_data })
+        let mut need_fill_doc_targets = TargetSet::new();
+        for d in &data {
+            if d.short_desc().is_empty() {
+                need_fill_doc_targets.extend(d.targets);
+            }
+        }
+        let mut fill_doc = Vec::with_capacity(need_fill_doc_targets.len());
+        for t in need_fill_doc_targets {
+            match t {
+                Target::LinuxAptX64 | Target::LinuxPacmanX64 => {
+                    // try different architecture - no solution
+                    // try different flavor
+                    let mut targets_to_try = Target::linux_x64();
+                    targets_to_try.remove(t);
+                    'outer: for t2 in targets_to_try {
+                        for d in &data {
+                            if !d.targets.contains(t2) || d.short_desc().is_empty() {
+                                continue;
+                            }
+                            fill_doc.push((t, d.doc.clone()));
+                            break 'outer;
+                        }
+                    }
+                }
+                Target::WindowsX64 | Target::WindowsArm => {
+                    // try different architecture
+                    let mut targets_to_try = Target::win();
+                    targets_to_try.remove(t);
+                    'outer: for t2 in targets_to_try {
+                        for d in &data {
+                            if !d.targets.contains(t2) || d.short_desc().is_empty() {
+                                continue;
+                            }
+                            fill_doc.push((t, d.doc.clone()));
+                            break 'outer;
+                        }
+                    }
+                }
+                Target::MacosArm => {
+                    // try different architecture - no solution
+                }
+            }
+        }
+        for (t, fill_doc) in fill_doc {
+            for d in &mut data {
+                if d.targets.contains(t) && d.short_desc().is_empty() {
+                    d.doc = fill_doc;
+                    break;
+                }
+            }
+        }
+        Ok(Self { data })
     }
     pub fn collect_binaries(&self, out: &mut BTreeSet<String>) {
-        for data in self.platform_data.values() {
-            out.extend(data.kebab_binaries.iter().cloned());
+        for d in &self.data {
+            out.extend(d.kebab_binaries.iter().cloned());
         }
     }
 }
-#[derive(Default)]
+// #[derive(Default)]
 pub struct ModuleData {
+    pub targets: TargetSet,
     /// doc paragraphs
+    ///
+    /// If not specified, it will try to find same OS but different architecture.
+    /// Then on linux it will try other flavors. However it will not try other OS
     pub doc: Vec<String>,
     pub kebab_binaries: BTreeSet<String>,
     pub has_binary_dependencies: bool,
@@ -264,6 +299,7 @@ impl cu::Parse for ModuleData {
         }
 
         Ok(Self {
+            targets: Default::default(),
             doc,
             kebab_binaries: binaries,
             has_binary_dependencies,
