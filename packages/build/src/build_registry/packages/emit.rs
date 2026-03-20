@@ -6,7 +6,6 @@ use itertools::Itertools as _;
 
 use super::kebab;
 use super::parse::{ModuleData, ModuleFileStructure, ParsedModule};
-use super::platform::Platform;
 use super::platform::{Target, TargetSet, CfgAttr};
 
 pub struct RegistryBuilder {
@@ -108,7 +107,7 @@ mod _stub {{ {stub_impl} }}
 
 impl BindId {
     /// Get packages that provide this binary
-    pub fn providers(self) -> EnumSet<PkgId> {{"
+    pub fn providers(self) -> EnumSet<PkgId> {{
         match self {
 "##;
         build_bin_providers(&pascal_bins, &kebab_bins, &pascal_pkgs, &modules, &mut out)?;
@@ -116,16 +115,9 @@ impl BindId {
     }
 }"##;
 
-        for (snake_name, (kebab_name, metadata)) in
-        std::iter::zip(
-            &snake_pkgs,
-            std::iter::zip(
-                &kebab_pkgs, &metadatas
-            )
-        )
-        {
+        for (snake_name, metadata) in std::iter::zip( &snake_pkgs, &metadatas) {
             for m in metadata {
-                m.build_mux_module(snake_name, kebab_name, &mut out)?;
+                m.build_module(snake_name, &self.registry_src_path, &mut out)?;
             }
         }
 
@@ -239,7 +231,8 @@ impl ModuleMetadata<'_> {
 
         let targets = self.metadata_targets();
         let unified_data = self.unified_data();
-        let module_path = format!("_pkg_{}{}", snake_name, self.module_suffix()?);
+        let data = self.any_data();
+        let module_path = format!("_pkg_{}{}", snake_name, self.unified_module_suffix()?);
         let _ = writeln!(out, r##"    {cfg_attr} {{ crate::Package {{
         enabled: true,
         name: "{kebab_name}","##, 
@@ -256,16 +249,73 @@ impl ModuleMetadata<'_> {
                     .iter()
                     .map(|x| format!("BinId::{}", kebab::kebab_to_pascal(x)))
                     .join(" | ");
-                writeln!(out, "        binaries_fn: || enum_set!{{ {binaries} }},")?;
+                let _ = writeln!(out, "        binaries_fn: || enum_set!{{ {binaries} }},");
             }
         }
 
+        let linux_flavor_set = match self {
+            ModuleMetadata::MacosUnified(_) |
+            ModuleMetadata::WindowsUnified(_) |
+            ModuleMetadata::WindowsMux { ..}|
+            ModuleMetadata::Leftover(_) => "corelib::opfs::LinuxFlavor::none()",
+            ModuleMetadata::LinuxUnified(_) => "corelib::opfs::LinuxFlavor::all()",
+            ModuleMetadata::LinuxMux { data_pacman, data_apt: _ } => {
+                if data_pacman.is_some() {
+                    "enum_set!{ corelib::opfs::LinuxFlavor::Pacman }"
+                } else {
+                    "enum_set!{ corelib::opfs::LinuxFlavor::Apt }"
+                }
+            }
+        };
+        let _ = writeln!(out, "        linux_flavors: {linux_flavor_set},");
+        let _ = writeln!(
+            out,
+            "        short_desc: {},",
+            json::stringify(data.short_desc())?
+        );
+        let _ = writeln!(
+            out,
+            "        long_desc: {},",
+            json::stringify(&data.long_desc())?
+        );
+        // required functions
+        let _ = writeln!(out, "        verify_fn: {module_path}::verify,");
+        let _ = writeln!(out, "        install_fn: {module_path}::install,");
+        let _ = writeln!(out, "        uninstall_fn: {module_path}::uninstall,");
+        macro_rules! write_optional_function {
+            ($has_ident:ident, $fn_name:literal, $stub_name:literal) => {
+                if unified_data.is_none() || data.$has_ident {
+                    let fn_name = $fn_name;
+                    let _ = writeln!(out, "        {fn_name}_fn: {module_path}::{fn_name},");
+                } else {
+                    let _ = writeln!(out, "        {}_fn: _stub::{},", $fn_name, $stub_name);
+                }
+            };
+        }
+        write_optional_function!(
+            has_binary_dependencies,
+            "binary_dependencies",
+            "empty_bin_set"
+        );
+        write_optional_function!(
+            has_config_dependencies,
+            "config_dependencies",
+            "empty_pkg_set"
+        );
+        write_optional_function!(has_download, "download", "ok");
+        write_optional_function!(has_configure, "configure", "ok");
+        write_optional_function!(has_clean, "clean", "ok");
+        write_optional_function!(has_config_location, "config_location", "ok_none");
+        write_optional_function!(has_backup_restore, "backup", "ok");
+        write_optional_function!(has_backup_restore, "restore", "ok");
+        write_optional_function!(has_pre_uninstall, "pre_uninstall", "ok");
 
-        todo!()
+        let _ = writeln!(out, "    }} }},");
+        Ok(())
     }
-    fn module_suffix(&self) -> cu::Result<&'static str> {
+    fn unified_module_suffix(&self) -> cu::Result<&'static str> {
         match self {
-            ModuleMetadata::MacosUnified(_) => Ok("__macos"),
+            ModuleMetadata::MacosUnified(_) => Ok("__mac"),
             ModuleMetadata::WindowsUnified(_) => Ok("__win"),
             ModuleMetadata::LinuxUnified(_) => Ok("__linux"),
             ModuleMetadata::WindowsMux { .. } => Ok("__win"),
@@ -298,99 +348,234 @@ impl ModuleMetadata<'_> {
         }
     }
 
-    fn build_mux_module(&self,
+    fn any_data(&self) -> &ModuleData {
+        match self {
+            ModuleMetadata::MacosUnified(d) => d,
+            ModuleMetadata::WindowsUnified(d) => d,
+            ModuleMetadata::LinuxUnified(d) => d,
+            ModuleMetadata::WindowsMux { data_x64, data_arm } => {
+                if let Some(d) = data_x64 {
+                    return d;
+                }
+                data_arm.as_ref().unwrap()
+            }, 
+            ModuleMetadata::LinuxMux { data_pacman, data_apt } => {
+                if let Some(d) = data_pacman {
+                    return d;
+                }
+                data_apt.as_ref().unwrap()
+            },
+            ModuleMetadata::Leftover(_) => {
+                panic!("cannot call any_data() on ModuleMetadata::Leftover");
+            },
+        }
+    }
+
+    fn build_module(&self,
         snake_name: &str,
-        kebab_name: &str,
+        registry_src_path: &Path, 
         out: &mut String,
     ) -> cu::Result<()> {
-        match self {
-            ModuleMetadata::MacosUnified(_) => {}
-            ModuleMetadata::WindowsUnified(_) => {}
-            ModuleMetadata::LinuxUnified(_) => {}
-            ModuleMetadata::WindowsMux { data_x64, data_arm } => todo!(),
-            ModuleMetadata::LinuxMux { data_pacman, data_apt } => todo!(),
-            ModuleMetadata::Leftover(_) => {}
+        use std::fmt::Write as _;
+        let (mux_match_expr, mux_arms) = match self {
+            ModuleMetadata::MacosUnified(d) => {
+                Self::build_mod_decl(d, snake_name, "__mac", registry_src_path, out)?;
+                return Ok(());
+            }
+            ModuleMetadata::WindowsUnified(d) => {
+                Self::build_mod_decl(d, snake_name, "__win", registry_src_path, out)?;
+                return Ok(());
+            }
+            ModuleMetadata::LinuxUnified(d) => {
+                Self::build_mod_decl(d, snake_name, "__linux", registry_src_path, out)?;
+                return Ok(());
+            }
+            ModuleMetadata::WindowsMux { data_x64, data_arm } => {
+                let mut mux_arms = Vec::with_capacity(2);
+                if let Some(d) = data_x64 {
+                    Self::build_mod_decl(d, snake_name, "__win_x64", registry_src_path, out)?;
+                    mux_arms.push(("corelib::opfs::CpuArch::X64", "__win_x64", *d));
+                }
+                if let Some(d) = data_arm {
+                    Self::build_mod_decl(d, snake_name, "__win_arm", registry_src_path, out)?;
+                    mux_arms.push(("corelib::opfs::CpuArch::ARM64", "__win_arm", *d));
+                }
+                let _ = writeln!(
+                    out,
+                    "{} mod _pkg_{}__win {{ use super::*;",
+                    CfgAttr(Target::win()).attr(),
+                    snake_name,
+                );
+                ("corelib::opfs::cpu_arch()", mux_arms)
+            }
+            ModuleMetadata::LinuxMux { data_pacman, data_apt } => {
+                let mut mux_arms = Vec::with_capacity(2);
+                if let Some(d) = data_pacman {
+                    Self::build_mod_decl(d, snake_name, "__linux_pacman_x64", registry_src_path, out)?;
+                    mux_arms.push(("corelib::opfs::LinuxFlavor::Pacman", "__linux_pacman_x64", *d));
+                }
+                if let Some(d) = data_apt {
+                    Self::build_mod_decl(d, snake_name, "__linux_apt_x64", registry_src_path, out)?;
+                    mux_arms.push(("corelib::opfs::LinuxFlavor::Apt", "__linux_apt_x64", *d));
+                }
+                let _ = writeln!(
+                    out,
+                    "{} mod _pkg_{}__linux {{ use super::*;",
+                    CfgAttr(Target::linux()).attr(),
+                    snake_name,
+                );
+                ("corelib::opfs::linux_flavor()", mux_arms)
+            }
+            ModuleMetadata::Leftover(_) => { 
+                return Ok(());
+            }
+        };
+        // mux module
+        macro_rules! write_end_match {
+            (none) => { let _ = writeln!(out, "        _ => Ok(None),\n    }} }}"); };
+            (default) => { let _ = writeln!(out, "        _ => Default::default(),\n    }} }}"); };
+            (unreachable) => { let _ = writeln!(out, "        _ => cu::bail!(\"unreachable\"),\n    }} }}"); };
         }
+        {
+            let _ = writeln!(
+                out,
+                "    pub fn binaries() -> EnumSet<BinId> {{ match {mux_match_expr} {{",
+            );
+            for (match_arm, _, d) in &mux_arms {
+                let binaries = d.kebab_binaries
+                    .iter()
+                    .map(|x| format!("BinId::{}", kebab::kebab_to_pascal(x)))
+                    .join(" | ");
+                let _ = writeln!( out, "        {match_arm} => enum_set!{{ {binaries} }},",);
+            }
+            write_end_match!(default);
+        }
+        {
+            let _ = writeln!(
+                out,
+                "    pub fn config_location(_ctx: &crate::Context) -> cu::Result<Option<std::path::PathBuf>> {{ match {mux_match_expr} {{"
+            );
+            for (match_arm, suffix, d) in &mux_arms {
+                if d.has_config_location {
+                    let _ = writeln!(
+                        out,
+                        "        {match_arm} => _pkg_{snake_name}{suffix}::config_location(_ctx),",
+                    );
+                } else {
+                    let _ = writeln!(out, "        {match_arm} => Ok(None),");
+                }
+            }
+            write_end_match!(none);
+        }
+        for fn_name in ["verify", "install", "uninstall"] {
+            let retty = if fn_name == "verify" {
+                "crate::Verified"
+            } else {
+                "()"
+            };
+            let _ = writeln!(
+                out,
+                "    pub fn {fn_name}(ctx: &crate::Context) -> cu::Result<{retty}> {{ match {mux_match_expr} {{"
+            );
+            for (match_arm, suffix, _) in &mux_arms {
+                let _ = writeln!(
+                    out,
+                    "        {match_arm} => _pkg_{snake_name}{suffix}::{fn_name}(ctx),",
+                );
+            }
+            // the package functions will check the flavor before invoking vtable functions,
+            // so the other platforms are not reachable
+            write_end_match!(unreachable);
+        }
+        macro_rules! write_optional_function {
+            ($fn_name:literal, $has_ident:ident) => {
+                let _ = writeln!(
+                    out, 
+                    "    pub fn {}(_ctx: &crate::Context) -> cu::Result<()> {{ match {} {{",
+                    $fn_name,
+                    mux_match_expr
+                );
+                for (match_arm, suffix, d) in &mux_arms {
+                    if d.$has_ident {
+                        let _ = writeln!(out, "        {match_arm} => _pkg_{snake_name}{suffix}::{fn_name}(_ctx),", fn_name = $fn_name);
+                    } else {
+                        let _ = writeln!(out, "        {match_arm} => Ok(()),");
+                    }
+                }
+                write_end_match!(unreachable);
+            }
+        }
+        write_optional_function!("download", has_download);
+        write_optional_function!("configure", has_configure);
+        write_optional_function!("clean", has_clean);
+        write_optional_function!("backup", has_backup_restore);
+        write_optional_function!("restore", has_backup_restore);
+        write_optional_function!("pre_uninstall", has_pre_uninstall);
+        macro_rules! write_dependency_function {
+            ($fn_name:literal, $has_ident:ident, $retty:literal) => {
+                let _ = writeln!(
+                    out,
+                    "    pub fn {}() -> {} {{ match {} {{",
+                    $fn_name, $retty, mux_match_expr
+                );
+                for (match_arm, suffix, d) in &mux_arms {
+                    if d.$has_ident {
+                        let _ = writeln!(
+                            out,
+                            "        {match_arm} => _pkg_{snake_name}{suffix}::{fn_name}(),",
+                            fn_name = $fn_name
+                        );
+                    } else {
+                        let _ = writeln!(
+                            out,
+                            "        {match_arm} => Default::default(),",
+                        );
+                    }
+                }
+                write_end_match!(default);
+            };
+        }
+        write_dependency_function!(
+            "binary_dependencies",
+            has_binary_dependencies,
+            "enumset::EnumSet<super::BinId>"
+        );
+        write_dependency_function!(
+            "config_dependencies",
+            has_config_dependencies,
+            "enumset::EnumSet<super::PkgId>"
+        );
+
+        let _ = writeln!(out, "}}");
+
+        Ok(())
+    }
+
+    fn build_mod_decl(
+        data: &ModuleData, 
+        snake_name: &str,
+        suffix: &str,
+        registry_src_path: &Path, 
+        out: &mut String) -> cu::Result<()> {
+        use std::fmt::Write as _;
+        let path = data.file.normalize()?;
+        let path = path.try_to_rel_from(registry_src_path);
+        // relative path ensures the output is consistent throughout
+        // build environments
+        cu::ensure!(path.is_relative(), "'{}'", path.display())?;
+        let path = path.as_utf8()?;
+        let _ = writeln!(
+            out,
+            "{} #[path = {}] mod _pkg_{}{};",
+            CfgAttr(data.targets).attr(),
+            json::stringify(path)?,
+            snake_name,
+            suffix
+        );
         Ok(())
     }
 }
 
-fn build_metadata_for_module(
-    snake_name: &str,
-    kebab_name: &str,
-    platform: Platform,
-    linux_flavors: &str,
-    is_linux_mux: bool,
-    data: &ModuleData,
-    out: &mut String,
-) -> cu::Result<()> {
-    use std::fmt::Write as _;
-
-    let module_path = format!("_pkg_{}{}", snake_name, platform.module_str());
-
-    writeln!(out, "    {} {{ crate::Package {{", platform.cfg_attr())?;
-    writeln!(out, "        enabled: true,")?;
-    writeln!(out, "        name: \"{kebab_name}\",")?;
-    if is_linux_mux {
-        writeln!(out, "        binaries_fn: {module_path}::binaries,")?;
-    } else {
-        let binaries = data
-            .kebab_binaries
-            .iter()
-            .map(|x| format!("BinId::{}", kebab::kebab_to_pascal(x)))
-            .join(" | ");
-        writeln!(out, "        binaries_fn: || enum_set!{{ {binaries} }},")?;
-    }
-
-    writeln!(out, "        linux_flavors: {linux_flavors},")?;
-    writeln!(
-        out,
-        "        short_desc: {},",
-        json::stringify(data.short_desc())?
-    )?;
-    writeln!(
-        out,
-        "        long_desc: {},",
-        json::stringify(&data.long_desc())?
-    )?;
-
-    // required functions
-    writeln!(out, "        verify_fn: {module_path}::verify,")?;
-    writeln!(out, "        install_fn: {module_path}::install,")?;
-    writeln!(out, "        uninstall_fn: {module_path}::uninstall,")?;
-
-    macro_rules! write_optional_function {
-        ($has_ident:ident, $fn_name:literal, $stub_name:literal) => {
-            if is_linux_mux || data.$has_ident {
-                let fn_name = $fn_name;
-                writeln!(out, "        {fn_name}_fn: {module_path}::{fn_name},")?;
-            } else {
-                writeln!(out, "        {}_fn: _stub::{},", $fn_name, $stub_name)?;
-            }
-        };
-    }
-    write_optional_function!(
-        has_binary_dependencies,
-        "binary_dependencies",
-        "empty_bin_set"
-    );
-    write_optional_function!(
-        has_config_dependencies,
-        "config_dependencies",
-        "empty_pkg_set"
-    );
-    write_optional_function!(has_download, "download", "ok");
-    write_optional_function!(has_configure, "configure", "ok");
-    write_optional_function!(has_clean, "clean", "ok");
-    write_optional_function!(has_config_location, "config_location", "ok_none");
-    write_optional_function!(has_backup_restore, "backup", "ok");
-    write_optional_function!(has_backup_restore, "restore", "ok");
-    write_optional_function!(has_pre_uninstall, "pre_uninstall", "ok");
-
-    writeln!(out, "    }} }},")?;
-
-    Ok(())
-}
 
 fn generate_id_enum(
     out: &mut String,
@@ -453,48 +638,147 @@ fn build_bin_providers(
     use std::fmt::Write as _;
 
     for (pascal_bin, kebab_bin) in std::iter::zip(pascal_bins, kebab_bins) {
-        let mut providers: BTreeMap<Platform, BTreeSet<String>> = BTreeMap::default();
+        // providers for this binary
+        let mut providers: BTreeMap<Target, BTreeSet<String>> = BTreeMap::default();
         for (pascal_pkg, m) in std::iter::zip(pascal_pkgs, modules) {
-            for (platform, data) in &m.platform_data {
-                if !data.kebab_binaries.contains(kebab_bin.as_str()) {
+            for d in &m.data {
+                if !d.kebab_binaries.contains(kebab_bin.as_str()) {
                     continue;
                 }
-                for leaf_platform in platform.leaves() {
-                    let set = providers.entry(*leaf_platform).or_default();
+                for t in d.targets {
+                    let set = providers.entry(t).or_default();
                     set.insert(format!("PkgId::{pascal_pkg}"));
                 }
             }
         }
-        Platform::combine_leaves(&mut providers);
-        writeln!(out, "            Self::{pascal_bin} => {{")?;
-        let mut linux_flavors = vec![];
-        for (platform, providers) in providers {
-            if platform.is_linux_leaf() {
-                linux_flavors.push((platform, providers));
+
+        let providers = Target::combine_targets(providers);
+        let _ = writeln!(out, "            Self::{pascal_bin} => {{");
+        let mut providers_linux_pacman_x64 = None;
+        let mut providers_linux_apt_x64 = None;
+        let mut providers_win_x64 = None;
+        let mut providers_win_arm = None;
+        for (targets, providers) in &providers {
+            let targets = *targets;
+            let win_unified = targets.union(Target::win()) == targets;
+            let linux_unified = targets.union(Target::linux()) == targets;
+            let mac_unified = targets.union(Target::mac()) == targets;
+            if win_unified && linux_unified && mac_unified {
+                let _ = writeln!(
+                    out,
+                    "                {} {{ enum_set!{{ {} }}}}",
+                    CfgAttr(targets).attr(),
+                    providers.iter().join(" | "),
+                );
                 continue;
             }
-            writeln!(
-                out,
-                "                {} {{ enum_set!{{ {} }} }}",
-                platform.cfg_attr(),
-                providers.iter().join(" | ")
-            )?;
+            if win_unified {
+                let _ = writeln!(
+                    out,
+                    "                {} {{ enum_set!{{ {} }}}}",
+                    CfgAttr(Target::win()).attr(),
+                    providers.iter().join(" | "),
+                );
+            }
+            if linux_unified {
+                let _ = writeln!(
+                    out,
+                    "                {} {{ enum_set!{{ {} }}}}",
+                    CfgAttr(Target::linux()).attr(),
+                    providers.iter().join(" | "),
+                );
+            }
+            if mac_unified {
+                let _ = writeln!(
+                    out,
+                    "                {} {{ enum_set!{{ {} }}}}",
+                    CfgAttr(Target::mac()).attr(),
+                    providers.iter().join(" | "),
+                );
+            }
+            if providers.is_empty() {
+                continue;
+            }
+            if targets == TargetSet::from(Target::LinuxPacmanX64) {
+                providers_linux_pacman_x64 = Some(providers);
+                continue;
+            }
+            if targets == TargetSet::from(Target::LinuxAptX64) {
+                providers_linux_apt_x64 = Some(providers);
+                continue;
+            }
+            if targets == TargetSet::from(Target::WindowsX64) {
+                providers_win_x64 = Some(providers);
+                continue;
+            }
+            if targets == TargetSet::from(Target::WindowsArm) {
+                providers_win_arm = Some(providers);
+                continue;
+            }
         }
-        if !linux_flavors.is_empty() {
-            writeln!(
+        if providers_linux_pacman_x64.is_some() || providers_linux_apt_x64.is_some() {
+            let _ = writeln!(
                 out,
                 "                {} {{ match corelib::opfs::linux_flavor() {{",
-                Platform::Linux.cfg_attr()
-            )?;
-            for (platform, providers) in linux_flavors {
-                writeln!(
+                CfgAttr(Target::linux()).attr(),
+            );
+            let mut count = 0;
+            if let Some(providers) = providers_linux_pacman_x64 {
+                let _ = writeln!(
                     out,
-                    "                    {} => enum_set! {{ {} }},",
-                    platform.linux_flavor(),
+                    "                    {} corelib::opfs::LinuxFlavor::Pacman => enum_set! {{ {} }},",
+                    CfgAttr(Target::LinuxPacmanX64.into()).attr(),
                     providers.iter().join(" | ")
-                )?;
+                );
+                count+=1;
             }
-            writeln!(out, "                }} }}")?;
+            if let Some(providers) = providers_linux_apt_x64 {
+                let _ = writeln!(
+                    out,
+                    "                    {} corelib::opfs::LinuxFlavor::Apt => enum_set! {{ {} }},",
+                    CfgAttr(Target::LinuxAptX64.into()).attr(),
+                    providers.iter().join(" | ")
+                );
+                count+=1;
+            }
+            if count != 2 {
+                let _ = writeln!(
+                    out,
+                    "                    _ => enum_set!{{}},",
+                );
+            }
+        }
+        if providers_win_x64.is_some() || providers_win_arm.is_some() {
+            let _ = writeln!(
+                out,
+                "                {} {{ match corelib::opfs::cpu_arch() {{",
+                CfgAttr(Target::win()).attr(),
+            );
+            let mut count = 0;
+            if let Some(providers) = providers_win_x64 {
+                let _ = writeln!(
+                    out,
+                    "                    {} corelib::opfs::CpuArch::X64 => enum_set! {{ {} }},",
+                    CfgAttr(Target::WindowsX64.into()).attr(),
+                    providers.iter().join(" | ")
+                );
+                count+=1;
+            }
+            if let Some(providers) = providers_win_arm {
+                let _ = writeln!(
+                    out,
+                    "                    {} corelib::opfs::CpuArch::ARM64 => enum_set! {{ {} }},",
+                    CfgAttr(Target::WindowsArm.into()).attr(),
+                    providers.iter().join(" | ")
+                );
+                count+=1;
+            }
+            if count != 2 {
+                let _ = writeln!(
+                    out,
+                    "                    _ => enum_set!{{}},",
+                );
+            }
         }
         writeln!(out, "            }}")?;
     }
@@ -502,196 +786,196 @@ fn build_bin_providers(
     Ok(())
 }
 
-fn build_package_modules(
-    packages: &BTreeMap<String, ModuleFileStructure>,
-    snake_pkgs: &[String],
-    modules: &[ParsedModule],
-    registry_src_path: &Path,
-    out: &mut String,
-) -> cu::Result<()> {
-    use std::fmt::Write as _;
-    let iter = packages.values().zip(modules.iter().zip(snake_pkgs));
-    for (module, (parsed, name)) in iter {
-        let mut linux_flavors = vec![];
-        for (platform, path) in &module.files {
-            if platform.is_linux_leaf() {
-                linux_flavors.push(*platform);
-            }
-            let path = path.normalize()?;
-            let path = path.try_to_rel_from(registry_src_path);
-            // relative path ensures the output is consistent throughout
-            // build environments
-            cu::ensure!(path.is_relative(), "'{}'", path.display())?;
-            let path = path.as_utf8()?;
-            writeln!(
-                out,
-                "{} #[path = {}] mod _pkg_{}{};",
-                platform.cfg_attr(),
-                json::stringify(path)?,
-                name,
-                platform.module_str()
-            )?;
-        }
-        // since linux flavors can't be decided at compile time,
-        // generate a linux module to mux it at runtime
-        if !linux_flavors.is_empty() {
-            writeln!(
-                out,
-                "{} mod _pkg_{}{} {{",
-                Platform::Linux.cfg_attr(),
-                name,
-                Platform::Linux.module_str()
-            )?;
-            {
-                writeln!(
-                    out,
-                    "    pub fn binaries() -> enumset::EnumSet<super::BinId> {{ match corelib::opfs::linux_flavor() {{"
-                )?;
-                for platform in &linux_flavors {
-                    let data = cu::check!(
-                        parsed.platform_data.get(platform),
-                        "failed to get module data for platform '{platform}', package '{name}'"
-                    )?;
-                    let binaries = data
-                        .kebab_binaries
-                        .iter()
-                        .map(|x| format!("super::BinId::{}", kebab::kebab_to_pascal(x)))
-                        .join(" | ");
-                    writeln!(
-                        out,
-                        "        {} => enumset::enum_set!{{ {} }},",
-                        platform.linux_flavor(),
-                        binaries
-                    )?;
-                }
-                writeln!(out, "        _ => Default::default(),")?;
-                writeln!(out, "    }} }}")?;
-            }
-            {
-                writeln!(
-                    out,
-                    "    pub fn config_location(_ctx: &crate::Context) -> cu::Result<Option<std::path::PathBuf>> {{ match corelib::opfs::linux_flavor() {{"
-                )?;
-                for platform in &linux_flavors {
-                    let data = cu::check!(
-                        parsed.platform_data.get(platform),
-                        "failed to get module data for platform '{platform}', package '{name}'"
-                    )?;
-                    if data.has_config_location {
-                        writeln!(
-                            out,
-                            "        {} => super::_pkg_{}{}::config_location(_ctx),",
-                            platform.linux_flavor(),
-                            name,
-                            platform.module_str()
-                        )?;
-                    } else {
-                        writeln!(out, "        {} => Ok(None),", platform.linux_flavor())?;
-                    }
-                }
-                writeln!(out, "        _ => Ok(None),")?;
-                writeln!(out, "    }} }}")?;
-            }
-            macro_rules! write_unreachable_match_arm {
-                () => {
-                    writeln!(out, "        _ => cu::bail!(\"unreachable\")")
-                };
-            }
-            for fn_name in ["verify", "install", "uninstall"] {
-                let retty = if fn_name == "verify" {
-                    "crate::Verified"
-                } else {
-                    "()"
-                };
-                writeln!(
-                    out,
-                    "    pub fn {fn_name}(ctx: &crate::Context) -> cu::Result<{retty}> {{ match corelib::opfs::linux_flavor() {{"
-                )?;
-                for platform in &linux_flavors {
-                    writeln!(
-                        out,
-                        "        {} => super::_pkg_{}{}::{}(ctx),",
-                        platform.linux_flavor(),
-                        name,
-                        platform.module_str(),
-                        fn_name
-                    )?;
-                }
-                // the package functions will check the flavor before invoking vtable functions,
-                // so the other platforms are not reachable
-                write_unreachable_match_arm!()?;
-                writeln!(out, "    }} }}")?;
-            }
-            macro_rules! write_optional_function {
-                ($fn_name:literal, $has_ident:ident) => {
-                    writeln!(out, "    pub fn {}(_ctx: &crate::Context) -> cu::Result<()> {{ match corelib::opfs::linux_flavor() {{", $fn_name)?;
-                    for platform in &linux_flavors {
-                        let platform_data = cu::check!(parsed.platform_data.get(&platform), "failed to get module data for platform '{platform}', package '{name}'")?;
-                        if platform_data.$has_ident {
-                            writeln!(out, "        {} => super::_pkg_{}{}::{}(_ctx),", platform.linux_flavor(), name, platform.module_str(), $fn_name)?;
-                        } else {
-                            writeln!(out, "        {} => Ok(()),", platform.linux_flavor())?;
-                        }
-                    }
-                    write_unreachable_match_arm!()?;
-                    writeln!(out, "    }} }}")?;
-                }
-            }
-            write_optional_function!("download", has_download);
-            write_optional_function!("configure", has_configure);
-            write_optional_function!("clean", has_clean);
-            write_optional_function!("backup", has_backup_restore);
-            write_optional_function!("restore", has_backup_restore);
-            write_optional_function!("pre_uninstall", has_pre_uninstall);
-            macro_rules! write_dependency_function {
-                ($fn_name:literal, $has_ident:ident, $retty:literal) => {
-                    writeln!(
-                        out,
-                        "    pub fn {}() -> {} {{ match corelib::opfs::linux_flavor() {{",
-                        $fn_name, $retty
-                    )?;
-                    for platform in &linux_flavors {
-                        let platform_data = cu::check!(
-                            parsed.platform_data.get(&platform),
-                            "failed to get module data for platform '{platform}', package '{name}'"
-                        )?;
-                        if platform_data.$has_ident {
-                            writeln!(
-                                out,
-                                "        {} => super::_pkg_{}{}::{}(),",
-                                platform.linux_flavor(),
-                                name,
-                                platform.module_str(),
-                                $fn_name
-                            )?;
-                        } else {
-                            writeln!(
-                                out,
-                                "        {} => Default::default(),",
-                                platform.linux_flavor()
-                            )?;
-                        }
-                    }
-                    writeln!(out, "        _ => Default::default(),")?;
-                    writeln!(out, "    }} }}")?;
-                };
-            }
-            write_dependency_function!(
-                "binary_dependencies",
-                has_binary_dependencies,
-                "enumset::EnumSet<super::BinId>"
-            );
-            write_dependency_function!(
-                "config_dependencies",
-                has_config_dependencies,
-                "enumset::EnumSet<super::PkgId>"
-            );
-
-            writeln!(out, "}}")?;
-        }
-    }
-    Ok(())
-}
+// fn build_package_modules(
+//     packages: &BTreeMap<String, ModuleFileStructure>,
+//     snake_pkgs: &[String],
+//     modules: &[ParsedModule],
+//     registry_src_path: &Path,
+//     out: &mut String,
+// ) -> cu::Result<()> {
+//     use std::fmt::Write as _;
+//     let iter = packages.values().zip(modules.iter().zip(snake_pkgs));
+//     for (module, (parsed, name)) in iter {
+//         let mut linux_flavors = vec![];
+//         for (platform, path) in &module.files {
+//             if platform.is_linux_leaf() {
+//                 linux_flavors.push(*platform);
+//             }
+//             let path = path.normalize()?;
+//             let path = path.try_to_rel_from(registry_src_path);
+//             // relative path ensures the output is consistent throughout
+//             // build environments
+//             cu::ensure!(path.is_relative(), "'{}'", path.display())?;
+//             let path = path.as_utf8()?;
+//             writeln!(
+//                 out,
+//                 "{} #[path = {}] mod _pkg_{}{};",
+//                 platform.cfg_attr(),
+//                 json::stringify(path)?,
+//                 name,
+//                 platform.module_str()
+//             )?;
+//         }
+//         // since linux flavors can't be decided at compile time,
+//         // generate a linux module to mux it at runtime
+//         if !linux_flavors.is_empty() {
+//             writeln!(
+//                 out,
+//                 "{} mod _pkg_{}{} {{",
+//                 Platform::Linux.cfg_attr(),
+//                 name,
+//                 Platform::Linux.module_str()
+//             )?;
+//             {
+//                 writeln!(
+//                     out,
+//                     "    pub fn binaries() -> enumset::EnumSet<super::BinId> {{ match corelib::opfs::linux_flavor() {{"
+//                 )?;
+//                 for platform in &linux_flavors {
+//                     let data = cu::check!(
+//                         parsed.platform_data.get(platform),
+//                         "failed to get module data for platform '{platform}', package '{name}'"
+//                     )?;
+//                     let binaries = data
+//                         .kebab_binaries
+//                         .iter()
+//                         .map(|x| format!("super::BinId::{}", kebab::kebab_to_pascal(x)))
+//                         .join(" | ");
+//                     writeln!(
+//                         out,
+//                         "        {} => enumset::enum_set!{{ {} }},",
+//                         platform.linux_flavor(),
+//                         binaries
+//                     )?;
+//                 }
+//                 writeln!(out, "        _ => Default::default(),")?;
+//                 writeln!(out, "    }} }}")?;
+//             }
+//             {
+//                 writeln!(
+//                     out,
+//                     "    pub fn config_location(_ctx: &crate::Context) -> cu::Result<Option<std::path::PathBuf>> {{ match corelib::opfs::linux_flavor() {{"
+//                 )?;
+//                 for platform in &linux_flavors {
+//                     let data = cu::check!(
+//                         parsed.platform_data.get(platform),
+//                         "failed to get module data for platform '{platform}', package '{name}'"
+//                     )?;
+//                     if data.has_config_location {
+//                         writeln!(
+//                             out,
+//                             "        {} => super::_pkg_{}{}::config_location(_ctx),",
+//                             platform.linux_flavor(),
+//                             name,
+//                             platform.module_str()
+//                         )?;
+//                     } else {
+//                         writeln!(out, "        {} => Ok(None),", platform.linux_flavor())?;
+//                     }
+//                 }
+//                 writeln!(out, "        _ => Ok(None),")?;
+//                 writeln!(out, "    }} }}")?;
+//             }
+//             macro_rules! write_unreachable_match_arm {
+//                 () => {
+//                     writeln!(out, "        _ => cu::bail!(\"unreachable\")")
+//                 };
+//             }
+//             for fn_name in ["verify", "install", "uninstall"] {
+//                 let retty = if fn_name == "verify" {
+//                     "crate::Verified"
+//                 } else {
+//                     "()"
+//                 };
+//                 writeln!(
+//                     out,
+//                     "    pub fn {fn_name}(ctx: &crate::Context) -> cu::Result<{retty}> {{ match corelib::opfs::linux_flavor() {{"
+//                 )?;
+//                 for platform in &linux_flavors {
+//                     writeln!(
+//                         out,
+//                         "        {} => super::_pkg_{}{}::{}(ctx),",
+//                         platform.linux_flavor(),
+//                         name,
+//                         platform.module_str(),
+//                         fn_name
+//                     )?;
+//                 }
+//                 // the package functions will check the flavor before invoking vtable functions,
+//                 // so the other platforms are not reachable
+//                 write_unreachable_match_arm!()?;
+//                 writeln!(out, "    }} }}")?;
+//             }
+//             macro_rules! write_optional_function {
+//                 ($fn_name:literal, $has_ident:ident) => {
+//                     writeln!(out, "    pub fn {}(_ctx: &crate::Context) -> cu::Result<()> {{ match corelib::opfs::linux_flavor() {{", $fn_name)?;
+//                     for platform in &linux_flavors {
+//                         let platform_data = cu::check!(parsed.platform_data.get(&platform), "failed to get module data for platform '{platform}', package '{name}'")?;
+//                         if platform_data.$has_ident {
+//                             writeln!(out, "        {} => super::_pkg_{}{}::{}(_ctx),", platform.linux_flavor(), name, platform.module_str(), $fn_name)?;
+//                         } else {
+//                             writeln!(out, "        {} => Ok(()),", platform.linux_flavor())?;
+//                         }
+//                     }
+//                     write_unreachable_match_arm!()?;
+//                     writeln!(out, "    }} }}")?;
+//                 }
+//             }
+//             write_optional_function!("download", has_download);
+//             write_optional_function!("configure", has_configure);
+//             write_optional_function!("clean", has_clean);
+//             write_optional_function!("backup", has_backup_restore);
+//             write_optional_function!("restore", has_backup_restore);
+//             write_optional_function!("pre_uninstall", has_pre_uninstall);
+//             macro_rules! write_dependency_function {
+//                 ($fn_name:literal, $has_ident:ident, $retty:literal) => {
+//                     writeln!(
+//                         out,
+//                         "    pub fn {}() -> {} {{ match corelib::opfs::linux_flavor() {{",
+//                         $fn_name, $retty
+//                     )?;
+//                     for platform in &linux_flavors {
+//                         let platform_data = cu::check!(
+//                             parsed.platform_data.get(&platform),
+//                             "failed to get module data for platform '{platform}', package '{name}'"
+//                         )?;
+//                         if platform_data.$has_ident {
+//                             writeln!(
+//                                 out,
+//                                 "        {} => super::_pkg_{}{}::{}(),",
+//                                 platform.linux_flavor(),
+//                                 name,
+//                                 platform.module_str(),
+//                                 $fn_name
+//                             )?;
+//                         } else {
+//                             writeln!(
+//                                 out,
+//                                 "        {} => Default::default(),",
+//                                 platform.linux_flavor()
+//                             )?;
+//                         }
+//                     }
+//                     writeln!(out, "        _ => Default::default(),")?;
+//                     writeln!(out, "    }} }}")?;
+//                 };
+//             }
+//             write_dependency_function!(
+//                 "binary_dependencies",
+//                 has_binary_dependencies,
+//                 "enumset::EnumSet<super::BinId>"
+//             );
+//             write_dependency_function!(
+//                 "config_dependencies",
+//                 has_config_dependencies,
+//                 "enumset::EnumSet<super::PkgId>"
+//             );
+//
+//             writeln!(out, "}}")?;
+//         }
+//     }
+//     Ok(())
+// }
         // for d in &module.data {
         //     if let Some(t) = d.targets.iter().next() && included_targets.contains(t) {
         //         continue;
@@ -759,3 +1043,79 @@ fn build_package_modules(
         //         "    {cfg} {{ crate::Package::stub(\"{kebab_name}\") }},"
         //     )?;
         // }
+// fn build_metadata_for_module(
+//     snake_name: &str,
+//     kebab_name: &str,
+//     platform: Platform,
+//     linux_flavors: &str,
+//     is_linux_mux: bool,
+//     data: &ModuleData,
+//     out: &mut String,
+// ) -> cu::Result<()> {
+//     use std::fmt::Write as _;
+//
+//     let module_path = format!("_pkg_{}{}", snake_name, platform.module_str());
+//
+//     writeln!(out, "    {} {{ crate::Package {{", platform.cfg_attr())?;
+//     writeln!(out, "        enabled: true,")?;
+//     writeln!(out, "        name: \"{kebab_name}\",")?;
+//     if is_linux_mux {
+//         writeln!(out, "        binaries_fn: {module_path}::binaries,")?;
+//     } else {
+//         let binaries = data
+//             .kebab_binaries
+//             .iter()
+//             .map(|x| format!("BinId::{}", kebab::kebab_to_pascal(x)))
+//             .join(" | ");
+//         writeln!(out, "        binaries_fn: || enum_set!{{ {binaries} }},")?;
+//     }
+//
+//     writeln!(out, "        linux_flavors: {linux_flavors},")?;
+//     writeln!(
+//         out,
+//         "        short_desc: {},",
+//         json::stringify(data.short_desc())?
+//     )?;
+//     writeln!(
+//         out,
+//         "        long_desc: {},",
+//         json::stringify(&data.long_desc())?
+//     )?;
+//
+//     // required functions
+//     writeln!(out, "        verify_fn: {module_path}::verify,")?;
+//     writeln!(out, "        install_fn: {module_path}::install,")?;
+//     writeln!(out, "        uninstall_fn: {module_path}::uninstall,")?;
+//
+//     macro_rules! write_optional_function {
+//         ($has_ident:ident, $fn_name:literal, $stub_name:literal) => {
+//             if is_linux_mux || data.$has_ident {
+//                 let fn_name = $fn_name;
+//                 writeln!(out, "        {fn_name}_fn: {module_path}::{fn_name},")?;
+//             } else {
+//                 writeln!(out, "        {}_fn: _stub::{},", $fn_name, $stub_name)?;
+//             }
+//         };
+//     }
+//     write_optional_function!(
+//         has_binary_dependencies,
+//         "binary_dependencies",
+//         "empty_bin_set"
+//     );
+//     write_optional_function!(
+//         has_config_dependencies,
+//         "config_dependencies",
+//         "empty_pkg_set"
+//     );
+//     write_optional_function!(has_download, "download", "ok");
+//     write_optional_function!(has_configure, "configure", "ok");
+//     write_optional_function!(has_clean, "clean", "ok");
+//     write_optional_function!(has_config_location, "config_location", "ok_none");
+//     write_optional_function!(has_backup_restore, "backup", "ok");
+//     write_optional_function!(has_backup_restore, "restore", "ok");
+//     write_optional_function!(has_pre_uninstall, "pre_uninstall", "ok");
+//
+//     writeln!(out, "    }} }},")?;
+//
+//     Ok(())
+// }

@@ -52,12 +52,17 @@ pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleF
             "unable to determine file name for module file structure: '{path_str}'"
         )?;
         let Some(file_name_stripped) = file_name.strip_suffix(".rs") else {
+            cu::debug!("ignoring '{path_str}': not .rs");
             continue;
         };
-        let Ok((package_name, targets)) = Target::parse(file_name_stripped) else {
+        if file_name != "mod.rs" && !file_name_stripped.starts_with("mod_") {
+            cu::debug!("ignoring '{path_str}': not mod.rs or mod_*.rs: {file_name_stripped}");
+            continue;
+        }
+        let Ok((_, targets)) = Target::parse(file_name_stripped) else {
+            cu::debug!("ignoring '{path_str}': failed to parse targets");
             continue;
         };
-        cu::ensure!(package_name == "mod", "in file: '{path_str}'");
         structure.add(targets, path)?;
     }
 
@@ -124,6 +129,7 @@ impl ParsedModule {
                 "failed to parse file: '{}'",
                 s.file.display()
             )?;
+            module_data.file = s.file.clone();
             module_data.targets = s.targets;
             data.push(module_data);
         }
@@ -186,8 +192,8 @@ impl ParsedModule {
         }
     }
 }
-// #[derive(Default)]
 pub struct ModuleData {
+    pub file: PathBuf,
     pub targets: TargetSet,
     /// doc paragraphs
     ///
@@ -299,6 +305,7 @@ impl cu::Parse for ModuleData {
         }
 
         Ok(Self {
+            file: Default::default(),
             targets: Default::default(),
             doc,
             kebab_binaries: binaries,
