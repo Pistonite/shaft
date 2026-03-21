@@ -5,7 +5,7 @@ use std::sync::Arc;
 use cu::pre::*;
 use shaftim_build::{ShimCommand, ShimConfig};
 
-use crate::{bin_name, hmgr, opfs};
+use crate::{bin_name, epkg, hmgr, opfs};
 
 #[derive(Default)]
 pub struct ItemMgr {
@@ -575,7 +575,7 @@ impl ItemMgr {
         // however, cargo now requires this file to exists before running anything
         cu::fs::write(shim_path.join("main.rs"), "")?;
 
-        let (child, bar) = cu::which("cargo")?
+        let command = cu::which("cargo")?
             .command()
             // setting current dir in case the current directory the user is in has a
             // rust-toolchain file, which will override the rust toolchain being used
@@ -586,7 +586,9 @@ impl ItemMgr {
                 "--release",
                 "--manifest-path",
                 shim_path.join("Cargo.toml")
-            ])
+            ]);
+        let command = epkg::cargo::add_platform_build_args(command);
+        let (child, bar) = command
             .preset(
                 cu::pio::cargo("building shaft shim").configure_spinner(|x| x.parent(bar.cloned())),
             )

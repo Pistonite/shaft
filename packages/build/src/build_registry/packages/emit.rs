@@ -130,10 +130,16 @@ fn create_metadata(modules: &[ParsedModule]) -> cu::Result<Vec<Vec<ModuleMetadat
     for module in modules {
         let mut included_targets = TargetSet::new();
         let mut metadatas = vec![];
+        // extract unified data
         for d in &module.data {
             if let Some(t) = d.targets.iter().next()
                 && included_targets.contains(t)
             {
+                continue;
+            }
+            if d.targets == TargetSet::all() {
+                included_targets.extend(d.targets);
+                metadatas.push(ModuleMetadata::AllUnified(d));
                 continue;
             }
             if d.targets == Target::mac() {
@@ -152,6 +158,7 @@ fn create_metadata(modules: &[ParsedModule]) -> cu::Result<Vec<Vec<ModuleMetadat
                 continue;
             }
         }
+        // extract remaining non-unified data
         if included_targets.union(Target::win()) != included_targets {
             let mut data_x64 = None;
             let mut data_arm = None;
@@ -200,6 +207,7 @@ fn create_metadata(modules: &[ParsedModule]) -> cu::Result<Vec<Vec<ModuleMetadat
 }
 
 enum ModuleMetadata<'a> {
+    AllUnified(&'a ModuleData),
     MacosUnified(&'a ModuleData),
     WindowsUnified(&'a ModuleData),
     LinuxUnified(&'a ModuleData),
@@ -263,6 +271,7 @@ impl ModuleMetadata<'_> {
             | ModuleMetadata::WindowsUnified(_)
             | ModuleMetadata::WindowsMux { .. }
             | ModuleMetadata::Leftover(_) => "corelib::opfs::LinuxFlavor::none()",
+            ModuleMetadata::AllUnified(_) |
             ModuleMetadata::LinuxUnified(_) => "corelib::opfs::LinuxFlavor::all()",
             ModuleMetadata::LinuxMux {
                 data_pacman,
@@ -281,7 +290,8 @@ impl ModuleMetadata<'_> {
             ModuleMetadata::WindowsUnified(_)
             | ModuleMetadata::MacosUnified(_)
             | ModuleMetadata::LinuxUnified(_)
-            | ModuleMetadata::Leftover(_) => "corelib::opfs::CpuArch::all()",
+            | ModuleMetadata::AllUnified(_) => "corelib::opfs::CpuArch::all()",
+            ModuleMetadata::Leftover(_) => "corelib::opfs::CpuArch::all()",
             ModuleMetadata::WindowsMux {
                 data_x64,
                 data_arm: _,
@@ -346,6 +356,7 @@ impl ModuleMetadata<'_> {
     }
     fn unified_module_suffix(&self) -> cu::Result<&'static str> {
         match self {
+            ModuleMetadata::AllUnified(_) => Ok(""),
             ModuleMetadata::MacosUnified(_) => Ok("__mac"),
             ModuleMetadata::WindowsUnified(_) => Ok("__win"),
             ModuleMetadata::LinuxUnified(_) => Ok("__linux"),
@@ -359,6 +370,7 @@ impl ModuleMetadata<'_> {
 
     fn metadata_targets(&self) -> TargetSet {
         match self {
+            ModuleMetadata::AllUnified(_) => TargetSet::all(),
             ModuleMetadata::MacosUnified(_) => Target::mac(),
             ModuleMetadata::WindowsUnified(_) => Target::win(),
             ModuleMetadata::LinuxUnified(_) => Target::linux(),
@@ -370,6 +382,7 @@ impl ModuleMetadata<'_> {
 
     fn unified_data(&self) -> Option<&ModuleData> {
         match self {
+            ModuleMetadata::AllUnified(d) => Some(d),
             ModuleMetadata::MacosUnified(d) => Some(d),
             ModuleMetadata::WindowsUnified(d) => Some(d),
             ModuleMetadata::LinuxUnified(d) => Some(d),
@@ -381,6 +394,7 @@ impl ModuleMetadata<'_> {
 
     fn any_data(&self) -> &ModuleData {
         match self {
+            ModuleMetadata::AllUnified(d) => d,
             ModuleMetadata::MacosUnified(d) => d,
             ModuleMetadata::WindowsUnified(d) => d,
             ModuleMetadata::LinuxUnified(d) => d,
@@ -413,6 +427,10 @@ impl ModuleMetadata<'_> {
     ) -> cu::Result<()> {
         use std::fmt::Write as _;
         let (mux_match_expr, mux_arms) = match self {
+            ModuleMetadata::AllUnified(d) => {
+                Self::build_mod_decl(d, snake_name, "", registry_src_path, out)?;
+                return Ok(());
+            }
             ModuleMetadata::MacosUnified(d) => {
                 Self::build_mod_decl(d, snake_name, "__mac", registry_src_path, out)?;
                 return Ok(());

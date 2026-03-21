@@ -1,7 +1,13 @@
 use super::{CURRENT_ARCH, CpuArch};
 
 pub fn init() -> cu::Result<()> {
-    CURRENT_ARCH.set(get_arch()?);
+    let arch = get_arch()?;
+    CURRENT_ARCH.set(arch);
+    if cfg!(feature = "build-x64") {
+        cu::debug!("arch: {arch} +build-x64");
+    } else {
+        cu::debug!("arch: {arch}");
+    }
     Ok(())
 }
 fn get_arch() -> cu::Result<CpuArch> {

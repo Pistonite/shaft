@@ -1,3 +1,6 @@
+#[cfg(all(target_arch = "x86_64", feature = "build-x64"))]
+compile_error!("cannot enable build-x64 feature on x86_64");
+
 /// External package managers
 pub mod epkg;
 /// Home Manager. Manages contents in the SHAFT_HOME directory
@@ -13,7 +16,7 @@ pub use hmgr::{ItemMgr, Version, VersionCache};
 pub(crate) mod internal;
 
 pub fn check_requirements() -> cu::Result<()> {
-    if opfs::which_sudo().is_err() {
+    let Ok(sudo_path) = opfs::which_sudo() else {
         if cfg!(windows) {
             cu::hint!("sudo is required.");
             cu::hint!("please refer to the following link to enable it on Windows");
@@ -22,16 +25,21 @@ pub fn check_requirements() -> cu::Result<()> {
             cu::hint!("sudo is required; please install sudo with your system package manager.");
         }
         cu::bail!("requirement not satisfied: sudo not found");
-    }
-    cu::debug!("sudo is found");
-    if let Err(e) = cu::which("cargo") {
-        cu::error!("cargo not found: {e:?}");
-        cu::hint!("rust toolchain is required for shaft to work.");
-        cu::hint!("please refer to: https://rustup.rs");
-        if cfg!(windows) {
-            cu::hint!("note that MSVC build tools also need to be installed on Windows.");
+    };
+    cu::debug!("sudo: {}", sudo_path.display());
+    match cu::which("cargo") {
+        Err(e) => {
+            cu::error!("cargo not found: {e:?}");
+            cu::hint!("rust toolchain is required for shaft to work.");
+            cu::hint!("please refer to: https://rustup.rs");
+            if cfg!(windows) {
+                cu::hint!("note that MSVC build tools also need to be installed on Windows.");
+            }
+            cu::bail!("requirement not satisfied: cargo not found in PATH");
         }
-        cu::bail!("requirement not satisfied: cargo not found in PATH");
+        Ok(cargo_path) => {
+            cu::debug!("cargo: {}", cargo_path.display());
+        }
     }
 
     #[cfg(windows)]

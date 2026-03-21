@@ -30,3 +30,6 @@ winapi = { version = "0.3.9", features = ["securitybaseapi", "processthreadsapi"
 
 [target.'cfg(unix)'.dependencies]
 libc.workspace = true
+
+[features]
+build-x64 = []

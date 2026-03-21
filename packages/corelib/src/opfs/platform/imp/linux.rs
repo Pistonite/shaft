@@ -11,18 +11,18 @@ fn init_flavor() -> cu::Result<()> {
             cu::bail!("unsupported platform: pacman not available; please fix your system");
         }
         CURRENT_FLAVOR.set(LinuxFlavor::Pacman);
-        cu::debug!("found pacman - arch linux");
+        cu::debug!("linux_flavor: pacman (Arch Linux)");
         return Ok(());
     }
 
     if cu::which("pacman").is_ok() {
-        cu::debug!("found pacman - assuming using pacman as package manager");
+        cu::debug!("linux_flavor: pacman (Unknown)");
         CURRENT_FLAVOR.set(LinuxFlavor::Pacman);
         return Ok(());
     }
 
     if cu::which("apt").is_ok() {
-        cu::debug!("found apt - assuming using apt as package manager");
+        cu::debug!("linux_flavor: apt (Unknown)");
         CURRENT_FLAVOR.set(LinuxFlavor::Apt);
         return Ok(());
     }
