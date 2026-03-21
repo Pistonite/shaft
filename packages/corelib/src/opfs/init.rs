@@ -3,110 +3,8 @@ use std::sync::OnceLock;
 use cu::pre::*;
 use enumset::{EnumSet, EnumSetType};
 
-#[cfg(target_os = "linux")]
-static CURRENT_FLAVOR: cu::Atomic<u8, LinuxFlavor> = cu::Atomic::new_u8(0);
-static CURRENT_ARCH: cu::Atomic<u8, CpuArch> = cu::Atomic::new_u8(0);
 
-/// Processor Architecture (supported ones)
-#[derive(EnumSetType, Display, DebugCustom)]
-#[repr(u8)]
-pub enum CpuArch {
-    /// x86_64 (amd64)
-    #[display("x64")]
-    #[debug("x64")]
-    X64,
-    /// aarch64 (arm64)
-    #[display("arm64")]
-    #[debug("arm64")]
-    Arm64,
-}
 
-impl CpuArch {
-    /// Get a set for all of the supported architectures
-    pub const fn all() -> EnumSet<Self> {
-        enumset::enum_set! {
-            Self::X64 |
-            Self::Arm64
-        }
-    }
-    /// Get a set for none of the architectures
-    pub const fn none() -> EnumSet<Self> {
-        enumset::enum_set! {}
-    }
-}
-
-impl From<u8> for CpuArch {
-    fn from(value: u8) -> Self {
-        match value {
-            0 => Self::X64,
-            _ => Self::Arm64,
-        }
-    }
-}
-impl From<CpuArch> for u8 {
-    fn from(value: CpuArch) -> Self {
-        match value {
-            CpuArch::X64 => 0,
-            CpuArch::Arm64 => 1,
-        }
-    }
-}
-
-/// Linux package manager flavor
-#[derive(EnumSetType, Display, DebugCustom)]
-#[repr(u8)]
-pub enum LinuxFlavor {
-    /// Pacman (Arch Linux, etc)
-    #[display("pacman")]
-    #[debug("pacman")]
-    Pacman,
-    /// Apt (Ubuntu, etc)
-    #[display("apt")]
-    #[debug("apt")]
-    Apt,
-}
-
-impl LinuxFlavor {
-    /// Get a set for all of the flavors
-    pub const fn all() -> EnumSet<Self> {
-        enumset::enum_set! {
-            Self::Pacman |
-            Self::Apt
-        }
-    }
-    /// Get a set for none of the flavors
-    pub const fn none() -> EnumSet<Self> {
-        enumset::enum_set! {}
-    }
-}
-
-impl From<u8> for LinuxFlavor {
-    fn from(value: u8) -> Self {
-        match value {
-            0 => Self::Pacman,
-            _ => Self::Apt,
-        }
-    }
-}
-impl From<LinuxFlavor> for u8 {
-    fn from(value: LinuxFlavor) -> Self {
-        match value {
-            LinuxFlavor::Pacman => 0,
-            LinuxFlavor::Apt => 1,
-        }
-    }
-}
-
-static VERSION: OnceLock<String> = OnceLock::new();
-
-/// Initialize the platform variable. Called once at beginning when launching
-/// the package manager
-#[inline(always)]
-pub fn init(version: &str) -> cu::Result<()> {
-    crate::internal::ensure_main_thread()?; // record main thread ID
-    let _ = VERSION.set(version.to_string());
-    imp::init()
-}
 
 #[cfg(target_os = "linux")]
 mod imp {
@@ -141,8 +39,12 @@ mod imp {
 
 #[cfg(windows)]
 mod imp {
+    use super::*;
     pub fn init() -> cu::Result<()> {
+        cu::env_var("PROCESSOR_ARCHITECTURE")
         Ok(())
+    }
+    fn get_arch() -> cu::Result<CpuArch> {
     }
 }
 
@@ -154,28 +56,3 @@ mod imp {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "macos"))]
-fn get_arch_with_uname()
-
-#[cfg(target_os = "linux")]
-pub fn linux_flavor() -> LinuxFlavor {
-    CURRENT_FLAVOR.get()
-}
-
-pub fn cli_version() -> &'static str {
-    VERSION.get().expect("version not initialized")
-}
-
-#[macro_export]
-macro_rules! if_arm {
-    () => {
-        cfg!(target_arch = "aarch64")
-    };
-    ($a:expr, else $b:expr) => {
-        if cfg!(target_arch = "aarch64") {
-            $a
-        } else {
-            $b
-        }
-    };
-}
