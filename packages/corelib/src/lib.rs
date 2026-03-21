@@ -1,6 +1,3 @@
-#[cfg(all(target_arch = "x86_64", feature = "build-x64", not(debug_assertions)))]
-compile_error!("cannot enable build-x64 feature on x86_64");
-
 /// External package managers
 pub mod epkg;
 /// Home Manager. Manages contents in the SHAFT_HOME directory
