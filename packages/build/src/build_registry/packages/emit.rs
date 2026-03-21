@@ -104,9 +104,9 @@ mod _stub {{ {stub_impl} }}
     pub fn package(self) -> &'static crate::Package {{ &METADATA_ARRAY[Enum::into_usize(self)] }}
 }
 
-impl BindId {
+impl BinId {
     /// Get packages that provide this binary
-    pub fn providers(self) -> EnumSet<PkgId> {{
+    pub fn providers(self) -> EnumSet<PkgId> {
         match self {
 "##;
         build_bin_providers(&pascal_bins, &kebab_bins, &pascal_pkgs, &modules, &mut out)?;
@@ -226,7 +226,7 @@ impl ModuleMetadata<'_> {
         if let Self::Leftover(targets) = self {
             let _ = writeln!(
                 out,
-                r##"{cfg_attr} {{ crate::Package::stub("{kebab_name}") }},"##,
+                r##"    {cfg_attr} {{ crate::Package::stub("{kebab_name}") }},"##,
                 cfg_attr = CfgAttr(*targets).attr(),
             );
             return Ok(());
@@ -276,6 +276,29 @@ impl ModuleMetadata<'_> {
             }
         };
         let _ = writeln!(out, "        linux_flavors: {linux_flavor_set},");
+
+        let cpu_arch_set = match self {
+            ModuleMetadata::WindowsUnified(_)
+            | ModuleMetadata::MacosUnified(_)
+            | ModuleMetadata::LinuxUnified(_)
+            | ModuleMetadata::Leftover(_) => "corelib::opfs::CpuArch::all()",
+            ModuleMetadata::WindowsMux {
+                data_x64,
+                data_arm: _,
+            } => {
+                if data_x64.is_some() {
+                    "enum_set!{ corelib::opfs::CpuArch::X64 }"
+                } else {
+                    "enum_set!{ corelib::opfs::CpuArch::ARM64 }"
+                }
+            }
+            ModuleMetadata::LinuxMux {
+                data_pacman: _,
+                data_apt: _,
+            } => "corelib::opfs::CpuArch::all()",
+        };
+        let _ = writeln!(out, "        cpu_archs: {cpu_arch_set},");
+
         let _ = writeln!(
             out,
             "        short_desc: {},",
@@ -691,62 +714,70 @@ fn build_bin_providers(
         let mut providers_win_x64 = None;
         let mut providers_win_arm = None;
         for (targets, providers) in &providers {
-            let targets = *targets;
-            let win_unified = targets.union(Target::win()) == targets;
-            let linux_unified = targets.union(Target::linux()) == targets;
-            let mac_unified = targets.union(Target::mac()) == targets;
-            if win_unified && linux_unified && mac_unified {
+            let mut targets = *targets;
+            if targets == TargetSet::all() {
                 let _ = writeln!(
                     out,
-                    "                {} {{ enum_set!{{ {} }}}}",
-                    CfgAttr(targets).attr(),
+                    "                enum_set!{{ {} }}",
                     providers.iter().join(" | "),
                 );
                 continue;
             }
-            if win_unified {
+            if targets.intersection(Target::linux()) != Target::linux() {
+                if targets.contains(Target::LinuxPacmanX64) {
+                    providers_linux_pacman_x64 = Some(providers);
+                    targets.remove(Target::LinuxPacmanX64);
+                }
+                if targets.contains(Target::LinuxAptX64) {
+                    providers_linux_apt_x64 = Some(providers);
+                    targets.remove(Target::LinuxAptX64);
+                }
+            }
+            if targets.intersection(Target::win()) != Target::win() {
+                if targets.contains(Target::WindowsX64) {
+                    providers_win_x64 = Some(providers);
+                    targets.remove(Target::WindowsX64);
+                    continue;
+                }
+                if targets.contains(Target::WindowsArm) {
+                    providers_win_arm = Some(providers);
+                    targets.remove(Target::WindowsArm);
+                    continue;
+                }
+            }
+            if targets.is_empty() {
+                continue;
+            }
+            if targets == Target::win() {
                 let _ = writeln!(
                     out,
-                    "                {} {{ enum_set!{{ {} }}}}",
-                    CfgAttr(Target::win()).attr(),
+                    "                #[cfg(windows)] {{ enum_set!{{ {} }} }}",
                     providers.iter().join(" | "),
                 );
+                continue;
             }
-            if linux_unified {
+            if targets == Target::linux() {
                 let _ = writeln!(
                     out,
-                    "                {} {{ enum_set!{{ {} }}}}",
-                    CfgAttr(Target::linux()).attr(),
+                    "                #[cfg(target_os = \"linux\")] {{ enum_set!{{ {} }} }}",
                     providers.iter().join(" | "),
                 );
+                continue;
             }
-            if mac_unified {
+            if targets == Target::mac() {
                 let _ = writeln!(
                     out,
-                    "                {} {{ enum_set!{{ {} }}}}",
-                    CfgAttr(Target::mac()).attr(),
+                    "                #[cfg(target_os = \"macos\")] {{ enum_set!{{ {} }} }}",
                     providers.iter().join(" | "),
                 );
-            }
-            if providers.is_empty() {
                 continue;
             }
-            if targets == TargetSet::from(Target::LinuxPacmanX64) {
-                providers_linux_pacman_x64 = Some(providers);
-                continue;
-            }
-            if targets == TargetSet::from(Target::LinuxAptX64) {
-                providers_linux_apt_x64 = Some(providers);
-                continue;
-            }
-            if targets == TargetSet::from(Target::WindowsX64) {
-                providers_win_x64 = Some(providers);
-                continue;
-            }
-            if targets == TargetSet::from(Target::WindowsArm) {
-                providers_win_arm = Some(providers);
-                continue;
-            }
+            let _ = writeln!(
+                out,
+                "                {} {{ enum_set!{{ {} }}}}",
+                CfgAttr(targets).attr(),
+                providers.iter().join(" | "),
+            );
         }
         if providers_linux_pacman_x64.is_some() || providers_linux_apt_x64.is_some() {
             let _ = writeln!(
@@ -758,8 +789,7 @@ fn build_bin_providers(
             if let Some(providers) = providers_linux_pacman_x64 {
                 let _ = writeln!(
                     out,
-                    "                    {} corelib::opfs::LinuxFlavor::Pacman => enum_set! {{ {} }},",
-                    CfgAttr(Target::LinuxPacmanX64.into()).attr(),
+                    "                    corelib::opfs::LinuxFlavor::Pacman => enum_set! {{ {} }},",
                     providers.iter().join(" | ")
                 );
                 count += 1;
@@ -767,15 +797,15 @@ fn build_bin_providers(
             if let Some(providers) = providers_linux_apt_x64 {
                 let _ = writeln!(
                     out,
-                    "                    {} corelib::opfs::LinuxFlavor::Apt => enum_set! {{ {} }},",
-                    CfgAttr(Target::LinuxAptX64.into()).attr(),
+                    "                    corelib::opfs::LinuxFlavor::Apt => enum_set! {{ {} }},",
                     providers.iter().join(" | ")
                 );
                 count += 1;
             }
             if count != 2 {
-                let _ = writeln!(out, "                    _ => enum_set!{{}},",);
+                let _ = writeln!(out, "                    _ => enum_set!{{}},");
             }
+            let _ = writeln!(out, "                }} }}");
         }
         if providers_win_x64.is_some() || providers_win_arm.is_some() {
             let _ = writeln!(
@@ -787,8 +817,7 @@ fn build_bin_providers(
             if let Some(providers) = providers_win_x64 {
                 let _ = writeln!(
                     out,
-                    "                    {} corelib::opfs::CpuArch::X64 => enum_set! {{ {} }},",
-                    CfgAttr(Target::WindowsX64.into()).attr(),
+                    "                    corelib::opfs::CpuArch::X64 => enum_set! {{ {} }},",
                     providers.iter().join(" | ")
                 );
                 count += 1;
@@ -796,15 +825,15 @@ fn build_bin_providers(
             if let Some(providers) = providers_win_arm {
                 let _ = writeln!(
                     out,
-                    "                    {} corelib::opfs::CpuArch::ARM64 => enum_set! {{ {} }},",
-                    CfgAttr(Target::WindowsArm.into()).attr(),
+                    "                    corelib::opfs::CpuArch::ARM64 => enum_set! {{ {} }},",
                     providers.iter().join(" | ")
                 );
                 count += 1;
             }
             if count != 2 {
-                let _ = writeln!(out, "                    _ => enum_set!{{}},",);
+                let _ = writeln!(out, "                    _ => enum_set!{{}},");
             }
+            let _ = writeln!(out, "                }} }}");
         }
         writeln!(out, "            }}")?;
     }

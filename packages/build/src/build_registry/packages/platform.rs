@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use cu::pre::*;
 use enumset::{EnumSet, EnumSetType, enum_set};
@@ -25,7 +25,7 @@ impl Target {
         }
         let (name, suffix) = match spec.find('_') {
             None => {
-                return Ok((spec, enum_set!()));
+                return Ok((spec, TargetSet::all()));
             }
             Some(i) => spec.split_at(i),
         };
@@ -178,16 +178,23 @@ impl Target {
 pub struct CfgAttr(pub TargetSet);
 impl CfgAttr {
     pub fn attr(&self) -> String {
+        if self.0 == TargetSet::all() {
+            return "".to_string();
+        }
         format!("#[cfg({})]", self.expr())
     }
     pub fn expr(&self) -> String {
         if self.0.is_empty() {
-            format!("not({})", Self(TargetSet::all()).expr())
-        } else {
-            format!(
-                "any({})",
-                self.0.into_iter().map(Target::raw_cfg).join(", ")
-            )
+            return format!("not({})", Self(TargetSet::all()).expr());
         }
+        let targets = self
+            .0
+            .into_iter()
+            .map(Target::raw_cfg)
+            .collect::<BTreeSet<_>>();
+        if targets.len() == 1 {
+            return targets.into_iter().next().unwrap().to_string();
+        }
+        format!("any({})", targets.into_iter().join(", "))
     }
 }
