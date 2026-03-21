@@ -40,7 +40,7 @@ fn cmake_url() -> String {
 
 fn release_name() -> String {
     let version = metadata::cmake::VERSION;
-    let arch = if_arm!("arm64", else "x86_64");
+    let arch = if opfs::is_arm() { "arm64" } else { "x86_64" };
     format!("cmake-{version}-windows-{arch}")
 }
 

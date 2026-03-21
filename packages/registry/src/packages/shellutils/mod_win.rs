@@ -227,7 +227,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
 fn fzf_url() -> String {
     let repo = metadata::fzf::REPO;
     let ver = metadata::fzf::VERSION;
-    let arch = if_arm!("arm64", else "amd64");
+    let arch = if opfs::is_arm() { "arm64" } else { "amd64" };
     format!("{repo}/releases/download/v{ver}/fzf-{ver}-windows_{arch}.zip")
 }
 
@@ -238,7 +238,7 @@ fn jq_url() -> String {
 }
 
 fn task_url() -> String {
-    let arch = if_arm!("arm64", else "amd64");
+    let arch = if opfs::is_arm() { "arm64" } else { "amd64" };
     let repo = metadata::task::REPO;
     let ver = metadata::task::VERSION;
     format!("{repo}/releases/download/v{ver}/task_windows_{arch}.zip")

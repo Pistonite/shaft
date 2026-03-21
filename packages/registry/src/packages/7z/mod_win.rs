@@ -94,7 +94,7 @@ fn ensure_terminated() -> cu::Result<()> {
 
 fn download_url() -> String {
     let repo = metadata::_7z::REPO;
-    let arch = if_arm!("arm64", else "x64");
+    let arch = if opfs::is_arm() { "arm64" } else { "x64" };
     let version = metadata::_7z::VERSION;
     let version_no_dot = version.replace(".", "");
     format!("{repo}/releases/download/{version}/7z{version_no_dot}-{arch}.exe")

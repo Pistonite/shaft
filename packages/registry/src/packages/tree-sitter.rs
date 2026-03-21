@@ -31,7 +31,11 @@ fn tree_sitter_url() -> cu::Result<String> {
 
 fn tree_sitter_base_name() -> cu::Result<&'static str> {
     if cfg!(windows) {
-        Ok(if_arm!("tree-sitter-windows-arm64", else "tree-sitter-windows-x64"))
+        Ok(if opfs::is_arm() {
+            "tree-sitter-windows-arm64"
+        } else {
+            "tree-sitter-windows-x64"
+        })
     } else if cfg!(target_os = "linux") {
         Ok("tree-sitter-linux-x64")
     } else {

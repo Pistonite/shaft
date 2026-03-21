@@ -164,7 +164,7 @@ fn volta_file_name() -> &'static str {
 fn volta_url() -> cu::Result<String> {
     let version = metadata::volta::VERSION;
     let artifact = if cfg!(windows) {
-        let arch = if_arm!("-arm64", else "");
+        let arch = if opfs::is_arm() { "-arm64" } else { "" };
         format!("volta-{version}-windows{arch}.zip")
     } else if cfg!(target_os = "linux") {
         format!("volta-{version}-linux.tar.gz")
