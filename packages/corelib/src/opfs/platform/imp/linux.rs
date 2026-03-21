@@ -1,5 +1,5 @@
-use std::path::Path;
 use super::{CURRENT_FLAVOR, CpuArch, LinuxFlavor};
+use std::path::Path;
 pub fn init() -> cu::Result<()> {
     init_flavor()?;
     super::imp_unix::init_arch_with_uname(CpuArch::X64)

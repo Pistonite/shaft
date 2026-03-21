@@ -22,10 +22,16 @@ pub fn parse_module_file_structure(top_path: &Path) -> cu::Result<Option<ModuleF
     )?;
 
     if let Some(file_name_stripped) = file_name.strip_suffix(".rs") {
-        let (package_name, targets) = 
-        cu::check!(Target::parse(file_name_stripped), "failed to parse target from filep path: '{top_path_str}'")?;
+        let (package_name, targets) = cu::check!(
+            Target::parse(file_name_stripped),
+            "failed to parse target from filep path: '{top_path_str}'"
+        )?;
         cu::ensure!(kebab::is_kebab(package_name), "in file: '{top_path_str}'")?;
-        let structure = ModuleFileStructure::single_file(package_name.to_string(), targets, top_path.to_path_buf());
+        let structure = ModuleFileStructure::single_file(
+            package_name.to_string(),
+            targets,
+            top_path.to_path_buf(),
+        );
         return Ok(Some(structure));
     }
 
@@ -80,18 +86,13 @@ pub struct ModuleFileStructure {
 }
 pub struct ModuleFileTarget {
     pub file: PathBuf,
-    pub targets: TargetSet
+    pub targets: TargetSet,
 }
 impl ModuleFileStructure {
     pub fn single_file(package_name: String, targets: TargetSet, file: PathBuf) -> Self {
         Self {
             package_name: package_name.to_string(),
-            target_structure: vec![
-                ModuleFileTarget {
-                    file,
-                    targets
-                }
-            ]
+            target_structure: vec![ModuleFileTarget { file, targets }],
         }
     }
     pub fn new(package_name: String) -> Self {
@@ -104,14 +105,16 @@ impl ModuleFileStructure {
         for s in &self.target_structure {
             let conflict = s.targets.intersection(targets);
             if !conflict.is_empty() {
-                cu::bail!("conflicting targets '{:?}' in files '{}' and '{}'",
+                cu::bail!(
+                    "conflicting targets '{:?}' in files '{}' and '{}'",
                     conflict,
                     s.file.display(),
                     file.display()
-            );
+                );
             }
         }
-        self.target_structure.push(ModuleFileTarget{file,targets});
+        self.target_structure
+            .push(ModuleFileTarget { file, targets });
         Ok(())
     }
 }

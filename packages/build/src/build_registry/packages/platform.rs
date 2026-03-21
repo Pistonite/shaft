@@ -27,14 +27,15 @@ impl Target {
             None => {
                 return Ok((spec, enum_set!()));
             }
-            Some(i) => {
-                spec.split_at(i)
-            }
+            Some(i) => spec.split_at(i),
         };
         if name.is_empty() {
             cu::bail!("package name cannot be empty, from spec: {spec}");
         }
-        let targets = cu::check!(Self::parse_target_suffix(suffix), "failed to parse the target from package spec: {spec}")?;
+        let targets = cu::check!(
+            Self::parse_target_suffix(suffix),
+            "failed to parse the target from package spec: {spec}"
+        )?;
         Ok((name, targets))
     }
 
@@ -66,16 +67,36 @@ impl Target {
                 }
                 let mut suggestion: Option<String> = None;
                 if suffix.contains("windows") {
-                    suggestion = Some(suggestion.as_deref().unwrap_or(suffix).replace("windows", "win"));
+                    suggestion = Some(
+                        suggestion
+                            .as_deref()
+                            .unwrap_or(suffix)
+                            .replace("windows", "win"),
+                    );
                 }
                 if suffix.contains("aarch64") {
-                    suggestion = Some(suggestion.as_deref().unwrap_or(suffix).replace("aarch64", "arm"));
+                    suggestion = Some(
+                        suggestion
+                            .as_deref()
+                            .unwrap_or(suffix)
+                            .replace("aarch64", "arm"),
+                    );
                 }
                 if suffix.contains("armv8") {
-                    suggestion = Some(suggestion.as_deref().unwrap_or(suffix).replace("armv8", "arm"));
+                    suggestion = Some(
+                        suggestion
+                            .as_deref()
+                            .unwrap_or(suffix)
+                            .replace("armv8", "arm"),
+                    );
                 }
                 if suffix.contains("macos") {
-                    suggestion = Some(suggestion.as_deref().unwrap_or(suffix).replace("macos", "mac"));
+                    suggestion = Some(
+                        suggestion
+                            .as_deref()
+                            .unwrap_or(suffix)
+                            .replace("macos", "mac"),
+                    );
                 }
                 match suggestion {
                     None => {
@@ -118,12 +139,16 @@ impl Target {
         match self {
             Target::WindowsX64 => r#"all(windows, target_arch="x86_64")"#,
             Target::WindowsArm => r#"all(windows, target_arch="aarch64")"#,
-            Target::LinuxPacmanX64 | Target::LinuxAptX64=> r#"all(target_os = "linux", target_arch="x86_64")"#,
+            Target::LinuxPacmanX64 | Target::LinuxAptX64 => {
+                r#"all(target_os = "linux", target_arch="x86_64")"#
+            }
             Target::MacosArm => r#"all(target_os = "macos", target_arch="aarch64")"#,
         }
     }
 
-    pub fn combine_targets<T: Default + PartialEq>(mut tree: BTreeMap<Self, T>) -> Vec<(TargetSet, T)> {
+    pub fn combine_targets<T: Default + PartialEq>(
+        mut tree: BTreeMap<Self, T>,
+    ) -> Vec<(TargetSet, T)> {
         for t in TargetSet::all() {
             tree.entry(t).or_default();
         }
@@ -159,7 +184,10 @@ impl CfgAttr {
         if self.0.is_empty() {
             format!("not({})", Self(TargetSet::all()).expr())
         } else {
-            format!("any({})", self.0.into_iter().map(Target::raw_cfg).join(", "))
+            format!(
+                "any({})",
+                self.0.into_iter().map(Target::raw_cfg).join(", ")
+            )
         }
     }
 }

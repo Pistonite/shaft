@@ -51,7 +51,6 @@ pub fn is_arm() -> bool {
     CURRENT_ARCH.get() == CpuArch::Arm64
 }
 
-
 /// Initialize the platform variable. Called once at beginning when launching
 /// the package manager
 #[inline(always)]
