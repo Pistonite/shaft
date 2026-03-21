@@ -27,18 +27,24 @@ Installing for the first time: clone and build
 git clone https://github.com/Pistonite/shaft
 cd shaft
 cargo run --bin shaft-build
-cargo build --bin shaft
-target/debug/shaft
-```
-
-Then, setup:
-```
-target/debug/shaft
+cargo run --bin shaft
 ```
 
 After setup is complete:
 ```
-target/debug/shaft upgrade
+cargo run --bin shaft upgrade
 ```
 
 To upgrade run `shaft upgrade`
+
+## ARM build issue
+For ARM64, if build is failing, consider using the X64 emulation mode.
+
+First add the target (replace the target triple with the one for your OS)
+```
+rustup target add x86_64-pc-windows-msvc
+```
+Then replace `cargo run --bin shaft` above with
+```
+cargo run --bin shaft --target x86_64-pc-windows-msvc --features build-x64
+```
