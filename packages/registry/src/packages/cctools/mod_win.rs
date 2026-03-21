@@ -82,7 +82,7 @@ fn llvm_url() -> String {
 
 fn llvm_release_name() -> String {
     let version = metadata::clang::LLVM_VERSION;
-    let arch = if_arm!("aarch64", else "x86_64");
+    let arch = if opfs::is_arm() { "aarch64" } else { "x86_64" };
     format!("clang+llvm-{version}-{arch}-pc-windows-msvc")
 }
 
@@ -95,14 +95,14 @@ fn llvm_mingw_url() -> String {
 
 fn llvm_mingw_release_name() -> String {
     let tag = metadata::llvm_mingw::TAG;
-    let arch = if_arm!("aarch64", else "x86_64");
+    let arch = if opfs::is_arm() { "aarch64" } else { "x86_64" };
     format!("llvm-mingw-{tag}-ucrt-{arch}")
 }
 
 fn ninja_url() -> String {
     let repo = metadata::ninja::REPO;
     let version = metadata::ninja::VERSION;
-    let arch = if_arm!("winarm64", else "win");
+    let arch = if opfs::is_arm() { "winarm64" } else { "win" };
     format!("{repo}/releases/download/v{version}/ninja-{arch}.zip")
 }
 

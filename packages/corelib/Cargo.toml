@@ -5,7 +5,9 @@ edition = "2024"
 publish = false
 
 [dependencies]
-cu = { workspace = true, features = ["process", "json", "derive", "prompt", "toml-preserve-order", "parse-impl"] }
+cu = { workspace = true, features = [
+    "process", "json", "derive", "prompt", "toml-preserve-order", "parse-impl"
+] }
 shaftim-build = { path = "../tools/shaftim-build", default-features = false }
 enumset.workspace = true
 boa_engine = "0.21.0"
@@ -28,3 +30,6 @@ winapi = { version = "0.3.9", features = ["securitybaseapi", "processthreadsapi"
 
 [target.'cfg(unix)'.dependencies]
 libc.workspace = true
+
+[features]
+build-x64 = []

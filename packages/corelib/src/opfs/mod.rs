@@ -1,5 +1,5 @@
-mod init;
-pub use init::*;
+mod platform;
+pub use platform::*;
 mod sudo;
 pub use sudo::*;
 mod sysinfo;

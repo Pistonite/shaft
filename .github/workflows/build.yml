@@ -9,17 +9,13 @@ on:
 
 
 jobs:
-  build:
+  build-native:
     strategy:
       fail-fast: false
       matrix:
         include:
           - image: ubuntu-latest
             target: x64
-          # - image: ubuntu-24.04-arm
-          #   target: arm64
-          # - image: macos-latest
-          #   target: arm64
           - image: windows-latest
             target: x64
           - image: windows-11-arm
@@ -35,3 +31,12 @@ jobs:
         with:
           arch: ${{ matrix.target }}
           binary: shaft
+  build-windows-arm-x64:
+    runs-on: windows-11-arm
+    steps:
+      - uses: Pistonight/mono-dev/actions/setup@main
+        with:
+          rust: stable
+          rust-native: x64,arm64
+      - run: task run-build
+      - run: cargo build --bin shaft --release --target x86_64-pc-windows-msvc --features build-x64

@@ -19,7 +19,7 @@ pub(crate) mod pre {
     pub(crate) use corelib::hmgr::config::ConfigDef;
     #[allow(unused)]
     pub(crate) use corelib::{
-        Version, VersionCache, bin_name, command_output, epkg, hmgr, if_arm, jsexe, opfs,
+        Version, VersionCache, bin_name, command_output, epkg, hmgr, jsexe, opfs,
     };
     pub(crate) use cu::pre::*;
     pub(crate) use enumset::{EnumSet, enum_set};

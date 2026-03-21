@@ -47,7 +47,7 @@ pub fn $f() -> PathBuf {
 ///
 /// Will fail silently and print a warning if it's already set
 pub fn init_home_path(path: PathBuf) {
-    cu::debug!("initializing home path: {}", path.display());
+    cu::debug!("home: {}", path.display());
     if HOME_PATH.set(path).is_err() {
         cu::warn!(
             "SHAFT_HOME is already initialized at '{}'",

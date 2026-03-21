@@ -29,6 +29,7 @@ impl crate::Package {
             name,
             binaries_fn: empty_bin_set,
             linux_flavors: enumset::enum_set! {},
+            cpu_archs: enumset::enum_set! {},
             short_desc: "",
             long_desc: "",
             verify_fn: unsupported_platform,

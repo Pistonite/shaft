@@ -61,7 +61,11 @@ fn nvim_url() -> cu::Result<String> {
 
 fn nvim_file_name() -> cu::Result<&'static str> {
     if cfg!(windows) {
-        Ok(if_arm!("nvim-win-arm64.zip", else "nvim-win64.zip"))
+        Ok(if opfs::is_arm() {
+            "nvim-win-arm64.zip"
+        } else {
+            "nvim-win64.zip"
+        })
     } else if cfg!(target_os = "linux") {
         Ok("nvim-linux-x86_64.tar.gz")
     } else {

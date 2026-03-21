@@ -114,7 +114,7 @@ pub fn uninstall(ctx: &Context) -> cu::Result<()> {
 
 fn download_url() -> String {
     let repo = metadata::pwsh::REPO;
-    let arch = if_arm!("arm64", else "x64");
+    let arch = if opfs::is_arm() { "arm64" } else { "x64" };
     let version = metadata::pwsh::VERSION;
     format!("{repo}/releases/download/v{version}/PowerShell-{version}-win-{arch}.zip")
 }

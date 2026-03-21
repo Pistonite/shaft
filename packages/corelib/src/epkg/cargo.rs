@@ -86,14 +86,14 @@ pub fn install_git_commit(
     bar: Option<&Arc<cu::ProgressBar>>,
 ) -> cu::Result<()> {
     let mut state = cargo::instance()?;
-    let (child, bar) = cu::which("cargo")?
+    let command = cu::which("cargo")?
         .command()
         // setting current dir in case the current directory the user is in has a
         // rust-toolchain file, which will override the rust toolchain being used
         .current_dir(hmgr::paths::home())
-        .add(cu::args![
-            "install", package, "--git", git, "--rev", rev, "--locked"
-        ])
+        .args(["install", package, "--git", git, "--rev", rev, "--locked"]);
+    let command = add_platform_build_args(command);
+    let (child, bar) = command
         .preset(
             cu::pio::cargo(format!("cargo install '{package}'"))
                 .configure_spinner(|builder| builder.keep(true).parent(bar.cloned())),
@@ -110,10 +110,12 @@ pub fn install_git_commit(
 #[cu::context("failed to install '{package}' with cargo")]
 pub fn install(package: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
     let mut state = cargo::instance()?;
-    let (child, bar) = cu::which("cargo")?
+    let command = cu::which("cargo")?
         .command()
         .current_dir(hmgr::paths::home())
-        .add(cu::args!["install", package, "--locked"])
+        .args(["install", package, "--locked"]);
+    let command = add_platform_build_args(command);
+    let (child, bar) = command
         .preset(
             cu::pio::cargo(format!("cargo install '{package}'"))
                 .configure_spinner(|builder| builder.keep(true).parent(bar.cloned())),
@@ -136,7 +138,7 @@ pub fn binstall(package: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result
         .add(cu::args![
             package,
             "--strategies",
-            "crate-meta-data,compile",
+            "crate-meta-data",
             "--no-confirm",
             "--locked",
         ])
@@ -168,7 +170,7 @@ pub fn binstall_git(
         .add(cu::args![
             package,
             "--strategies",
-            "crate-meta-data,compile",
+            "crate-meta-data",
             "--no-confirm",
             "--locked",
             "--git",
@@ -203,4 +205,22 @@ pub fn uninstall(package: &str) -> cu::Result<()> {
     state.installed_packages.clear();
     cu::info!("uninstalled '{package}' with cargo");
     Ok(())
+}
+
+#[cfg(not(feature = "build-x64"))]
+pub fn add_platform_build_args(command: cu::CommandBuilder) -> cu::CommandBuilder {
+    command
+}
+
+#[cfg(all(feature = "build-x64", windows))]
+pub static BUILD_X64_TARGET_TRIPLE: &str = "x86_64-pc-windows-msvc";
+#[cfg(all(feature = "build-x64", target_os = "linux"))]
+pub static BUILD_X64_TARGET_TRIPLE: &str = "x86_64-unknown-linux-gnu";
+// note x86_64 apple is no longer a tier 1 target so custom rust build is needed
+#[cfg(all(feature = "build-x64", target_os = "macos"))]
+pub static BUILD_X64_TARGET_TRIPLE: &str = "x86_64-apple-darwin";
+
+#[cfg(feature = "build-x64")]
+pub fn add_platform_build_args(command: cu::CommandBuilder) -> cu::CommandBuilder {
+    command.args(["--target", BUILD_X64_TARGET_TRIPLE])
 }

@@ -252,7 +252,7 @@ fn display_pkg_detail(installed: &InstallCache, pkg: PkgId, machine_mode: bool) 
     }
     let package = pkg.package();
     if !package.enabled() {
-        cu::warn!("package '{pkg}' is disabled on the current platform");
+        cu::warn!("package '{pkg}' is disabled on the current platform target");
     }
     cu::hint!("=== [package: {pkg}] ============");
     let mut desc = package.short_desc.to_string();

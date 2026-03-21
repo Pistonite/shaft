@@ -27,6 +27,11 @@ pub struct Package {
     #[allow(unused)]
     pub(crate) linux_flavors: EnumSet<opfs::LinuxFlavor>,
 
+    /// Processor architecture supported by this package.
+    /// By default, all supported architectures for the OS are supported.
+    #[allow(unused)]
+    pub(crate) cpu_archs: EnumSet<opfs::CpuArch>,
+
     /// Short description. The first line of the doc comment
     pub short_desc: &'static str,
     /// Long description. Everything but the first line of the doc comment
@@ -60,9 +65,14 @@ impl Package {
         }
         #[cfg(target_os = "linux")]
         {
-            if !self.linux_flavors.contains(opfs::linux_flavor()) {
+            if self.linux_flavors != EnumSet::all()
+                && !self.linux_flavors.contains(opfs::linux_flavor())
+            {
                 return false;
             }
+        }
+        if self.cpu_archs != EnumSet::all() && !self.cpu_archs.contains(opfs::cpu_arch()) {
+            return false;
         }
         true
     }
@@ -103,7 +113,7 @@ impl Package {
     pub fn verify(&self, ctx: &Context) -> cu::Result<Verified> {
         if !self.enabled() {
             cu::bail!(
-                "package '{}' does not support the current platform.",
+                "package '{}' does not support the current OS or CPU architecture.",
                 ctx.pkg
             );
         }
@@ -119,7 +129,7 @@ impl Package {
     pub fn pre_uninstall(&self, ctx: &Context) -> cu::Result<()> {
         if !self.enabled() {
             cu::bail!(
-                "package '{}' does not support the current platform.",
+                "package '{}' does not support the current OS or CPU architecture.",
                 ctx.pkg
             );
         }

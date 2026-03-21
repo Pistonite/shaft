@@ -1,6 +1,6 @@
 use cu::pre::*;
 
-use crate::{bin_name, hmgr};
+use crate::{bin_name, epkg, hmgr};
 
 static SHAFT_REPO: &str = "https://github.com/Pistonite/shaft";
 
@@ -22,7 +22,7 @@ pub fn local_update() -> cu::Result<()> {
     cu::which("git")?
         .command()
         .current_dir(&repo_path)
-        .add(cu::args!["fetch", "origin", "main"])
+        .args(["fetch", "origin", "main"])
         .stdout(cu::lv::P)
         .stderr(cu::lv::P)
         .stdin_null()
@@ -31,23 +31,34 @@ pub fn local_update() -> cu::Result<()> {
     cu::which("git")?
         .command()
         .current_dir(&repo_path)
-        .add(cu::args!["reset", "--hard", "origin/main"])
+        .args(["reset", "--hard", "origin/main"])
         .stdout(cu::lv::P)
         .stderr(cu::lv::P)
         .stdin_null()
         .wait_nz()?;
 
     {
-        let (child, bar) = cu::which("cargo")?
-            .command()
-            .current_dir(&repo_path)
-            .add(cu::args!["build", "--bin", "shaft-build", "--locked",])
+        let command = cu::which("cargo")?.command().current_dir(&repo_path).args([
+            "build",
+            "--bin",
+            "shaft-build",
+            "--locked",
+        ]);
+        let command = epkg::cargo::add_platform_build_args(command);
+        let (child, bar) = command
             .preset(cu::pio::cargo("building pre-build script"))
             .spawn()?;
         child.wait_nz()?;
         bar.done();
     }
     {
+        #[cfg(feature = "build-x64")]
+        let build_script = repo_path
+            .join("target")
+            .join(epkg::cargo::BUILD_X64_TARGET_TRIPLE)
+            .join("debug")
+            .join(bin_name!("shaft-build"));
+        #[cfg(not(feature = "build-x64"))]
         let build_script = repo_path
             .join("target")
             .join("debug")
@@ -59,18 +70,17 @@ pub fn local_update() -> cu::Result<()> {
             .wait_nz()?;
     }
     {
-        let (child, bar) = cu::which("cargo")?
-            .command()
-            .current_dir(&repo_path)
-            .add(cu::args![
-                "build",
-                "--bin",
-                "shaft",
-                "--release",
-                "--locked"
-            ])
-            .preset(cu::pio::cargo("building"))
-            .spawn()?;
+        let command = cu::which("cargo")?.command().current_dir(&repo_path).args([
+            "build",
+            "--bin",
+            "shaft",
+            "--release",
+            "--locked",
+        ]);
+        #[cfg(feature = "build-x64")]
+        let command = command.args(["--feature", "build-x64"]);
+        let command = epkg::cargo::add_platform_build_args(command);
+        let (child, bar) = command.preset(cu::pio::cargo("building")).spawn()?;
         child.wait_nz()?;
         bar.done();
     }
