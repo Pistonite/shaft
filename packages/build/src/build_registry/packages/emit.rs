@@ -271,8 +271,9 @@ impl ModuleMetadata<'_> {
             | ModuleMetadata::WindowsUnified(_)
             | ModuleMetadata::WindowsMux { .. }
             | ModuleMetadata::Leftover(_) => "corelib::opfs::LinuxFlavor::none()",
-            ModuleMetadata::AllUnified(_) |
-            ModuleMetadata::LinuxUnified(_) => "corelib::opfs::LinuxFlavor::all()",
+            ModuleMetadata::AllUnified(_) | ModuleMetadata::LinuxUnified(_) => {
+                "corelib::opfs::LinuxFlavor::all()"
+            }
             ModuleMetadata::LinuxMux {
                 data_pacman,
                 data_apt: _,

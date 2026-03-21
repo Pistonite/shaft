@@ -38,10 +38,12 @@ pub fn local_update() -> cu::Result<()> {
         .wait_nz()?;
 
     {
-        let command = cu::which("cargo")?
-            .command()
-            .current_dir(&repo_path)
-            .args(["build", "--bin", "shaft-build", "--locked"]);
+        let command = cu::which("cargo")?.command().current_dir(&repo_path).args([
+            "build",
+            "--bin",
+            "shaft-build",
+            "--locked",
+        ]);
         let command = epkg::cargo::add_platform_build_args(command);
         let (child, bar) = command
             .preset(cu::pio::cargo("building pre-build script"))
@@ -53,7 +55,7 @@ pub fn local_update() -> cu::Result<()> {
         #[cfg(feature = "build-x64")]
         let build_script = repo_path
             .join("target")
-            .join(epkg::cargo::BUILD_x64_TARGET_TRIPLE)
+            .join(epkg::cargo::BUILD_X64_TARGET_TRIPLE)
             .join("debug")
             .join(bin_name!("shaft-build"));
         #[cfg(not(feature = "build-x64"))]
@@ -68,22 +70,17 @@ pub fn local_update() -> cu::Result<()> {
             .wait_nz()?;
     }
     {
-        let command = cu::which("cargo")?
-            .command()
-            .current_dir(&repo_path)
-            .args([
-                "build",
-                "--bin",
-                "shaft",
-                "--release",
-                "--locked"
-            ]);
+        let command = cu::which("cargo")?.command().current_dir(&repo_path).args([
+            "build",
+            "--bin",
+            "shaft",
+            "--release",
+            "--locked",
+        ]);
         #[cfg(feature = "build-x64")]
         let command = command.args(["--feature", "build-x64"]);
         let command = epkg::cargo::add_platform_build_args(command);
-        let (child, bar) = command
-            .preset(cu::pio::cargo("building"))
-            .spawn()?;
+        let (child, bar) = command.preset(cu::pio::cargo("building")).spawn()?;
         child.wait_nz()?;
         bar.done();
     }

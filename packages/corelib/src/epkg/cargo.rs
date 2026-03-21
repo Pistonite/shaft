@@ -91,11 +91,10 @@ pub fn install_git_commit(
         // setting current dir in case the current directory the user is in has a
         // rust-toolchain file, which will override the rust toolchain being used
         .current_dir(hmgr::paths::home())
-        .args([
-            "install", package, "--git", git, "--rev", rev, "--locked"
-        ]);
+        .args(["install", package, "--git", git, "--rev", rev, "--locked"]);
     let command = add_platform_build_args(command);
-    let (child, bar) = command.preset(
+    let (child, bar) = command
+        .preset(
             cu::pio::cargo(format!("cargo install '{package}'"))
                 .configure_spinner(|builder| builder.keep(true).parent(bar.cloned())),
         )
@@ -222,6 +221,6 @@ pub static BUILD_X64_TARGET_TRIPLE: &str = "x86_64-unknown-linux-gnu";
 pub static BUILD_X64_TARGET_TRIPLE: &str = "x86_64-apple-darwin";
 
 #[cfg(feature = "build-x64")]
-pub fn add_build_args(command: cu::CommandBuilder) -> cu::CommandBuilder {
+pub fn add_platform_build_args(command: cu::CommandBuilder) -> cu::CommandBuilder {
     command.args(["--target", BUILD_X64_TARGET_TRIPLE])
 }

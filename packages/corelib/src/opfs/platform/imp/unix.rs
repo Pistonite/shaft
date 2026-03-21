@@ -3,9 +3,7 @@ use cu::pre::*;
 
 pub fn init_arch_with_uname(default: CpuArch) -> cu::Result<()> {
     let arch = match get_arch_with_uname() {
-        Ok(Some(x)) => {
-            x
-        }
+        Ok(Some(x)) => x,
         Ok(None) => {
             cu::bail!("unknown processor architecture");
         }
