@@ -633,11 +633,11 @@ impl ItemMgr {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ItemEntry {
-    package: String,
-    item: Item,
+    pub package: String,
+    pub item: Item,
     /// Higher is applied first
     #[serde(default)]
-    priority: i32,
+    pub priority: i32,
 }
 
 /// An item is an injection to the installation. Packages
@@ -647,15 +647,23 @@ pub struct ItemEntry {
 pub enum Item {
     /// Setting a user environment variable.
     ///
-    /// This corresponds to adding to the init shell profiles
+    /// This corresponds to adding to the init shell profiles (bash_profile)
     /// on non-Windows, and setting user environment registry on Windows
     UserEnvVar(String, String),
 
     /// Add to user PATH
     ///
-    /// This corresponds to adding to the init shell profiles
+    /// This corresponds to adding to the init shell profiles (bash_profile)
     /// on non-Windows, and setting user PATH environment registry on Windows
     UserPath(String),
+
+    /// Set environment for compositor-specific environment
+    ///
+    /// In linux, compositor environment are usually on top of
+    /// shell environments as display manager like SDDM will source
+    /// bash_profile.
+    #[cfg(target_os = "linux")]
+    SessionEnvVar(SessionType, String, String),
 
     /// Link a binary (in the HOME/bin directory) to a location
     /// in the install directory.
@@ -701,6 +709,11 @@ impl Item {
     }
 
     #[inline(always)]
+    pub fn session_env(compositor: SessionType, key: impl Into<String>, value: impl Into<String>) -> Self {
+        Self::SessionEnvVar(compositor, key.into(), value.into())
+    }
+
+    #[inline(always)]
     pub fn link_bin(name: impl Into<String>, target: impl Into<String>) -> Self {
         Self::LinkBin(name.into(), target.into(), false)
     }
@@ -735,4 +748,30 @@ impl Item {
     pub fn zsh(script: impl Into<String>) -> Self {
         Self::Zsh(script.into())
     }
+}
+
+#[cfg(target_os = "linux")]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum SessionType {
+    /// Environment: sourced from ~/.config/hyprland/hyprland.conf
+    Hyprland,
+}
+
+pub fn build_env_map(items: &[ItemEntry]) -> cu::Result<Vec<(String, String)>> {
+    let mut seen_key = BTreeSet::new();
+    let mut envs = vec![];
+    for entry in items {
+        let Item::UserEnvVar(key, value) = &entry.item else {
+            continue;
+        };
+        if key.to_lowercase() == "path" {
+            cu::bail!("unexpected: use Item::UserPath to set PATH");
+        }
+        let key = key.trim();
+        if !seen_key.insert(key) {
+            cu::bail!("an env config for '{key}' already exists");
+        }
+        envs.push((key.to_string(), value.trim().to_string()));
+    }
+    Ok(envs)
 }
