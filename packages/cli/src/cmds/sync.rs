@@ -37,7 +37,7 @@ pub fn sync_pkgs(pkgs: EnumSet<PkgId>, installed: &mut InstallCache) -> cu::Resu
         if let Some(false) = core_version_uptodate {
             cu::warn!("core version was bumped - all installed packages will be re-configured");
             let bar = cu::progress("removing all config items").spawn();
-            items2.remove_all(Some(&bar))?;
+            items2.remove_all()?;
             items2.rebuild_items(Some(&bar))?;
             bar.done();
             items = None;
@@ -152,7 +152,7 @@ fn do_sync_package(
 
     cu::progress!(bar, "configuring");
     ctx.stage.set(Stage::Configure);
-    ctx.items_mut()?.remove_package(pkg.to_str(), Some(&bar))?;
+    ctx.items_mut()?.remove_package(pkg.to_str())?;
     package.configure(&ctx)?;
     ctx.items_mut()?.rebuild_items(Some(&bar))?;
     installed.set_dirty(pkg, false);

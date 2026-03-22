@@ -52,6 +52,13 @@ pub fn add_env_assert<I: IntoIterator<Item = (String, String)>>(iter: I) -> cu::
     Ok(())
 }
 
+pub fn add_env_assert_once(key: String, value: String) -> cu::Result<()> {
+    let mut envs = load_env_json()?;
+    envs.insert(key, value);
+    save_env_json(&envs);
+    Ok(())
+}
+
 /// Load and check if the current environment matches assertions in HOME/environment.json
 #[inline(always)]
 pub fn init_env() -> cu::Result<()> {
@@ -89,7 +96,7 @@ pub fn require_envchange_reinvocation() -> cu::Result<()> {
             "environment has changed, please restart (all) terminal process, then rerun the command"
         );
     } else {
-        cu::bail!("environment has changed, please restart the shell, then rerun the command");
+        cu::bail!("environment has changed, please restart the session, then rerun the command");
     }
 }
 

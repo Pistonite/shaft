@@ -120,7 +120,7 @@ fn do_remove_package(mut ctx: Context) -> cu::Result<Context> {
     ctx.stage.set(Stage::Uninstall);
     package.uninstall(&ctx)?;
     ctx.stage.set(Stage::Configure);
-    ctx.items_mut()?.remove_package(pkg.to_str(), Some(&bar))?;
+    ctx.items_mut()?.remove_package(pkg.to_str())?;
 
     cu::progress!(bar, "cleaning");
     ctx.stage.set(Stage::Clean);

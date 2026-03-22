@@ -1,5 +1,3 @@
-# items/init.pwsh
-# this file is managed by SHAFT, do not edit manually
 # -- Bind Ctrl+D to exit
 Set-PSReadlineKeyHandler -Key ctrl+d -Function ViExit
 # -- Command Prediction

@@ -1,3 +1,6 @@
+/// OS environment abstraction
+mod env;
+
 mod environment;
 pub mod paths;
 pub use environment::*;
