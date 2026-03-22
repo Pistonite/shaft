@@ -1,6 +1,6 @@
 [core]
 # Bumping this version will re-configure all installed packages
-CONFIG_VERSION = "2"
+CONFIG_VERSION = "3"
 
 [_7z]
 REPO = "https://github.com/ip7z/7zip"
