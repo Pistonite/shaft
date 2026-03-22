@@ -1,10 +1,9 @@
 use cu::pre::*;
 
 use crate::hmgr;
-use crate::hmgr::item::{ItemEntry, SessionType};
-use crate::hmgr::env::unix;
 use crate::hmgr::Item;
-
+use crate::hmgr::env::unix;
+use crate::hmgr::item::{ItemEntry, SessionType};
 
 #[derive(Default)]
 pub struct Env {
@@ -15,7 +14,11 @@ pub struct Env {
 
 impl Env {
     pub fn new_dirty() -> Self {
-        Self { bash_dirty: true, zsh_dirty: true, hyprland_dirty: true }
+        Self {
+            bash_dirty: true,
+            zsh_dirty: true,
+            hyprland_dirty: true,
+        }
     }
     pub fn rebuild(&mut self, items: &[ItemEntry]) -> cu::Result<bool> {
         let mut reinvocation_needed = false;
@@ -42,12 +45,18 @@ impl Env {
         use std::fmt::Write as _;
 
         let mut out = String::new();
-        let _ = writeln!(out, r#"# init_profile.bash; managed by SHAFT, do not edit manually!"#);
+        let _ = writeln!(
+            out,
+            r#"# init_profile.bash; managed by SHAFT, do not edit manually!"#
+        );
         let _ = writeln!(out, r#"{exports}"#);
         cu::fs::write(hmgr::paths::init_profile_bash(), &out)?;
 
         out.clear();
-        let _ = writeln!(out, "# init_rc.bash; managed by SHAFT, do not edit manually!\n# ===");
+        let _ = writeln!(
+            out,
+            "# init_rc.bash; managed by SHAFT, do not edit manually!\n# ==="
+        );
         let mut current_package = "";
         for entry in items {
             let Item::Bash(script) = &entry.item else {
@@ -68,12 +77,18 @@ impl Env {
         use std::fmt::Write as _;
 
         let mut out = String::new();
-        let _ = writeln!(out, r#"# init_profile.zsh; managed by SHAFT, do not edit manually!"#);
+        let _ = writeln!(
+            out,
+            r#"# init_profile.zsh; managed by SHAFT, do not edit manually!"#
+        );
         let _ = writeln!(out, r#"{exports}"#);
         cu::fs::write(hmgr::paths::init_profile_zsh(), &out)?;
 
         out.clear();
-        let _ = writeln!(out, "# init_rc.zsh; managed by SHAFT, do not edit manually!\n# ===");
+        let _ = writeln!(
+            out,
+            "# init_rc.zsh; managed by SHAFT, do not edit manually!\n# ==="
+        );
         let mut current_package = "";
         for entry in items {
             let Item::Bash(script) = &entry.item else {
@@ -95,7 +110,10 @@ impl Env {
 
         let mut out = String::new();
         let home = hmgr::paths::home().as_utf8()?;
-        let _ = writeln!(out, r#"export SHAFT_HOME='{home}'"#);
+        let _ = writeln!(
+            out,
+            "export SHAFT_HOME='{home}'\nexport USERPROFILE=\"$HOME\""
+        );
         let envs = hmgr::item::build_env_map(items)?;
 
         let mut reinvocation_needed = false;
@@ -123,7 +141,10 @@ impl Env {
 
         let mut reinvocation_needed = false;
         let mut out = String::new();
-        let _ = writeln!(out, "# init_hyprland.conf; managed by SHAFT, do not edit manually!\n# ===");
+        let _ = writeln!(
+            out,
+            "# init_hyprland.conf; managed by SHAFT, do not edit manually!\n# ==="
+        );
         let mut current_package = "";
         let mut env_asserts = vec![];
         for entry in items {
@@ -150,5 +171,4 @@ impl Env {
 
         Ok(reinvocation_needed)
     }
-
 }

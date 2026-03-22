@@ -3,8 +3,7 @@ use std::collections::BTreeSet;
 use crate::hmgr::Item;
 use crate::hmgr::item::ItemEntry;
 
-
-pub    fn rebuild_user_path(items: &[ItemEntry]) -> cu::Result<(String, bool)> {
+pub fn rebuild_user_path(items: &[ItemEntry]) -> cu::Result<(String, bool)> {
     use std::fmt::Write as _;
 
     let current_paths = cu::env_var("PATH")?;

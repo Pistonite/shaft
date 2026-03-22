@@ -96,7 +96,7 @@ pub fn require_envchange_reinvocation() -> cu::Result<()> {
             "environment has changed, please restart (all) terminal process, then rerun the command"
         );
     } else {
-        cu::bail!("environment has changed, please restart the shell, then rerun the command");
+        cu::bail!("environment has changed, please restart the session, then rerun the command");
     }
 }
 

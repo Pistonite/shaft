@@ -27,6 +27,7 @@ tasks:
     - lfmt -c
   fix:
     - task: registry:fix
+    - task: corelib:fix
     - cargo fmt
     - lfmt
   test:

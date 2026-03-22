@@ -5,19 +5,17 @@ use std::sync::Arc;
 use cu::pre::*;
 use shaftim_build::{ShimCommand, ShimConfig};
 
+use crate::hmgr::env::Env;
 use crate::{bin_name, epkg, hmgr, opfs};
 
 #[derive(Default)]
 pub struct ItemMgr {
     items: Vec<ItemEntry>,
     skip_reinvocation: bool,
-    reinvocation_needed: bool,
     dirty: bool,
+    link_dirty: bool,
     shim_dirty: bool,
-    bash_dirty: bool,
-    zsh_dirty: bool,
-    pwsh_dirty: bool,
-    cmd_dirty: bool,
+    env: Env,
 }
 
 impl ItemMgr {
@@ -28,13 +26,10 @@ impl ItemMgr {
             return Ok(Self {
                 items: vec![],
                 skip_reinvocation: false,
-                reinvocation_needed: false,
                 dirty: true,
                 shim_dirty: true,
-                bash_dirty: true,
-                zsh_dirty: true,
-                pwsh_dirty: true,
-                cmd_dirty: true,
+                link_dirty: true,
+                env: Env::new_dirty(),
             });
         };
         let items = match json::parse(&items) {
@@ -49,13 +44,10 @@ impl ItemMgr {
         Ok(Self {
             items,
             skip_reinvocation: false,
-            reinvocation_needed: false,
             dirty: false,
             shim_dirty: false,
-            bash_dirty: false,
-            zsh_dirty: false,
-            pwsh_dirty: false,
-            cmd_dirty: false,
+            link_dirty: false,
+            env: Default::default(),
         })
     }
     pub fn skip_reinvocation(&mut self, skip: bool) {
@@ -71,39 +63,31 @@ impl ItemMgr {
             return;
         }
         match &entry.item {
-            Item::UserEnvVar(_, _) => {
-                self.set_all_shells_dirty();
-            }
-            Item::UserPath(_) => {
-                self.set_all_shells_dirty();
-            }
-            Item::LinkBin(_, _, _) => {}
+            Item::UserEnvVar(_, _) => {}
+            Item::UserPath(_) => {}
+            Item::LinkBin(_, _, _) => self.link_dirty = true,
             Item::ShimBin(_, _) => self.shim_dirty = true,
-            Item::Pwsh(_) => self.pwsh_dirty = true,
-            Item::Bash(_) => self.bash_dirty = true,
-            Item::Zsh(_) => self.zsh_dirty = true,
-            Item::Cmd(_) => self.cmd_dirty = true,
+            Item::Pwsh(_) => {}
+            Item::Bash(_) => {}
+            Item::Zsh(_) => {}
+            Item::Cmd(_) => {}
         }
+        self.env.on_item_modified(&entry);
         self.dirty = true;
         self.items.push(entry);
     }
 
-    pub fn remove_package(
-        &mut self,
-        package: &str,
-        bar: Option<&Arc<cu::ProgressBar>>,
-    ) -> cu::Result<()> {
-        self.remove_package_internal(Some(package), bar)
+    pub fn remove_package(&mut self, package: &str) -> cu::Result<()> {
+        self.remove_package_internal(Some(package))
     }
 
-    pub fn remove_all(&mut self, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
-        self.remove_package_internal(None, bar)
+    pub fn remove_all(&mut self) -> cu::Result<()> {
+        self.remove_package_internal(None)
     }
 
     fn remove_package_internal(
         &mut self,
         package: Option<&str>, // none for removing all
-        bar: Option<&Arc<cu::ProgressBar>>,
     ) -> cu::Result<()> {
         let mut bin_to_remove = vec![];
         let mut _env_to_remove = BTreeMap::new();
@@ -115,24 +99,26 @@ impl ItemMgr {
             if package != Some(&entry.package) {
                 return true;
             }
+            self.env.on_item_modified(entry);
             match &entry.item {
                 Item::UserEnvVar(k, v) => {
                     _env_to_remove.insert(k.to_string(), v.to_string());
-                    self.set_all_shells_dirty();
                 }
                 Item::UserPath(path) => {
                     _path_to_remove.insert(path.to_string());
-                    self.set_all_shells_dirty();
                 }
-                Item::LinkBin(bin, _, _) => bin_to_remove.push(bin.to_string()),
+                Item::LinkBin(bin, _, _) => {
+                    bin_to_remove.push(bin.to_string());
+                    // removing a link does not make links dirty
+                }
                 Item::ShimBin(bin, _) => {
                     bin_to_remove.push(bin.to_string());
                     self.shim_dirty = true;
                 }
-                Item::Pwsh(_) => self.pwsh_dirty = true,
-                Item::Bash(_) => self.bash_dirty = true,
-                Item::Zsh(_) => self.zsh_dirty = true,
-                Item::Cmd(_) => self.cmd_dirty = true,
+                Item::Pwsh(_) => {}
+                Item::Bash(_) => {}
+                Item::Zsh(_) => {}
+                Item::Cmd(_) => {}
             }
             self.dirty = true;
             false
@@ -140,13 +126,8 @@ impl ItemMgr {
         self.items = items;
 
         if !bin_to_remove.is_empty() {
-            let bar = cu::progress("removing old links")
-                .parent(bar.cloned())
-                .total(bin_to_remove.len())
-                .spawn();
             let bin_root = hmgr::paths::bin_root();
             for bin in bin_to_remove {
-                cu::progress!(bar += 1, "{bin}");
                 if let Err(e) = opfs::safe_remove_link(&bin_root.join(bin)) {
                     cu::warn!("failed to remove old link: {e}");
                 }
@@ -185,18 +166,6 @@ impl ItemMgr {
         Ok(())
     }
 
-    pub fn set_need_reinvocation(&mut self) {
-        self.reinvocation_needed = true;
-    }
-
-    pub fn set_all_shells_dirty(&mut self) {
-        self.dirty = true;
-        self.bash_dirty = true;
-        self.zsh_dirty = true;
-        self.pwsh_dirty = true;
-        self.cmd_dirty = true;
-    }
-
     #[cu::context("failed to build installed items")]
     pub fn rebuild_items(&mut self, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
         if !self.dirty {
@@ -205,75 +174,24 @@ impl ItemMgr {
 
         self.items.sort_by_key(|x| std::cmp::Reverse(x.priority));
 
-        #[cfg(windows)]
-        {
-            self.rebuild_user_env_vars()?;
-        }
-        self.rebuild_links()?;
-
-        if cfg!(not(windows)) && self.bash_dirty {
-            self.rebuild_bash()?;
-        }
-        if cfg!(not(windows)) && self.zsh_dirty {
-            self.rebuild_zsh()?;
-        }
-        if cfg!(windows) && self.pwsh_dirty {
-            self.rebuild_pwsh()?;
-        }
-        if cfg!(windows) && self.cmd_dirty {
-            self.rebuild_cmd()?;
+        let reinvocation_needed = self.env.rebuild(&self.items, self.skip_reinvocation)?;
+        if self.link_dirty {
+            self.rebuild_links()?;
+            self.link_dirty = false;
         }
         if self.shim_dirty {
             self.rebuild_shim(bar)?;
+            self.shim_dirty = false;
         }
 
         let config_path = hmgr::paths::items_config_json();
         cu::fs::write_json_pretty(config_path, &self.items)?;
 
-        if !self.skip_reinvocation && self.reinvocation_needed {
+        if !self.skip_reinvocation && reinvocation_needed {
             hmgr::require_envchange_reinvocation()?;
         }
 
         self.dirty = false;
-        Ok(())
-    }
-
-    #[cfg(windows)]
-    #[cu::context("failed to build user environment variables")]
-    fn rebuild_user_env_vars(&mut self) -> cu::Result<()> {
-        let envs = self.build_env_map()?;
-        let mut reinvocation_needed = false;
-        for (key, value) in &envs {
-            if !reinvocation_needed {
-                if let Ok(current) = hmgr::windows::get_user_this_session(key) {
-                    if &current != value {
-                        reinvocation_needed = true;
-                        cu::debug!(
-                            "itemmgr: reinvocation because of env: '{key}': '{current}'->'{value}'"
-                        );
-                    }
-                } else {
-                    cu::debug!(
-                        "itemmgr: reinvocation because of env: '{key}': setting new value: '{value}'"
-                    );
-                    reinvocation_needed = true;
-                }
-            }
-            hmgr::windows::set_user(key, value)?;
-        }
-        let (path, path_changed) = self.build_user_path()?;
-        hmgr::windows::set_user("PATH", &path)?;
-        if path_changed {
-            cu::debug!("itemmgr: reinvocation because of path: setting path");
-            reinvocation_needed = true;
-        }
-        if reinvocation_needed {
-            // we are not adding path asserts here... since
-            // it could change (user can add extra paths)
-            // it's probably ok to just not assert
-            hmgr::add_env_assert(envs)?;
-            self.reinvocation_needed = true;
-        }
         Ok(())
     }
 
@@ -311,243 +229,8 @@ impl ItemMgr {
         Ok(())
     }
 
-    #[cu::context("failed to build bash profile")]
-    fn rebuild_bash(&mut self) -> cu::Result<()> {
-        use std::fmt::Write as _;
-        let mut out = include_str!("init.bash").to_string();
-        let home = hmgr::paths::home().as_utf8()?;
-        let _ = writeln!(out, r#"export SHAFT_HOME='{home}'"#);
-        // to be consistent with Windows, we hoist environment to the top
-        let envs = self.build_env_map()?;
-        let mut reinvocation_needed = false;
-        for (key, value) in &envs {
-            let _ = writeln!(out, r#"export {key}='{value}'"#);
-            if &cu::env_var(key).unwrap_or_default() != value {
-                reinvocation_needed = true;
-            }
-        }
-
-        let (path, path_changed) = self.build_user_path()?;
-        let _ = writeln!(out, r#"export PATH="{path}""#);
-        let _ = writeln!(out, "# ===");
-        let mut current_package = "";
-        for entry in &self.items {
-            let Item::Bash(script) = &entry.item else {
-                continue;
-            };
-            if entry.package != current_package {
-                current_package = &entry.package;
-                let _ = writeln!(out, "# == {current_package} >>>>>");
-            }
-            let _ = writeln!(out, "{script}");
-        }
-
-        cu::fs::write(hmgr::paths::init_bash(), out)?;
-        if path_changed || reinvocation_needed {
-            hmgr::add_env_assert(envs)?;
-            self.reinvocation_needed = true;
-        }
-        self.bash_dirty = false;
-        Ok(())
-    }
-
-    #[cu::context("failed to build zsh profile")]
-    fn rebuild_zsh(&mut self) -> cu::Result<()> {
-        use std::fmt::Write as _;
-        let mut out = include_str!("init.zsh").to_string();
-        let home = hmgr::paths::home().as_utf8()?;
-        let _ = writeln!(out, r#"export SHAFT_HOME='{home}'"#);
-        // to be consistent with Windows, we hoist environment to the top
-        let envs = self.build_env_map()?;
-        let mut reinvocation_needed = false;
-        for (key, value) in &envs {
-            let _ = writeln!(out, r#"export {key}='{value}'"#);
-            if &cu::env_var(key).unwrap_or_default() != value {
-                reinvocation_needed = true;
-            }
-        }
-
-        let (path, path_changed) = self.build_user_path()?;
-        let _ = writeln!(out, r#"export PATH="{path}""#);
-        let _ = writeln!(out, "# ===");
-        let mut current_package = "";
-        for entry in &self.items {
-            let Item::Zsh(script) = &entry.item else {
-                continue;
-            };
-            if entry.package != current_package {
-                current_package = &entry.package;
-                let _ = writeln!(out, "# == {current_package} >>>>>");
-            }
-            let _ = writeln!(out, "{script}");
-        }
-
-        cu::fs::write(hmgr::paths::init_zsh(), out)?;
-        if path_changed || reinvocation_needed {
-            hmgr::add_env_assert(envs)?;
-            self.reinvocation_needed = true;
-        }
-        self.zsh_dirty = false;
-        Ok(())
-    }
-
-    #[cu::context("failed to build powershell profile")]
-    fn rebuild_pwsh(&mut self) -> cu::Result<()> {
-        use std::fmt::Write as _;
-        let mut out = include_str!("init.ps1").to_string();
-        let mut current_package = "";
-        for entry in &self.items {
-            let Item::Pwsh(script) = &entry.item else {
-                continue;
-            };
-            if entry.package != current_package {
-                current_package = &entry.package;
-                let _ = writeln!(out, "# == {current_package} >>>>>");
-            }
-            let _ = writeln!(out, "{script}");
-        }
-        cu::fs::write(hmgr::paths::init_ps1(), &out)?;
-        self.pwsh_dirty = false;
-        Ok(())
-    }
-
-    #[cu::context("failed to build dosbatch init")]
-    fn rebuild_cmd(&mut self) -> cu::Result<()> {
-        use std::fmt::Write as _;
-        let mut out = include_str!("init.cmd").to_string();
-        let mut current_package = "";
-        for entry in &self.items {
-            let Item::Cmd(script) = &entry.item else {
-                continue;
-            };
-            if entry.package != current_package {
-                current_package = &entry.package;
-                let _ = writeln!(out, "REM # == {current_package} >>>>>");
-            }
-            let _ = writeln!(out, "{script}");
-        }
-        cu::fs::write(hmgr::paths::init_cmd(), &out)?;
-        self.cmd_dirty = false;
-        Ok(())
-    }
-
-    fn build_env_map(&self) -> cu::Result<Vec<(String, String)>> {
-        let mut seen_key = BTreeSet::new();
-        let mut envs = vec![];
-        for entry in &self.items {
-            let Item::UserEnvVar(key, value) = &entry.item else {
-                continue;
-            };
-            if key.to_lowercase() == "path" {
-                cu::bail!("please use Item::UserPath to set PATH");
-            }
-            let key = key.trim();
-            if !seen_key.insert(key) {
-                cu::bail!("an env config for '{key}' already exists");
-            }
-            envs.push((key.to_string(), value.trim().to_string()));
-        }
-        Ok(envs)
-    }
-
-    // return the PATH and if reinvocation is needed
-    fn build_user_path(&self) -> cu::Result<(String, bool)> {
-        let current_paths = cu::env_var("PATH")?;
-        let current_paths: BTreeSet<_> = if cfg!(windows) {
-            current_paths
-                .split(';')
-                .map(|x| x.trim().to_string())
-                .collect()
-        } else {
-            current_paths
-                .split(':')
-                .map(|x| x.trim().to_string())
-                .collect()
-        };
-
-        let mut reinvocation_needed = false;
-        let mut controlled_paths = vec![];
-        for entry in &self.items {
-            let Item::UserPath(p) = &entry.item else {
-                continue;
-            };
-            controlled_paths.push(p);
-            if !current_paths.contains(p) {
-                cu::debug!("itemmgr: reinvocation because of path: adding '{p}'");
-                reinvocation_needed = true;
-            }
-        }
-        let mut seen = BTreeSet::new();
-        let mut out = String::new();
-
-        #[cfg(not(windows))]
-        {
-            use std::fmt::Write as _;
-            // on non-Windows, simply append to existing $PATH in the shell
-            let _ = write!(out, "$SHAFT_HOME/bin");
-            // latest added path go to the front
-            for p in controlled_paths.iter().rev() {
-                let p = p.trim();
-                if p.is_empty() {
-                    continue;
-                }
-                if seen.insert(p) {
-                    let _ = write!(out, ":{p}");
-                }
-            }
-            out.push_str(":$PATH");
-        }
-
-        #[cfg(windows)]
-        {
-            use std::fmt::Write as _;
-            // on windows, we need to read the existing paths
-            let path = hmgr::windows::get_user_this_session("PATH")?;
-            let current_paths: BTreeSet<_> =
-                path.split(';').map(|x| x.trim().to_string()).collect();
-            // To be safe, we will expand %SHAFT_HOME% on windows
-            let home_bin = hmgr::paths::bin_root();
-            let home_bin_str = home_bin.as_utf8()?;
-            out.push_str(home_bin_str);
-            seen.insert(home_bin_str);
-            // add the new ones
-            // latest added path go to the front
-            for p in controlled_paths.iter().rev() {
-                let p = p.trim();
-                if p.is_empty() {
-                    continue;
-                }
-                if seen.insert(p) {
-                    let _ = write!(out, ";{p}");
-                    // we want to make sure the current path we are getting
-                    // is from the User env var, so it's persistent
-                    if !current_paths.contains(p) {
-                        cu::debug!(
-                            "itemmgr: reinvocation because of path: '{p}' was not from user env"
-                        );
-                        reinvocation_needed = true;
-                    }
-                }
-            }
-            // add the old ones
-            for p in path.split(';') {
-                let p = p.trim();
-                if p.is_empty() {
-                    continue;
-                }
-                if seen.insert(p) {
-                    let _ = write!(out, ";{p}");
-                }
-            }
-            if out != hmgr::windows::get_user_this_session("PATH")? {
-                reinvocation_needed = true;
-            }
-        }
-        Ok((out, reinvocation_needed))
-    }
-
     #[cu::context("failed to build shims")]
-    fn rebuild_shim(&mut self, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
+    fn rebuild_shim(&self, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
         let mut shim_config = ShimConfig::default();
         for entry in &self.items {
             use std::collections::btree_map::Entry;
@@ -626,7 +309,6 @@ impl ItemMgr {
             "failed to create hardlinks for shim binaries"
         )?;
 
-        self.shim_dirty = false;
         Ok(())
     }
 }
@@ -709,7 +391,12 @@ impl Item {
     }
 
     #[inline(always)]
-    pub fn session_env(compositor: SessionType, key: impl Into<String>, value: impl Into<String>) -> Self {
+    #[cfg(target_os = "linux")]
+    pub fn session_env(
+        compositor: SessionType,
+        key: impl Into<String>,
+        value: impl Into<String>,
+    ) -> Self {
         Self::SessionEnvVar(compositor, key.into(), value.into())
     }
 
