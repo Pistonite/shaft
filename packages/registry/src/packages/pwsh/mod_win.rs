@@ -42,7 +42,7 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
 }
 
 pub fn download(ctx: &Context) -> cu::Result<()> {
-    hmgr::download_file("pwsh.zip", download_url(), metadata::pwsh::SHA, ctx.bar())?;
+    hmgr::download_file("pwsh.zip", download_url(), metadata::pwsh::SHA(), ctx.bar())?;
     Ok(())
 }
 

@@ -79,9 +79,9 @@ pub fn download(ctx: &Context) -> cu::Result<()> {
         metadata::wget::SHA,
         ctx.bar(),
     )?;
-    hmgr::download_file("fzf.zip", fzf_url(), metadata::fzf::SHA, ctx.bar())?;
+    hmgr::download_file("fzf.zip", fzf_url(), metadata::fzf::SHA(), ctx.bar())?;
     hmgr::download_file("jq.exe", jq_url(), metadata::jq::SHA, ctx.bar())?;
-    hmgr::download_file("task.zip", task_url(), metadata::task::SHA, ctx.bar())?;
+    hmgr::download_file("task.zip", task_url(), metadata::task::SHA(), ctx.bar())?;
     Ok(())
 }
 

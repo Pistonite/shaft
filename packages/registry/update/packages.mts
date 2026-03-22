@@ -9,11 +9,19 @@ import { fetch_release_name } from "./fetch/release_description.mts";
 import { strip_v } from "./util.mts";
 
 const cfg_windows = (x: string) => `'cfg(windows)'.${x}`;
-const cfg_windows_arm64 = (x: string) => `'cfg(all(windows,target_arch="aarch64"))'.${x}`;
-const cfg_windows_x64 = (x: string) => `'cfg(all(windows,target_arch="x86_64"))'.${x}`;
-const cfg_arm64 = (x: string) => `'cfg(target_arch="aarch64")'.${x}`;
-const cfg_x64 = (x: string) => `'cfg(target_arch="x86_64")'.${x}`;
 const cfg_linux = (x: string) => `'cfg(target_os="linux")'.${x}`;
+// const cfg_windows_arm64 = (x: string) => `'cfg(all(windows,target_arch="aarch64"))'.${x}`;
+// const cfg_windows_x64 = (x: string) => `'cfg(all(windows,target_arch="x86_64"))'.${x}`;
+// const cfg_arm64 = (x: string) => `'cfg(target_arch="aarch64")'.${x}`;
+// const cfg_x64 = (x: string) => `'cfg(target_arch="x86_64")'.${x}`;
+
+const match_cpu_arch = <T,>(key: string, obj: { arm: T, x64: T }) => {
+    return {
+        [`${key}.__match__`]: "opfs::cpu_arch()",
+        [`${key}.'opfs::CpuArch::Arm64'`]: obj.arm,
+        [`${key}.'opfs::CpuArch::X64'`]: obj.x64,
+    } as const;
+}
 
 const default_cratesio_fetcher = (crate: string): PackageFn => {
     return () => fetch_from_cratesio({crate});
@@ -29,8 +37,10 @@ export const pkg__7z: PackageFn = (meta) =>
         },
         query: (_, tag, [arm, x64]) => ({
             VERSION: tag,
-            [cfg_arm64("SHA")]: arm.sha,
-            [cfg_x64("SHA")]: x64.sha,
+            // old:
+            // [cfg_arm64("SHA")]: arm.sha,
+            // [cfg_x64("SHA")]: x64.sha,
+            ...match_cpu_arch("SHA", { arm: arm.sha, x64: x64.sha })
         })
     });
 export const pkg_pwsh: PackageFn = (meta) =>
@@ -46,12 +56,11 @@ export const pkg_pwsh: PackageFn = (meta) =>
         },
         query: (_, tag, [arm, x64]) => ({
             VERSION: strip_v(tag),
-            [cfg_arm64("SHA")]: arm.sha,
-            [cfg_x64("SHA")]: x64.sha,
+            ...match_cpu_arch("SHA", { arm: arm.sha, x64: x64.sha }),
         })
     });
 export const pkg_cargo_binstall = default_cratesio_fetcher("cargo-binstall");
-export const pkg_coreutils: PackageFn = (meta) => [
+export const pkg_coreutils: PackageFn = () => [
     fetch_from_cratesio({ crate: "eza", query: (v) => ({ "eza.VERSION": v }) }),
     fetch_from_cratesio({ crate: "coreutils", query: (v) => ({ "uutils.VERSION": v }) }),
     fetch_from_arch_linux({ package: "zip", query: (version) => ({ "zip.VERSION": version }) }),
@@ -149,8 +158,7 @@ export const pkg_fzf: PackageFn = (meta) =>
         },
         query: (_, tag, [arm64, x64]) => ({
             VERSION: strip_v(tag),
-            [cfg_windows_arm64("SHA")]: arm64.sha,
-            [cfg_windows_x64("SHA")]: x64.sha,
+            ...match_cpu_arch(cfg_windows("SHA"), { arm: arm64.sha, x64: x64.sha }),
         })
     });
 export const pkg_jq: PackageFn = (meta) =>
@@ -171,9 +179,8 @@ export const pkg_task: PackageFn = (meta) =>
         artifacts: () => ["task_windows_arm64.zip", "task_windows_amd64.zip", "task_linux_amd64.tar.gz"],
         query: (_, tag, [arm64, x64, linux]) => ({
             VERSION: strip_v(tag),
-            [cfg_windows_arm64("SHA")]: arm64.sha,
-            [cfg_windows_x64("SHA")]: x64.sha,
-            [cfg_linux("SHA")]: linux.sha,
+            ...match_cpu_arch(cfg_windows("SHA"), { arm: arm64.sha, x64: x64.sha }),
+            ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
         })
     });
 export const pkg_bat = default_cratesio_fetcher("bat");
@@ -236,8 +243,7 @@ export const pkg_clang: PackageFn = (meta) => [
         query: (_, tag, [arm, x64]) => {
             return {
                 [cfg_windows("LLVM_VERSION")]: tag.substring(8),
-                [cfg_windows_arm64("SHA")]: arm.sha,
-                [cfg_windows_x64("SHA")]: x64.sha,
+                ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
             };
         }
     }),
@@ -259,8 +265,7 @@ export const pkg_llvm_mingw: PackageFn = (meta) =>
             return {
                 "TAG": tag,
                 [cfg_windows("LLVM_VERSION")]: version,
-                [cfg_windows_arm64("SHA")]: arm.sha,
-                [cfg_windows_x64("SHA")]: x64.sha,
+                ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
             };
         }
     });
@@ -273,8 +278,7 @@ export const pkg_cmake: PackageFn = (meta) => [
         },
         query: (_, tag, [arm, x64]) => ({
             [cfg_windows("VERSION")]: strip_v(tag),
-            [cfg_windows_arm64("SHA")]: arm.sha,
-            [cfg_windows_x64("SHA")]: x64.sha,
+            ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
         })
     }),
     fetch_from_arch_linux({ package: "cmake", query: (v) => ({ [cfg_linux("VERSION")]: v }) })
@@ -285,8 +289,7 @@ export const pkg_ninja: PackageFn = (meta) => [
         artifacts: () => ["ninja-winarm64.zip", "ninja-win.zip"],
         query: (_, tag, [arm, x64]) => ({
             [cfg_windows("VERSION")]: strip_v(tag),
-            [cfg_windows_arm64("SHA")]: arm.sha,
-            [cfg_windows_x64("SHA")]: x64.sha,
+            ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
         })
     }),
     fetch_from_arch_linux({ package: "ninja", query: (v) => ({ [cfg_linux("VERSION")]: v }) })
@@ -298,9 +301,8 @@ export const pkg_nvim: PackageFn = (meta) => [
         artifacts: () => ["nvim-linux-x86_64.tar.gz", "nvim-win-arm64.zip", "nvim-win64.zip"],
         query: (_, tag, [linux, arm, x64]) => ({
             "VERSION": strip_v(tag),
-            [cfg_linux("SHA")]: linux.sha,
-            [cfg_windows_arm64("SHA")]: arm.sha,
-            [cfg_windows_x64("SHA")]: x64.sha,
+            ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
+            ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
         })
     }),
 ];
@@ -314,9 +316,8 @@ export const pkg_tree_sitter: PackageFn = (meta) => [
         ],
         query: (_, tag, [linux, arm, x64]) => ({
             "VERSION": strip_v(tag),
-            [cfg_linux("SHA")]: linux.sha,
-            [cfg_windows_arm64("SHA")]: arm.sha,
-            [cfg_windows_x64("SHA")]: x64.sha,
+            ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
+            ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
         })
     }),
 ];

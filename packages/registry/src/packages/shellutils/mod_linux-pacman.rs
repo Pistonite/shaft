@@ -60,7 +60,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 }
 
 pub fn download(ctx: &Context) -> cu::Result<()> {
-    hmgr::download_file("task.tgz", task_url(), metadata::task::SHA, ctx.bar())?;
+    hmgr::download_file("task.tgz", task_url(), metadata::task::SHA(), ctx.bar())?;
     Ok(())
 }
 

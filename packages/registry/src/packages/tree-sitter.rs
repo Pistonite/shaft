@@ -5,7 +5,7 @@ register_binaries!("tree-sitter");
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_shaft!("tree-sitter");
     let v = command_output!("tree-sitter", ["--version"]);
-    let v = v.strip_prefix("tree-sitter ").unwrap_or(&v);
+    let v = v.strip_prefix("tree-sitter ").unwrap_or(&v).trim();
     check_outdated!(v, metadata[tree_sitter]::VERSION);
     Ok(Verified::UpToDate)
 }
@@ -14,7 +14,7 @@ pub fn download(ctx: &Context) -> cu::Result<()> {
     hmgr::download_file(
         format!("{file_name}.gz"),
         tree_sitter_url()?,
-        metadata::tree_sitter::SHA,
+        metadata::tree_sitter::SHA(),
         ctx.bar(),
     )?;
     Ok(())

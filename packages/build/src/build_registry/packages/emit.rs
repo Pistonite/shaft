@@ -300,7 +300,7 @@ impl ModuleMetadata<'_> {
                 if data_x64.is_some() {
                     "enum_set!{ corelib::opfs::CpuArch::X64 }"
                 } else {
-                    "enum_set!{ corelib::opfs::CpuArch::ARM64 }"
+                    "enum_set!{ corelib::opfs::CpuArch::Arm64 }"
                 }
             }
             ModuleMetadata::LinuxMux {
@@ -452,7 +452,7 @@ impl ModuleMetadata<'_> {
                 }
                 if let Some(d) = data_arm {
                     Self::build_mod_decl(d, snake_name, "__win_arm", registry_src_path, out)?;
-                    mux_arms.push(("corelib::opfs::CpuArch::ARM64", "__win_arm", *d));
+                    mux_arms.push(("corelib::opfs::CpuArch::Arm64", "__win_arm", *d));
                 }
                 let _ = writeln!(
                     out,
@@ -844,7 +844,7 @@ fn build_bin_providers(
             if let Some(providers) = providers_win_arm {
                 let _ = writeln!(
                     out,
-                    "                    corelib::opfs::CpuArch::ARM64 => enum_set! {{ {} }},",
+                    "                    corelib::opfs::CpuArch::Arm64 => enum_set! {{ {} }},",
                     providers.iter().join(" | ")
                 );
                 count += 1;
