@@ -99,21 +99,31 @@ to see why the auto-mount fails.
         println!(
             "\nNew-Item -ItemType File -Path $PROFILE.CurrentUserAllHosts -Force | Out-Null;\nnotepad $PROFILE.CurrentUserAllHosts\n"
         );
-        cu::prompt!("please press ENTER to continue once it's added")?;
     }
 
     #[cfg(not(windows))]
     {
-        let init_script = format!(
+        let init_profile_script = format!(
             r#"# shaft init script
-. {home_str}/items/init.bash
+. {home_str}/items/init_profile.bash
 "#
         );
-        cu::hint!("ATTENTION! please add the following to your shell profile:");
+        let init_script = format!(
+            r#"# shaft init script
+. {home_str}/items/init_rc.bash
+"#
+        );
+        cu::hint!(
+            "ATTENTION! please add the following to your shell profile (e.g. ~/.bash_profile):"
+        );
+        println!("\n{}\n", init_profile_script);
+        cu::hint!("you can replace `.bash` with the shell you use");
+        cu::hint!("ATTENTION! please add the following to your shell init (e.g. ~/.bashrc):");
         println!("\n{}\n", init_script);
         cu::hint!("you can replace `.bash` with the shell you use");
-        cu::prompt!("please press ENTER to continue once it's added")?;
     }
+
+    cu::prompt!("please press ENTER to continue once it's added")?;
 
     hmgr::add_env_assert([("SHAFT_HOME".to_string(), home_str.to_string())])?;
     hmgr::require_envchange_reinvocation()
@@ -142,7 +152,7 @@ press ENTER to accept the default, or enter another path",
             }
             if let Ok(false) = cu::fs::is_empty_dir(&user_selected_home) {
                 cu::error!(
-                    "selected homd path is a non-empty directory, please select another location"
+                    "selected home path is a non-empty directory, please choose another location"
                 );
                 return Ok(false);
             }

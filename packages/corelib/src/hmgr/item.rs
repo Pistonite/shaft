@@ -1,4 +1,6 @@
-use std::collections::{BTreeMap, BTreeSet};
+#[cfg(windows)]
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -65,6 +67,8 @@ impl ItemMgr {
         match &entry.item {
             Item::UserEnvVar(_, _) => {}
             Item::UserPath(_) => {}
+            #[cfg(target_os = "linux")]
+            Item::SessionEnvVar(_, _, _) => {}
             Item::LinkBin(_, _, _) => self.link_dirty = true,
             Item::ShimBin(_, _) => self.shim_dirty = true,
             Item::Pwsh(_) => {}
@@ -90,8 +94,10 @@ impl ItemMgr {
         package: Option<&str>, // none for removing all
     ) -> cu::Result<()> {
         let mut bin_to_remove = vec![];
-        let mut _env_to_remove = BTreeMap::new();
-        let mut _path_to_remove = BTreeSet::new();
+        #[cfg(windows)]
+        let mut env_to_remove = BTreeMap::new();
+        #[cfg(windows)]
+        let mut path_to_remove = BTreeSet::new();
 
         // take out items to workaround borrow check
         let mut items = std::mem::take(&mut self.items);
@@ -101,12 +107,23 @@ impl ItemMgr {
             }
             self.env.on_item_modified(entry);
             match &entry.item {
+                #[cfg(windows)]
                 Item::UserEnvVar(k, v) => {
-                    _env_to_remove.insert(k.to_string(), v.to_string());
+                    env_to_remove.insert(k.to_string(), v.to_string());
                 }
+                #[cfg(not(windows))]
+                Item::UserEnvVar(_, _) => {}
+
+                #[cfg(windows)]
                 Item::UserPath(path) => {
-                    _path_to_remove.insert(path.to_string());
+                    path_to_remove.insert(path.to_string());
                 }
+                #[cfg(not(windows))]
+                Item::UserPath(_) => {}
+
+                #[cfg(target_os = "linux")]
+                Item::SessionEnvVar(_, _, _) => {}
+
                 Item::LinkBin(bin, _, _) => {
                     bin_to_remove.push(bin.to_string());
                     // removing a link does not make links dirty
@@ -136,7 +153,7 @@ impl ItemMgr {
 
         #[cfg(windows)]
         {
-            for (key, value) in _env_to_remove {
+            for (key, value) in env_to_remove {
                 if let Ok(current_value) = hmgr::windows::get_user(&key) {
                     if current_value != value {
                         cu::warn!(
@@ -154,7 +171,7 @@ impl ItemMgr {
                 if p.is_empty() {
                     continue;
                 }
-                if _path_to_remove.contains(p) {
+                if path_to_remove.contains(p) {
                     continue;
                 }
                 new_paths.push(p)

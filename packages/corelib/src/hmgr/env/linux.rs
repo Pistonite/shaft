@@ -20,10 +20,11 @@ impl Env {
             hyprland_dirty: true,
         }
     }
-    pub fn rebuild(&mut self, items: &[ItemEntry]) -> cu::Result<bool> {
+    pub fn rebuild(&mut self, items: &[ItemEntry], skip_reinvocation: bool) -> cu::Result<bool> {
         let mut reinvocation_needed = false;
         if self.bash_dirty || self.zsh_dirty {
-            let (exports, reinvocation_needed_from_exports) = self.rebuild_exports(items)?;
+            let (exports, reinvocation_needed_from_exports) =
+                self.rebuild_exports(items, skip_reinvocation)?;
             reinvocation_needed |= reinvocation_needed_from_exports;
             if self.bash_dirty {
                 self.rebuild_bash(items, &exports)?;
@@ -35,7 +36,7 @@ impl Env {
             }
         }
         if self.hyprland_dirty {
-            reinvocation_needed |= self.rebuild_hyprland(items)?;
+            reinvocation_needed |= self.rebuild_hyprland(items, skip_reinvocation)?;
             self.hyprland_dirty = false;
         }
         Ok(reinvocation_needed)
@@ -105,7 +106,11 @@ impl Env {
         Ok(())
     }
 
-    fn rebuild_exports(&self, items: &[ItemEntry]) -> cu::Result<(String, bool)> {
+    fn rebuild_exports(
+        &self,
+        items: &[ItemEntry],
+        skip_reinvocation: bool,
+    ) -> cu::Result<(String, bool)> {
         use std::fmt::Write as _;
 
         let mut out = String::new();
@@ -123,11 +128,11 @@ impl Env {
                 reinvocation_needed = true;
             }
         }
-        if reinvocation_needed {
+        if reinvocation_needed && !skip_reinvocation {
             hmgr::add_env_assert(envs.clone())?;
         }
         let (path, path_changed) = unix::rebuild_user_path(items)?;
-        if path_changed {
+        if path_changed && !skip_reinvocation {
             hmgr::add_env_assert_once("PATH".to_string(), path.clone())?;
         }
         let _ = writeln!(out, r#"export PATH="{path}""#);
@@ -136,7 +141,7 @@ impl Env {
         Ok((out, reinvocation_needed))
     }
 
-    fn rebuild_hyprland(&self, items: &[ItemEntry]) -> cu::Result<bool> {
+    fn rebuild_hyprland(&self, items: &[ItemEntry], skip_reinvocation: bool) -> cu::Result<bool> {
         use std::fmt::Write as _;
 
         let mut reinvocation_needed = false;
@@ -164,11 +169,27 @@ impl Env {
                 env_asserts.push((key.clone(), value.clone()));
             }
         }
-        if reinvocation_needed {
+        if reinvocation_needed && !skip_reinvocation {
             hmgr::add_env_assert(env_asserts)?;
         }
         cu::fs::write(hmgr::paths::init_hyprland_conf(), &out)?;
 
         Ok(reinvocation_needed)
+    }
+
+    pub fn on_item_modified(&mut self, entry: &ItemEntry) {
+        match &entry.item {
+            Item::UserEnvVar(_, _) | Item::UserPath(_) => {
+                self.bash_dirty = true;
+                self.zsh_dirty = true;
+            }
+            Item::SessionEnvVar(SessionType::Hyprland, _, _) => self.hyprland_dirty = true,
+            Item::Bash(_) => self.bash_dirty = true,
+            Item::Zsh(_) => self.zsh_dirty = true,
+            Item::LinkBin(_, _, _) => {}
+            Item::ShimBin(_, _) => {}
+            Item::Pwsh(_) => {}
+            Item::Cmd(_) => {}
+        }
     }
 }
