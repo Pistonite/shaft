@@ -62,14 +62,14 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
 }
 
 pub fn download(ctx: &Context) -> cu::Result<()> {
-    hmgr::download_file("llvm.txz", llvm_url(), metadata::clang::SHA, ctx.bar())?;
+    hmgr::download_file("llvm.txz", llvm_url(), metadata::clang::SHA(), ctx.bar())?;
     hmgr::download_file(
         "llvm-mingw.zip",
         llvm_mingw_url(),
-        metadata::llvm_mingw::SHA,
+        metadata::llvm_mingw::SHA(),
         ctx.bar(),
     )?;
-    hmgr::download_file("ninja.zip", ninja_url(), metadata::ninja::SHA, ctx.bar())?;
+    hmgr::download_file("ninja.zip", ninja_url(), metadata::ninja::SHA(), ctx.bar())?;
     Ok(())
 }
 
@@ -111,14 +111,9 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
 
     // ninja is small and unlikely to fail so just unpack anyway
     {
-        let bar = cu::progress("unpacking ninja")
-            .keep(true)
-            .parent(ctx.bar())
-            .spawn();
         let ninja_dir = install_dir.join("ninja");
         let ninja_zip = hmgr::paths::download("ninja.zip", ninja_url());
         opfs::unarchive(&ninja_zip, ninja_dir, true)?;
-        bar.done();
     }
 
     let llvm_dir = install_dir.join("llvm");
@@ -135,7 +130,7 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
             .parent(ctx.bar())
             .spawn();
         let clang_zip = hmgr::paths::download("llvm.txz", llvm_url());
-        opfs::unarchive(&clang_zip, &install_dir, true)?;
+        opfs::unarchive(&clang_zip, &install_dir, false)?;
         let dir_name = install_dir.join(llvm_release_name());
         // rename could fail after high disk usage - retry up to 3 times
         if let Err(e) = cu::fs::rename(&dir_name, &llvm_dir) {
@@ -184,7 +179,7 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
             .parent(ctx.bar())
             .spawn();
         let clang_zip = hmgr::paths::download("llvm-mingw.zip", llvm_mingw_url());
-        opfs::unarchive(&clang_zip, &install_dir, true)?;
+        opfs::unarchive(&clang_zip, &install_dir, false)?;
         let dir_name = install_dir.join(llvm_mingw_release_name());
         // rename could fail after high disk usage - retry up to 3 times
         if let Err(e) = cu::fs::rename(&dir_name, &llvm_dir) {

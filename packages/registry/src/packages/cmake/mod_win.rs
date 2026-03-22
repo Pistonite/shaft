@@ -27,7 +27,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 }
 
 pub fn download(ctx: &Context) -> cu::Result<()> {
-    hmgr::download_file("cmake.zip", cmake_url(), metadata::cmake::SHA, ctx.bar())?;
+    hmgr::download_file("cmake.zip", cmake_url(), metadata::cmake::SHA(), ctx.bar())?;
     Ok(())
 }
 

@@ -31,7 +31,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 
 pub fn download(ctx: &Context) -> cu::Result<()> {
     let file_name = nvim_file_name()?;
-    hmgr::download_file(file_name, nvim_url()?, metadata::nvim::SHA, ctx.bar())?;
+    hmgr::download_file(file_name, nvim_url()?, metadata::nvim::SHA(), ctx.bar())?;
     Ok(())
 }
 

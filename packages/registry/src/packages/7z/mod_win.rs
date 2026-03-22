@@ -20,7 +20,7 @@ pub fn download(ctx: &Context) -> cu::Result<()> {
     hmgr::download_file(
         "7z-installer.exe",
         download_url(),
-        metadata::_7z::SHA,
+        metadata::_7z::SHA(),
         ctx.bar(),
     )?;
     Ok(())
