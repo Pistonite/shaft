@@ -78,7 +78,7 @@ pub fn local_update() -> cu::Result<()> {
             "--locked",
         ]);
         #[cfg(feature = "build-x64")]
-        let command = command.args(["--feature", "build-x64"]);
+        let command = command.args(["--features", "build-x64"]);
         let command = epkg::cargo::add_platform_build_args(command);
         let (child, bar) = command.preset(cu::pio::cargo("building")).spawn()?;
         child.wait_nz()?;
