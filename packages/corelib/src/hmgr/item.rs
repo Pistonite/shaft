@@ -301,8 +301,8 @@ impl ItemMgr {
         {
             shim_path.extend([
                 "target",
-                "release",
                 epkg::cargo::BUILD_X64_TARGET_TRIPLE,
+                "release",
                 bin_name!("shaftim"),
             ]);
         }
