@@ -296,7 +296,21 @@ impl ItemMgr {
         child.wait_nz()?;
         bar.done();
         let mut shim_path = hmgr::paths::tools_root();
-        shim_path.extend(["target", "release", bin_name!("shaftim")]);
+
+        #[cfg(feature = "build-x64")]
+        {
+            shim_path.extend([
+                "target",
+                "release",
+                epkg::cargo::BUILD_X64_TARGET_TRIPLE,
+                bin_name!("shaftim"),
+            ]);
+        }
+        #[cfg(not(feature = "build-x64"))]
+        {
+            shim_path.extend(["target", "release", bin_name!("shaftim")]);
+        }
+
         let shim_binary = hmgr::paths::shim_binary();
         let shim_binary_old = hmgr::paths::shim_binary_old();
         if shim_binary.exists() {
