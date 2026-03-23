@@ -85,6 +85,13 @@ pub fn local_update() -> cu::Result<()> {
         bar.done();
     }
 
+    #[cfg(feature = "build-x64")]
+    let output_path = repo_path
+        .join("target")
+        .join(epkg::cargo::BUILD_X64_TARGET_TRIPLE)
+        .join("release")
+        .join(bin_name!("shaft"));
+    #[cfg(not(feature = "build-x64"))]
     let output_path = repo_path
         .join("target")
         .join("release")
