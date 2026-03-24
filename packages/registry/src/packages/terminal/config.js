@@ -237,6 +237,8 @@ function main(config) {
         config.profiles.list.push(...non_controlled_profiles);
     }
     zap_profiles(config);
+    config.showTabsInTitlebar=false;
+    config.alwaysShowTabs=false;
 
     return config;
 }
