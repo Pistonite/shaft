@@ -372,12 +372,19 @@ pub fn find_in_wingit(path: impl AsRef<Path>) -> cu::Result<PathBuf> {
 #[cu::context("cannot find in git installation: '{}'", path.display())]
 fn find_in_wingit_impl(path: &Path) -> cu::Result<PathBuf> {
     let mut git_path = cu::which("git")?;
-    // find the mingw64
+    // find the mingw64 or clangarm64 (in arm installation)
     let mut mingw64_path = git_path.join("mingw64");
-    while !mingw64_path.is_dir() {
+    let mut clangarm64_path = git_path.join("clangarm64");
+    while !mingw64_path.is_dir() && !clangarm64_path.is_dir() {
         git_path = git_path.parent_abs()?;
         mingw64_path = git_path.join("mingw64");
+        clangarm64_path = git_path.join("clangarm64_path");
     }
-    cu::trace!("found mingw64: '{}'", mingw64_path.display());
+    if mingw64_path.is_dir() {
+        cu::trace!("found mingw64: '{}'", mingw64_path.display());
+    }
+    if clangarm64_path.is_dir() {
+        cu::trace!("found clangarm64: '{}'", clangarm64_path.display());
+    }
     git_path.join(path).normalize_executable()
 }
