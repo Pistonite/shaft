@@ -2596,7 +2596,7 @@ dependencies = [
  "tar",
  "tokio",
  "win-envedit",
- "winapi",
+ "windows",
  "xz2",
  "zip",
 ]

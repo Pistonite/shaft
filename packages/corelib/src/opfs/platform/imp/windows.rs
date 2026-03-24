@@ -11,13 +11,24 @@ pub fn init() -> cu::Result<()> {
     Ok(())
 }
 fn get_arch() -> cu::Result<CpuArch> {
-    let mut arch = cu::env_var("PROCESSOR_ARCHITECTURE")?;
-    arch.make_ascii_lowercase();
-    match arch.trim() {
-        "amd64" => Ok(CpuArch::X64),
-        "arm64" => Ok(CpuArch::Arm64),
+    use windows::Win32::System::SystemInformation::{
+        IMAGE_FILE_MACHINE, IMAGE_FILE_MACHINE_AMD64, IMAGE_FILE_MACHINE_ARM64,
+    };
+    use windows::Win32::System::Threading::{GetCurrentProcess, IsWow64Process2};
+    let mut process_machine = IMAGE_FILE_MACHINE::default();
+    let mut native_machine = IMAGE_FILE_MACHINE::default();
+    unsafe {
+        IsWow64Process2(
+            GetCurrentProcess(),
+            &mut process_machine,
+            Some(&mut native_machine),
+        )?;
+    }
+    match native_machine {
+        IMAGE_FILE_MACHINE_AMD64 => Ok(CpuArch::X64),
+        IMAGE_FILE_MACHINE_ARM64 => Ok(CpuArch::Arm64),
         other => {
-            cu::bail!("unknown processor architecture: {other}");
+            cu::bail!("unknown native machine type: {:#06x}", other.0);
         }
     }
 }
