@@ -378,7 +378,7 @@ fn find_in_wingit_impl(path: &Path) -> cu::Result<PathBuf> {
     while !mingw64_path.is_dir() && !clangarm64_path.is_dir() {
         git_path = git_path.parent_abs()?;
         mingw64_path = git_path.join("mingw64");
-        clangarm64_path = git_path.join("clangarm64_path");
+        clangarm64_path = git_path.join("clangarm64");
     }
     if mingw64_path.is_dir() {
         cu::trace!("found mingw64: '{}'", mingw64_path.display());
