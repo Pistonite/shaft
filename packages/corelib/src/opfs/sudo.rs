@@ -7,33 +7,31 @@ use cu::pre::*;
 /// Check if current process has elevated privilege
 #[cfg(windows)]
 pub fn is_sudo() -> bool {
-    use winapi::shared::minwindef::{BOOL, DWORD, FALSE, LPVOID};
-    use winapi::um::processthreadsapi::{GetCurrentProcess, OpenProcessToken};
-    use winapi::um::securitybaseapi::GetTokenInformation;
-    use winapi::um::winnt::{
-        HANDLE, TOKEN_ELEVATION, TOKEN_ELEVATION_TYPE, TOKEN_QUERY, TokenElevation,
+    use windows::Win32::Foundation::HANDLE;
+    use windows::Win32::Security::{
+        GetTokenInformation, TOKEN_ELEVATION, TOKEN_QUERY, TokenElevation,
     };
+    use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
     // https://github.com/yandexx/is_elevated/blob/master/src/lib.rs
     // based on https://stackoverflow.com/a/8196291
     let mut token_handle = HANDLE::default();
     let process = unsafe { GetCurrentProcess() };
-    let success: BOOL = unsafe { OpenProcessToken(process, TOKEN_QUERY, &mut token_handle) };
-    if success == FALSE {
+    if unsafe { OpenProcessToken(process, TOKEN_QUERY, &mut token_handle) }.is_err() {
         return false;
     }
 
     let mut token_elevation = TOKEN_ELEVATION::default();
-    let mut size: DWORD = 0;
-    let success = unsafe {
+    let mut size: u32 = 0;
+    let result = unsafe {
         GetTokenInformation(
             token_handle,
             TokenElevation,
-            &mut token_elevation as *mut TOKEN_ELEVATION as LPVOID,
-            std::mem::size_of::<TOKEN_ELEVATION_TYPE>() as u32,
+            Some(&mut token_elevation as *mut TOKEN_ELEVATION as *mut std::ffi::c_void),
+            std::mem::size_of::<TOKEN_ELEVATION>() as u32,
             &mut size,
         )
     };
-    if success == FALSE {
+    if result.is_err() {
         return false;
     }
     token_elevation.TokenIsElevated != 0

@@ -26,7 +26,12 @@ xz2.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 win-envedit.workspace = true
-winapi = { version = "0.3.9", features = ["securitybaseapi", "processthreadsapi", "impl-default"] }
+windows = { workspace = true , features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+]}
 
 [target.'cfg(unix)'.dependencies]
 libc.workspace = true
