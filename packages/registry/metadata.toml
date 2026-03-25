@@ -111,7 +111,7 @@ VERSION = "3.4.0"
 SHA = "8ca33a60c791392d872b80d26c42f2bfa914a480f9eb2d7516d9f84373c36897"
 
 [terminal]
-'cfg(windows)'.CONFIG_VERSION = "8"
+'cfg(windows)'.CONFIG_VERSION = "9"
 clink.REPO = "https://github.com/chrisant996/clink"
 clink.VERSION = "1.9.17"
 clink.SHA = "0f2e7b407b9e33d487b8f348a72310631a26db84c80ad8d25e617f953d976fa8"
