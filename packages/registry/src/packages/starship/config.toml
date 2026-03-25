@@ -5,6 +5,18 @@ This is not the actual starship config.toml. These are toggles by shaft to gener
 the config file for starship.
 !!!
 """
+
+[[section]]
+key = []
+children = [{
+    comment = """
+Build from source instead of binary release on GitHub.
+Requires reinstallation; You can force by `cargo uninstall starship`
+""",
+    key = ["build-from-source"],
+    value = false,
+}]
+
 [[section]]
 key = ["git"]
 comment = "Show/hide git properties"

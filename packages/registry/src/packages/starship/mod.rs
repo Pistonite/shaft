@@ -15,7 +15,12 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
-    epkg::cargo::binstall("starship", ctx.bar_ref())?;
+    let config = ctx.load_config(CONFIG)?;
+    if config.build_from_source {
+        epkg::cargo::install("starship", ctx.bar_ref())?;
+    } else {
+        epkg::cargo::binstall("starship", ctx.bar_ref())?;
+    }
     Ok(())
 }
 
@@ -232,7 +237,6 @@ disabled = {}
         "iex (& starship init powershell --print-full-init | out-string)",
     ))?;
 
-    // todo - clink-cmd
     CFG_VERSION.update()?;
     Ok(())
 }
@@ -257,13 +261,14 @@ pub fn clean(ctx: &Context) -> cu::Result<()> {
 config_file! {
     static CONFIG: Config = {
         template: include_str!("config.toml"),
-        migration: [""],
+        migration: ["", ""],
     }
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "kebab-case")]
 struct Config {
+    pub build_from_source: bool,
     pub git: ConfigGit,
     pub toolchains: ConfigToolchains,
     #[serde(default)]
