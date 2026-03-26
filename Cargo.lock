@@ -2563,7 +2563,7 @@ dependencies = [
 
 [[package]]
 name = "shaft-cli"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "enum-map",
  "enumset",
