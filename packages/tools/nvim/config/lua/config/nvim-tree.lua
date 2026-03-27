@@ -9,7 +9,7 @@ local config_gen = require("piston.config_gen")
 require("nvim-tree").setup({
     on_attach = on_attach_nvim_tree,
     git = {
-        enable = config_gen.git
+        enable = config_gen.nvim_tree_git
     },
     renderer = {
         icons = {

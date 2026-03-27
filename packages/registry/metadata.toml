@@ -186,7 +186,7 @@ VERSION = "0.11.6"
 'cfg(target_os="linux")'.SHA.__match__ = "opfs::cpu_arch()"
 'cfg(target_os="linux")'.SHA.'opfs::CpuArch::Arm64' = "<unsupported>"
 'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "2fc90b962327f73a78afbfb8203fd19db8db9cdf4ee5e2bef84704339add89cc"
-NVIM_CFG = "8"
+NVIM_CFG = "9"
 
 [tree_sitter]
 VERSION = "0.26.7"
