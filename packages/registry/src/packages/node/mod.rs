@@ -18,7 +18,7 @@ pub fn download(ctx: &Context) -> cu::Result<()> {
     hmgr::download_file(
         volta_file_name(),
         volta_url()?,
-        metadata::volta::SHA,
+        metadata::volta::SHA(),
         ctx.bar(),
     )?;
     Ok(())
