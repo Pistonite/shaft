@@ -78,13 +78,13 @@ VERSION = "1.8.1"
 
 [task]
 REPO = "https://github.com/go-task/task"
-VERSION = "3.49.1"
+VERSION = "3.50.0"
 'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
-'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "bacbc74ee6a1402179b62966f3e3f5b9047b6a6c2688c4ad3c08946b5a4cf731"
-'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "725c551f699d4d6c0dc57bd8148f72bef8d5b2fb650d9c985f271a61522fd521"
+'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "e41ecc600429b9673ecdb45d35f04d96b4f148d83d3d1af496b8177f86ef8d83"
+'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "82c20fbd19ac62073b8ecf89e026fbd209f702a2922106e4ff2ed6934d193038"
 'cfg(target_os="linux")'.SHA.__match__ = "opfs::cpu_arch()"
 'cfg(target_os="linux")'.SHA.'opfs::CpuArch::Arm64' = "<unsupported>"
-'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "4e7d24f1bf38218aec8f244eb7ba671f898830f9f87b3c9b30ff1c09e3135576"
+'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "d449ba85ab85a0769989d78f8b9872938e4ba9347f7f4f925f73d98272a0a655"
 
 [bat]
 VERSION = "0.26.1"
@@ -113,9 +113,9 @@ SHA = "8ca33a60c791392d872b80d26c42f2bfa914a480f9eb2d7516d9f84373c36897"
 [terminal]
 'cfg(windows)'.CONFIG_VERSION = "9"
 clink.REPO = "https://github.com/chrisant996/clink"
-clink.VERSION = "1.9.17"
-clink.SHA = "0f2e7b407b9e33d487b8f348a72310631a26db84c80ad8d25e617f953d976fa8"
-clink.URL = "https://github.com/chrisant996/clink/releases/download/v1.9.17/clink.1.9.17.36e2ca.zip"
+clink.VERSION = "1.9.21"
+clink.SHA = "01def804a2c7cd94f0122e708cc1d484eb307075502efaeca167f5bcaf742ff0"
+clink.URL = "https://github.com/chrisant996/clink/releases/download/v1.9.21/clink.1.9.21.3cc8b4.zip"
 clink.WRAPPER_VERSION = "2"
 
 [volta]
