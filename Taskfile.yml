@@ -2,7 +2,7 @@ version: '3'
 
 includes:
   common:
-    taskfile: ./packages/mono-dev/task/common.yaml
+    taskfile: ./mono-dev/task/common.yaml
     flatten: true
     optional: true
 
@@ -14,8 +14,8 @@ includes:
 tasks:
   install:
     - rm -rf packages/mono-dev
-    - mkdir -p packages
-    - git clone https://github.com/Pistonight/mono-dev --depth 1 packages/mono-dev
+    - rm -rf mono-dev
+    - git clone https://github.com/Pistonight/mono-dev --depth 1 mono-dev
   install-cargo-extra-tools:
     alias: [icets]
     cmds:

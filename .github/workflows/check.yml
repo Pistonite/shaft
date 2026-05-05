@@ -17,7 +17,6 @@ jobs:
       - run: git config --global core.autocrlf false
       - uses: Pistonight/mono-dev/actions/setup@main
         with:
-          mono-dev: packages
           rust: stable
           tool-cargo-install: lfmt=Pistonite/shellutils
       - run: task run-build
