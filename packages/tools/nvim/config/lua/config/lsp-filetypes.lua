@@ -3,14 +3,15 @@ local SERVERS = {
     pyright = {},
     eslint = {},
     ts_ls = {},
+    tsgo = { config = true },
     rust_analyzer = {},
 }
 local FILE_TYPES = {
     lua = "lua_ls",
     python = "pyright",
-    typescript = { "eslint", "ts_ls" },
-    typescriptreact = { "eslint", "ts_ls" },
-    javascript = "ts_ls",
+    typescript = { "eslint", "tsgo" },
+    typescriptreact = { "eslint", "tsgo" },
+    javascript = "tsgo",
     rust = "rust_analyzer",
 }
 local warn = function(msg) vim.notify("lsp_filetypes: "..msg, vim.log.levels.INFO) end
