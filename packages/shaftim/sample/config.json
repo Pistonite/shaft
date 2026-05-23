@@ -1,0 +1,7 @@
+{
+    "lsa": { "target": "eza", "args": ["-a"] },
+    "lsl": { "target": "eza", "args": ["-l"] },
+    "foo": { "target": "bar" },
+    "gpg": { "target": "gpg" },
+    "gcc": { "target": "gcc", "paths": ["C:\\here", "D:\\wee", "E:\\go"] }
+}

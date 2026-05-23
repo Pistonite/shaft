@@ -1,68 +1,7 @@
-use std::collections::BTreeMap;
-#[cfg(feature = "build")]
 use std::path::Path;
 
 use cu::pre::*;
 
-pub type ShimConfig = BTreeMap<String, ShimCommand>;
-
-/// Command configuration
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct ShimCommand {
-    /// The target binary
-    target: String,
-    /// The extra arguments to pass to target binary (additional CLI args follow the last arg specified, no extra -- in
-    /// between)
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    args: Vec<String>,
-    /// Only effective on Windows. The command will be wrapped with bash.exe
-    #[serde(default)]
-    #[serde(skip_serializing_if = "bool_is_false")]
-    bash: bool,
-    /// Additional PATHs to prepend before executing. This is useful
-    /// to optimize hotspot executables where only the first invocation
-    /// would be through the shim, and subprocesses would invoke the real executable
-    /// directly.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    paths: Vec<String>,
-}
-
-fn bool_is_false(b: &bool) -> bool {
-    !b
-}
-
-impl ShimCommand {
-    /// Create a shim to the target executable, without any args
-    #[inline(always)]
-    pub fn target(target: impl Into<String>) -> Self {
-        Self {
-            target: target.into(),
-            args: Default::default(),
-            bash: false,
-            paths: Default::default(),
-        }
-    }
-    /// Set additional args
-    #[inline(always)]
-    pub fn args(mut self, args: impl IntoIterator<Item = impl Into<String>>) -> Self {
-        self.args = args.into_iter().map(|x| x.into()).collect();
-        self
-    }
-    /// Set the target to be wrapped with bash
-    #[inline(always)]
-    pub fn bash(mut self) -> Self {
-        self.bash = true;
-        self
-    }
-    /// Set additional PATH to prepend before executing
-    #[inline(always)]
-    pub fn paths(mut self, paths: impl IntoIterator<Item = impl Into<String>>) -> Self {
-        self.paths = paths.into_iter().map(|x| x.into()).collect();
-        self
-    }
-}
-
-#[cfg(feature = "build")]
 pub fn build(config_path: &Path) -> cu::Result<String> {
     println!("cargo::rerun-if-changed={}", config_path.as_utf8()?);
     match build_internal(config_path) {
@@ -75,9 +14,9 @@ pub fn build(config_path: &Path) -> cu::Result<String> {
         }
     }
 }
-#[cfg(feature = "build")]
+
 fn build_internal(config_path: &Path) -> cu::Result<pm::TokenStream2> {
-    let config = json::parse::<ShimConfig>(&cu::fs::read_string(config_path)?)?;
+    let config = json::parse::<crate::ShimConfig>(&cu::fs::read_string(config_path)?)?;
     if config.is_empty() {
         return Ok(pm::quote! { fn main() {} });
     }
@@ -89,7 +28,7 @@ fn build_internal(config_path: &Path) -> cu::Result<pm::TokenStream2> {
     let mut max_exe_bytes = 0;
 
     for (exe_name, command) in config {
-        let exe_name = fix_exe_name(&exe_name)?;
+        let exe_name = pre_fix_exe_name(&exe_name)?;
         max_exe_bytes = max_exe_bytes.max(exe_name.len());
         let pattern = pm::Literal2::byte_string(exe_name.as_bytes());
         match_patterns.push(pattern);
@@ -165,8 +104,7 @@ fn build_internal(config_path: &Path) -> cu::Result<pm::TokenStream2> {
     Ok(output)
 }
 
-#[cfg(feature = "build")]
-fn fix_exe_name(s: &str) -> cu::Result<String> {
+fn pre_fix_exe_name(s: &str) -> cu::Result<String> {
     // we want:
     // - no .cmd or .exe
     // - lowercase

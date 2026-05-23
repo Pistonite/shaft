@@ -6,6 +6,8 @@ members = [
     "packages/corelib",
     "packages/cli",
     "packages/registry",
+    "packages/shaftim",
+    "packages/shaftim-build",
 ]
 
 [workspace.dependencies.cu]

@@ -1,11 +1,34 @@
+use std::sync::LazyLock;
+
 use cu::pre::*;
 
-use crate::{bin_name, epkg, hmgr};
+use crate::{bin_name, epkg, hmgr, opfs};
 
 static SHAFT_REPO: &str = "https://github.com/Pistonite/shaft";
 
-/// Build shaft from source locally and update the current executable
-pub fn local_update() -> cu::Result<()> {
+/// Get the current commit of the local repo (if checked out)
+pub fn get_commit() -> cu::Result<Option<String>> {
+    let repo_path = hmgr::paths::repo();
+
+    if !repo_path.exists() {
+        return Ok(None);
+    }
+
+    let (child, output) = cu::which("git")?
+        .command()
+        .current_dir(&repo_path)
+        .args(["rev-parse", "HEAD"])
+        .stdout(cu::pio::string())
+        .stderr(cu::lv::P)
+        .stdin_null()
+        .spawn()?;
+    child.wait_nz()?;
+    let output = output.join()??;
+
+    Ok(Some(output.trim().to_string()))
+}
+
+static CHECKOUT: LazyLock<cu::Result<()>> = LazyLock::new(|| {
     let repo_path = hmgr::paths::repo();
 
     if !repo_path.exists() {
@@ -36,6 +59,42 @@ pub fn local_update() -> cu::Result<()> {
         .stderr(cu::lv::P)
         .stdin_null()
         .wait_nz()?;
+    cu::Ok(())
+});
+
+pub fn ensure_checkout() -> cu::Result<()> {
+    match &*CHECKOUT {
+        Err(e) => {
+            cu::error!("repo checkout error: {e:?}");
+            cu::bail!("failed to checkout shaft repo");
+        }
+        Ok(()) => {
+            let repo_path = hmgr::paths::repo();
+            if !repo_path.exists() {
+                cu::bail!("cannot find shaft repo, please try again");
+            }
+            Ok(())
+        }
+    }
+}
+
+/// Build shaft from source locally and update the current executable
+pub fn local_update() -> cu::Result<()> {
+    let repo_path = hmgr::paths::repo();
+    ensure_checkout()?;
+
+    match get_cli_version() {
+        Err(e) => {
+            cu::warn!("failed to get next CLI version! {e:?}");
+        }
+        Ok(None) => {
+            cu::warn!("failed to get next CLI version!");
+        }
+        Ok(Some(v)) => {
+            let current_version = opfs::cli_version();
+            cu::hint!("upgrading: {current_version} -> {v}");
+        }
+    }
 
     {
         let command = cu::which("cargo")?.command().current_dir(&repo_path).args([
@@ -118,10 +177,32 @@ pub fn local_update() -> cu::Result<()> {
         "failed to copy build output to bin"
     )?;
     cu::info!("copied build output to $SHAFT_HOME/bin");
-    if !is_current_exe_in_shaft {
-        cu::hint!("you should remove the existing installation (e.g cargo uninstall shaft-cli)");
-    } else {
-        cu::info!("update successful");
-    }
     Ok(())
+}
+
+/// Get the current version of the CLI as specified in the repo (not the version
+/// of the running binary)
+pub fn get_cli_version() -> cu::Result<Option<String>> {
+    let mut repo_path = hmgr::paths::repo();
+
+    if !repo_path.exists() {
+        return Ok(None);
+    }
+
+    #[derive(Deserialize)]
+    struct PartialManifest {
+        package: PartialManifestPackage,
+    }
+    #[derive(Deserialize)]
+    struct PartialManifestPackage {
+        version: String,
+    }
+
+    repo_path.extend(["packages", "cli", "Cargo.toml"]);
+    let manifest = cu::check!(
+        cu::fs::read_string(repo_path),
+        "failed to read CLI manifest"
+    )?;
+    let manifest = toml::parse::<PartialManifest>(&manifest)?;
+    Ok(Some(manifest.package.version))
 }

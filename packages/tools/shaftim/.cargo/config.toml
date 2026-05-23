@@ -1,2 +1,0 @@
-[env]
-SHAFT_SHIM_BUILD_CONFIG = "config.json" # default config, for testing

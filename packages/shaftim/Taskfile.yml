@@ -1,0 +1,122 @@
+version: '3'
+
+includes:
+  cargo:
+    taskfile: ../../mono-dev/task/cargo.yaml
+    internal: true
+    optional: true
+
+env:
+  SHAFT_SHIM_BUILD_CONFIG: sample/config.json
+
+tasks:
+  check:
+    - echo 'fn main() {}' > main.rs
+    - task: cargo:clippy-all
+    - task: cargo:rustfmt-check
+      vars:
+        PATH: src
+  fix:
+    - task: cargo:rustfmt-fix
+      vars:
+        PATH: src
+
+  test:
+    deps:
+      - test-non-windows
+      - test-windows
+
+  test-non-windows:
+    internal: true
+    platforms: [linux, darwin]
+    deps:
+      - link-non-windows
+    cmds:
+      - rm -rf output
+      - mkdir -p output
+      - cmd: target/lsa > output/lsa.out.txt 2> output/lsa.err.txt
+        ignore_error: true
+      - cmd: target/lsl > output/lsl.out.txt 2> output/lsl.err.txt
+        ignore_error: true
+      - cmd: target/foo > output/foo.out.txt 2> output/foo.err.txt
+        ignore_error: true
+      - cmd: target/bar > output/bar.out.txt 2> output/bar.err.txt
+        ignore_error: true
+
+  test-windows:
+    internal: true
+    platforms: [windows]
+    deps:
+      - link-windows
+    cmds:
+      - rm -rf output
+      - mkdir -p output
+      - cmd: target/lsa.exe > output/lsa.out.txt 2> output/lsa.err.txt
+        ignore_error: true
+      - cmd: target/lsl.exe > output/lsl.out.txt 2> output/lsl.err.txt
+        ignore_error: true
+      - cmd: target/foo.exe > output/foo.out.txt 2> output/foo.err.txt
+        ignore_error: true
+      - cmd: target/bar.exe > output/bar.out.txt 2> output/bar.err.txt
+        ignore_error: true
+
+  link:
+    deps:
+      - link-non-windows
+      - link-windows
+
+  link-non-windows:
+    platforms: [linux, darwin]
+    internal: true
+    deps: 
+      - build-non-windows
+    cmds:
+      - rm -rf target
+      - mkdir -p target
+      - ln ../../target/debug/shaftim target/lsa
+      - ln ../../target/debug/shaftim target/lsl
+      - ln ../../target/debug/shaftim target/foo
+      - ln ../../target/debug/shaftim target/bar
+
+  link-windows:
+    platforms: [windows]
+    internal: true
+    deps: 
+      - build-windows
+    cmds:
+      - rm -rf target
+      - mkdir -p target
+      - ln ../../target/debug/shaftim.exe target/lsa.exe
+      - ln ../../target/debug/shaftim.exe target/lsl.exe
+      - ln ../../target/debug/shaftim.exe target/foo.exe
+      - ln ../../target/debug/shaftim.exe target/bar.exe
+
+  build:
+    deps:
+      - build-non-windows
+      - build-windows
+
+  build-non-windows:
+    internal: true
+    platforms: [linux, darwin]
+    cmds:
+      - task: do-build
+        vars:
+          CONFIG: sample/config.json
+
+  build-windows:
+    internal: true
+    platforms: [windows]
+    cmds:
+      - task: do-build
+        vars:
+          CONFIG: sample/config_windows.json
+
+  do-build:
+    internal: true
+    env:
+      SHAFT_SHIM_BUILD_CONFIG: '{{.CONFIG}}'
+    cmds:
+      - echo 'fn main() {}' > main.rs
+      - cargo build
+
