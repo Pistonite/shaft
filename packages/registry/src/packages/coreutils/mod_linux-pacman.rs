@@ -12,8 +12,6 @@ register_binaries!(
     "gzip",
     "sed",
     "grep",
-    "zip",
-    "unzip",
     "tar",
     "pacman-update"
 );
@@ -30,10 +28,6 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     let v = check_pacman!("bash-completion");
     check_outdated!(&v, metadata[coreutils::bash_cmp]::VERSION);
 
-    let v = check_pacman!("zip");
-    check_outdated!(&v, metadata[coreutils::zip]::VERSION);
-    let v = check_pacman!("unzip");
-    check_outdated!(&v, metadata[coreutils::unzip]::VERSION);
     let v = check_pacman!("tar");
     check_outdated!(&v, metadata[coreutils::tar]::VERSION);
     let v = check_pacman!("which");

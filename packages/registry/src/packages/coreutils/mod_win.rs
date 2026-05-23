@@ -8,7 +8,7 @@ mod common;
 mod eza;
 
 register_binaries!(
-    "ls", "diff", "find", "gzip", "sed", "grep", "zip", "unzip", "tar"
+    "ls", "diff", "find", "gzip", "sed", "grep", "tar"
 );
 binary_dependencies!(Git, CargoBinstall);
 
@@ -27,8 +27,6 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_shaft!("gzip");
     check_in_shaft!("sed");
     check_in_shaft!("grep");
-    check_in_shaft!("zip");
-    check_in_shaft!("unzip");
     cu::check!(
         cu::which("tar"),
         "tar.exe is bundled in Windows; your Windows version might be too low"
