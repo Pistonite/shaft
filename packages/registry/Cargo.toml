@@ -10,6 +10,6 @@ cu = { workspace = true, features = ["print", "process", "toml"] }
 corelib = { package = "shaft-corelib", path = "../corelib" }
 enum-map.workspace = true
 enumset.workspace = true
-serde = "1"
-phf = { version = "0.13.1", features = ["macros"] }
+serde.workspace = true
+phf = { workspace = true, features = ["macros"] }
 shaftim-build = { path = "../tools/shaftim-build", default-features = false }

@@ -10,8 +10,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: ubuntu-latest
-          - image: windows-latest
+          - image: blacksmith-4vcpu-ubuntu-2404
+          - image: blacksmith-4vcpu-windows-2025
     runs-on: ${{ matrix.image }}
     steps:
       - run: git config --global core.autocrlf false

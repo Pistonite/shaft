@@ -44,3 +44,6 @@ tasks:
 
   run-build:
     - cargo run --bin shaft-build
+
+  upgrade:
+    - cargo upgrade

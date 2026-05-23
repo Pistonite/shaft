@@ -3,10 +3,6 @@ on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
-
 
 jobs:
   build-native:
@@ -14,9 +10,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: ubuntu-latest
+          - image: blacksmith-4vcpu-ubuntu-2404
             target: x64
-          - image: windows-latest
+          - image: blacksmith-4vcpu-windows-2025
             target: x64
           - image: windows-11-arm
             target: arm64

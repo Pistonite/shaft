@@ -20,6 +20,7 @@ type GitHubReleaseArgsArtifact = {
     artifacts: undefined;
 };
 type GitHubTagsResponse = { name: string }[];
+type GitHubReleasesListItem = { tag_name: string; published_at: string };
 type GitHubReleaseResponse = { tag_name: string; assets: { name: string }[] };
 type GitHubArtifactData = {
     name: string;
@@ -53,13 +54,26 @@ export const fetch_from_github_release = async ({
         }
         selected_tag = tag_picker(tags);
     } else {
-        // fetch latest release
-        const release_response = await fetch(`${GITHUB_API}repos/${repo_path}/releases/latest`);
-        if (!release_response.ok) {
-            throw new Error(`failed to fetch latest release for ${repo_path}: ${release_response.status}`);
+        // fetch the latest release that is at least 14 days old
+        const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+        let page = 1;
+        outer: while (true) {
+            const releases_response = await fetch(`${GITHUB_API}repos/${repo_path}/releases?per_page=30&page=${page}`);
+            if (!releases_response.ok) {
+                throw new Error(`failed to fetch releases for ${repo_path}: ${releases_response.status}`);
+            }
+            const releases_data = await releases_response.json() as GitHubReleasesListItem[];
+            if (releases_data.length === 0) {
+                throw new Error(`no release older than 14 days found for ${repo_path}`);
+            }
+            for (const release of releases_data) {
+                if (new Date(release.published_at) < cutoff) {
+                    selected_tag = release.tag_name;
+                    break outer;
+                }
+            }
+            page++;
         }
-        const release_data = await release_response.json() as GitHubReleaseResponse;
-        selected_tag = release_data.tag_name;
     }
     // select artifacts if any
     const artifact_names: string[] = [];
