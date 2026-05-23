@@ -19,7 +19,7 @@ jobs:
       - uses: Pistonight/mono-dev/actions/setup@main
         with:
           rust: stable
-          rust-native: ${{ matrix.target }}
+          tool-cargo-install: lfmt=Pistonite/shellutils
       - run: task run-build
       - run: cargo build --bin shaft
       - run: task check
