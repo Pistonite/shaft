@@ -39,7 +39,7 @@ tasks:
 
   lfmt-check:
     internal: true
-    platform: [linux]
+    platforms: [linux]
     cmds:
       - lfmt -c
     
