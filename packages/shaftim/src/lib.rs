@@ -1,7 +1,6 @@
 use std::ffi::{OsStr, OsString};
 use std::process::Command;
 
-
 /// Get the executable name as bytes
 #[inline(always)]
 pub fn fix_exe_name(s: &OsStr, out: &mut [u8]) -> usize {
@@ -20,7 +19,7 @@ pub fn fix_exe_name(s: &OsStr, out: &mut [u8]) -> usize {
     }
     let bytes = match bytes.iter().rposition(match_path_sep) {
         None => bytes,
-        Some(i) => &bytes[i+1..]
+        Some(i) => &bytes[i + 1..],
     };
     if bytes.is_empty() {
         return 0;
@@ -28,15 +27,13 @@ pub fn fix_exe_name(s: &OsStr, out: &mut [u8]) -> usize {
     if bytes[0] == b'.' {
         return 0;
     }
-    let bytes = match bytes.iter().rposition(|b|*b==b'.') {
+    let bytes = match bytes.iter().rposition(|b| *b == b'.') {
         None => bytes,
-        Some(i) => {
-            match &bytes[i+1..] {
-                [b'e'|b'E', b'x'|b'X', b'e'|b'E'] => &bytes[..i],
-                [b'c'|b'C', b'm'|b'M', b'd'|b'D'] => &bytes[..i],
-                _ => bytes
-            }
-        }
+        Some(i) => match &bytes[i + 1..] {
+            [b'e' | b'E', b'x' | b'X', b'e' | b'E'] => &bytes[..i],
+            [b'c' | b'C', b'm' | b'M', b'd' | b'D'] => &bytes[..i],
+            _ => bytes,
+        },
     };
     let len = bytes.len().min(out.len());
     for (src, dst) in std::iter::zip(bytes, out) {
@@ -67,7 +64,11 @@ pub fn set_path(cmd: &mut Command, paths_to_prepend: &str) {
 }
 
 #[cfg(windows)]
-pub fn exec_bash_replace(cfg_args: &[&str], cli_args: std::env::ArgsOs, paths_to_prepend: Option<&str>) -> std::process::ExitCode {
+pub fn exec_bash_replace(
+    cfg_args: &[&str],
+    cli_args: std::env::ArgsOs,
+    paths_to_prepend: Option<&str>,
+) -> std::process::ExitCode {
     // the library we use only supports utf8
     let mut cli_args_utf8 = Vec::with_capacity(cli_args.len());
     for a in cli_args {

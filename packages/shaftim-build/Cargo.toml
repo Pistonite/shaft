@@ -6,13 +6,10 @@ edition = "2024"
 publish = false
 
 [dependencies]
-serde = "1"
+serde.workspace = true
 cu = { workspace = true, features = [ "json"] }
 pm = { workspace = true, optional = true }
 
 [features]
 default = ["build"]
 build = ["dep:pm", "pm/full", "cu/fs"]
-
-[lib]
-path = "lib.rs"

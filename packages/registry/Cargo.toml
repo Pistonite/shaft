@@ -12,4 +12,4 @@ enum-map.workspace = true
 enumset.workspace = true
 serde.workspace = true
 phf = { workspace = true, features = ["macros"] }
-shaftim-build = { path = "../tools/shaftim-build", default-features = false }
+shaftim-build = { path = "../shaftim-build", default-features = false }

@@ -2571,7 +2571,7 @@ dependencies = [
 
 [[package]]
 name = "shaft-cli"
-version = "0.3.10"
+version = "0.3.11"
 dependencies = [
  "enum-map",
  "enumset",
@@ -2620,6 +2620,17 @@ dependencies = [
  "serde",
  "shaft-corelib",
  "shaftim-build",
+]
+
+[[package]]
+name = "shaftim"
+version = "0.0.0"
+dependencies = [
+ "libc",
+ "pistonite-cu",
+ "shaftim-build",
+ "shell-words",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

@@ -10,12 +10,15 @@ includes:
   cli:            { taskfile: ./packages/cli,             dir: ./packages/cli,            internal: true }
   corelib:        { taskfile: ./packages/corelib,         dir: ./packages/corelib,        internal: true }
   registry:       { taskfile: ./packages/registry,        dir: ./packages/registry,       internal: true }
+  shaftim:        { taskfile: ./packages/shaftim,         dir: ./packages/shaftim,        internal: true }
+  shaftim-build:  { taskfile: ./packages/shaftim-build,   dir: ./packages/shaftim-build,  internal: true }
 
 tasks:
   install:
     - rm -rf packages/mono-dev
     - rm -rf mono-dev
     - git clone https://github.com/Pistonight/mono-dev --depth 1 mono-dev
+    - echo 'fn main() {}' > packages/shaftim/main.rs
   install-cargo-extra-tools:
     alias: [icets]
     cmds:
@@ -24,19 +27,25 @@ tasks:
     - task: corelib:check
     - task: registry:check
     - task: cli:check
-    - lfmt -c
+    - task: shaftim-build:check
+    - task: shaftim:check
+    - task: lfmt-check
   fix:
     - task: registry:fix
     - cargo fmt
-    - lfmt
   test:
     - task: corelib:test
     - task: registry:test
+
+  lfmt-check:
+    internal: true
+    platforms: [linux]
+    cmds:
+      - lfmt -c
     
   clean:
     - task: registry:clean
     - cargo clean
-    - cd packages/tools && cargo clean
 
   shaft:
     - task: run-build

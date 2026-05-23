@@ -65,6 +65,17 @@ impl CliApi {
         )?;
 
         if run_version {
+            match hmgr::repo::get_commit() {
+                Err(e) => {
+                    cu::warn!("failed to get shaft local repo: {e:?}");
+                }
+                Ok(None) => {
+                    cu::debug!("local: not cloned");
+                }
+                Ok(Some(commit)) => {
+                    cu::debug!("local: {commit}");
+                }
+            }
             cu::info!("self-check OK");
             return Ok(());
         }
