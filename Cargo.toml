@@ -10,7 +10,7 @@ members = [
 
 [workspace.dependencies.cu]
 package = "pistonite-cu"
-version = "0.8.0"
+version = "0.8.2"
 # path = "../cu/packages/copper"
 
 [workspace.dependencies.pm]
@@ -31,14 +31,16 @@ branch = "main"
 
 [workspace.dependencies]
 enum-map = "2.7.3"
-enumset = "1.1.10"
+enumset = "1.1.13"
 itertools = "0.14.0"
 flate2 = "1.1.9"
-tar = "0.4.44"
-libc = "0.2.183"
+tar = "0.4.46"
+libc = "0.2.186"
 shell-words = "1.1.1"
 ignore = "0.4.25"
 zip = "7.4.0"
 xz2 = "0.1.7"
 sha2 = "0.10.9"
 windows = "0.62.2"
+phf = "0.13.1"
+serde = "1"

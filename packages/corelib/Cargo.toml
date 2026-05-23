@@ -10,10 +10,10 @@ cu = { workspace = true, features = [
 ] }
 shaftim-build = { path = "../tools/shaftim-build", default-features = false }
 enumset.workspace = true
-boa_engine = "0.21.0"
+boa_engine = "0.21.1"
 fs2 = "0.4.3"
 fxhash = "0.2.1"
-reqwest = { version = "0.13.2", features = ["blocking", "gzip"] }
+reqwest = { version = "0.13.3", features = ["blocking", "gzip"] }
 serde = "1"
 sha2.workspace = true
 shell-words.workspace = true
