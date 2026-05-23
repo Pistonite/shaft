@@ -1,10 +1,7 @@
 //! Zip and Unzip commands
 use crate::pre::*;
 
-register_binaries!(
-    "zip",
-    "unzip"
-);
+register_binaries!("zip", "unzip");
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     let v = check_pacman!("zip");

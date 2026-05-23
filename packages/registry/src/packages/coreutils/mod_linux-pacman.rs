@@ -93,8 +93,6 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     epkg::pacman::install("base", ctx.bar_ref())?;
     epkg::pacman::install("bash-completion", ctx.bar_ref())?;
     epkg::pacman::install("which", ctx.bar_ref())?;
-    epkg::pacman::install("zip", ctx.bar_ref())?;
-    epkg::pacman::install("unzip", ctx.bar_ref())?;
     Ok(())
 }
 
