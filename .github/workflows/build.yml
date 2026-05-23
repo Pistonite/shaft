@@ -5,8 +5,16 @@ on:
       - main
 
 jobs:
-  build-linux:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+  build-native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: blacksmith-4vcpu-ubuntu-2404
+          - image: blacksmith-4vcpu-windows-2025
+          # - image: windows-11-arm
+          #   target: arm64
+    runs-on: ${{ matrix.image }}
     steps:
       - uses: Pistonight/mono-dev/actions/setup@main
         with:
@@ -16,14 +24,6 @@ jobs:
       - run: cargo build --bin shaft
       - run: task check
       - run: task test
-  build-windows-x64:
-    runs-on: blacksmith-4vcpu-windows-2025
-    steps:
-      - uses: Pistonight/mono-dev/actions/setup@main
-        with:
-          rust: stable
-      - run: task run-build
-      - run: cargo build --bin shaft
   build-windows-arm-x64:
     runs-on: windows-11-arm
     steps:

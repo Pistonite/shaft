@@ -29,14 +29,19 @@ tasks:
     - task: cli:check
     - task: shaftim-build:check
     - task: shaftim:check
-    - lfmt -c
+    - task: lfmt-check
   fix:
     - task: registry:fix
     - cargo fmt
-    - lfmt
   test:
     - task: corelib:test
     - task: registry:test
+
+  lfmt-check:
+    internal: true
+    platform: [linux]
+    cmds:
+      - lfmt -c
     
   clean:
     - task: registry:clean
