@@ -7,9 +7,7 @@ use crate::pre::*;
 mod common;
 mod eza;
 
-register_binaries!(
-    "ls", "diff", "find", "gzip", "sed", "grep", "zip", "unzip", "tar"
-);
+register_binaries!("ls", "diff", "find", "gzip", "sed", "grep", "tar");
 binary_dependencies!(Git, CargoBinstall);
 
 static PS_ALIASES: &[&str] = &[
@@ -27,8 +25,6 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_shaft!("gzip");
     check_in_shaft!("sed");
     check_in_shaft!("grep");
-    check_in_shaft!("zip");
-    check_in_shaft!("unzip");
     cu::check!(
         cu::which("tar"),
         "tar.exe is bundled in Windows; your Windows version might be too low"
@@ -138,7 +134,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         bin_name!("grep"),
         ShimCommand::target(exe_path.into_utf8()?).args(["--color=auto"]),
     ))?;
-    const MINGW_UTILS: &[&str] = &["diff", "diff3", "cmp", "find", "gzip", "sed", "unzip"];
+    const MINGW_UTILS: &[&str] = &["diff", "diff3", "cmp", "find", "gzip", "sed"];
     for util in MINGW_UTILS {
         if config.windows.exclude_coreutils.contains(*util) {
             continue;
@@ -156,17 +152,6 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         )))?;
         ctx.add_item(Item::cmd(format!("doskey find=\"{findutil_path}\" $*")))?;
     }
-
-    // unpack zip for windows. note that GnuWin for unzip is outdated, so we are using
-    // the one from Git
-    let mut zip_path = hmgr::paths::tools_root();
-    zip_path.extend(["__windows__", "zip", "zip.exe"]);
-    hmgr::tools::ensure_unpacked()?;
-    // using shim bin because of dll deps
-    ctx.add_item(Item::shim_bin(
-        bin_name!("zip"),
-        ShimCommand::target(zip_path.into_utf8()?),
-    ))?;
 
     common::ALIAS_VERSION.update()?;
 

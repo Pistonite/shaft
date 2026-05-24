@@ -21,7 +21,7 @@ SHA.'opfs::CpuArch::X64' = "481ce45bd9ebfab9a5b254a35f145fb6259bd452ae67d92ab1d2
 VERSION = "1.17.7"
 
 [coreutils]
-ALIAS_VERSION = "12"
+ALIAS_VERSION = "13"
 eza.VERSION = "0.23.4"
 uutils.VERSION = "0.6.0"
 zip.VERSION = "3.0"
