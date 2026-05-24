@@ -7,7 +7,7 @@ register_binaries!(
     "perl", "gpg", "curl", "wget",
     "fzf", "jq", "task", "x",
     "bat", "dust", "fd", "rg", "websocat", "zoxide", "c", "ci",
-    "viopen", "vihosts", "n",
+    "viopen", "vihosts", "n", "lfmt"
     "vipath",
     "wsclip"
 );
@@ -67,8 +67,8 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_outdated!(&v.version, metadata[shellutils::wsclip]::VERSION);
     let v = check_cargo!("vipath");
     check_outdated!(&v.version, metadata[shellutils::vipath]::VERSION);
-    let v = check_cargo!("lfmt");
-    check_outdated!(&v.version, metadata[shellutils::lfmt]::VERSION);
+
+    check_verified!(lfmt::verify()?);
 
     check_config_version_cache!(common::ALIAS_VERSION);
     Ok(Verified::UpToDate)
@@ -136,12 +136,8 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
         metadata::shellutils::COMMIT,
         ctx.bar_ref(),
     )?;
-    epkg::cargo::install_git_commit(
-        "lfmt",
-        metadata::shellutils::REPO,
-        metadata::shellutils::COMMIT,
-        ctx.bar_ref(),
-    )?;
+
+    lfmt::install(ctx)?;
     Ok(())
 }
 
@@ -155,7 +151,7 @@ pub fn uninstall(_: &Context) -> cu::Result<()> {
     epkg::cargo::uninstall("n")?;
     epkg::cargo::uninstall("wsclip")?;
     epkg::cargo::uninstall("vipath")?;
-    epkg::cargo::uninstall("lfmt")?;
+    lfmt::uninstall(ctx)?;
     Ok(())
 }
 

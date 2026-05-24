@@ -19,6 +19,7 @@ jobs:
       - uses: Pistonight/mono-dev/actions/setup@main
         with:
           rust: stable
+          ecma-node: true
       - run: task run-build
       - run: cargo build --bin shaft
       - run: task check
