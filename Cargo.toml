@@ -8,6 +8,7 @@ members = [
     "packages/registry",
     "packages/shaftim",
     "packages/shaftim-build",
+    "packages/shutil-lfmt",
 ]
 
 [workspace.dependencies.cu]
