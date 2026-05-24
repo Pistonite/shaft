@@ -5,10 +5,13 @@ local SERVERS = {
     ts_ls = {},
     tsgo = { config = true },
     rust_analyzer = {},
+    clangd = {},
 }
 local FILE_TYPES = {
     lua = "lua_ls",
     python = "pyright",
+    c = "clangd",
+    cpp = "clangd",
     typescript = { "eslint", "tsgo" },
     typescriptreact = { "eslint", "tsgo" },
     javascript = "tsgo",
