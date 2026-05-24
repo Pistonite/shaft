@@ -16,6 +16,7 @@ struct Args {
 
 #[cu::cli]
 fn main(args: Args) -> cu::Result<()> {
+    cu::lv::disable_print_time();
     if args.clean {
         util::set_clean();
     }

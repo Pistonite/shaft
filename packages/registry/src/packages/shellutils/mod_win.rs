@@ -69,7 +69,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     let v = check_cargo!("lfmt");
     check_outdated!(&v.version, metadata[shellutils::lfmt]::VERSION);
 
-    check_version_cache!(common::ALIAS_VERSION);
+    check_config_version_cache!(common::ALIAS_VERSION);
     Ok(Verified::UpToDate)
 }
 pub fn download(ctx: &Context) -> cu::Result<()> {

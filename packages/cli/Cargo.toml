@@ -1,6 +1,6 @@
 [package]
 name = "shaft-cli"
-version = "0.3.12"
+version = "0.3.13"
 edition = "2024"
 publish = false
 repository = "https://github.com/Pistonite/shaft"
@@ -16,7 +16,7 @@ cu = { workspace = true, features = [
 ] }
 corelib = { package = "shaft-corelib", path = "../corelib" }
 registry = { package = "shaft-registry", path = "../registry" }
-serde = "1"
+serde.workspace = true
 enumset.workspace = true
 enum-map.workspace = true
 viopen.workspace = true

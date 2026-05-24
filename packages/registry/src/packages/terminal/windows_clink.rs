@@ -10,7 +10,8 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
     }
     let clink_bat = clink_bat.into_utf8()?;
     let v = command_output!("cmd", ["/c", &clink_bat, "--version"]);
-    check_outdated!(&v, metadata[terminal::clink]::VERSION);
+    let v = v.trim();
+    check_outdated!(v, metadata[terminal::clink]::VERSION);
 
     check_version_cache!(WRAPPER_VERSION);
     Ok(Verified::UpToDate)
@@ -28,18 +29,24 @@ pub fn download(ctx: &Context) -> cu::Result<()> {
 pub fn install(ctx: &Context) -> cu::Result<()> {
     let clink_zip = hmgr::paths::download("clink.zip", metadata::terminal::clink::URL);
     opfs::unarchive(clink_zip, clink_dir(ctx), true)?;
+    cu::check!(build_clink_cmd(ctx), "failed to build clink-cmd")?;
     Ok(())
 }
 
-pub fn configure(ctx: &Context) -> cu::Result<()> {
-    let arch = detect_architecture()?;
-    hmgr::tools::ensure_unpacked()?;
+fn build_clink_cmd(ctx: &Context) -> cu::Result<()> {
+    hmgr::repo::ensure_checkout()?;
     let clink_cmd_build_dir = {
-        let mut p = hmgr::paths::tools_root();
-        p.extend(["__windows__", "clink-cmd"]);
+        let mut p = hmgr::paths::repo();
+        p.extend([
+            "packages",
+            "registry",
+            "src",
+            "packages",
+            "terminal",
+            "clink-cmd",
+        ]);
         p
     };
-
     let mut cmd = cu::which("cmd.exe")?.into_utf8()?;
     cmd.make_ascii_lowercase();
     let real_cmd = {
@@ -51,6 +58,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         cu::bail!("not compiling clink-cmd because cmd.exe location seems suspicous: {cmd}");
     }
 
+    let arch = detect_architecture()?;
     let clink_exe = clink_dir(ctx)
         .join(format!("clink_{arch}.exe"))
         .into_utf8()?;
@@ -88,6 +96,12 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     };
     let clink_cmd_exe_target = ctx.install_dir().join("clink-cmd.exe");
     cu::fs::copy(clink_cmd_exe, &clink_cmd_exe_target)?;
+
+    Ok(())
+}
+
+pub fn configure(ctx: &Context) -> cu::Result<()> {
+    let clink_cmd_exe_target = ctx.install_dir().join("clink-cmd.exe");
     ctx.add_item(Item::link_bin(
         hmgr::paths::binary("clink-cmd.exe").into_utf8()?,
         clink_cmd_exe_target.into_utf8()?,

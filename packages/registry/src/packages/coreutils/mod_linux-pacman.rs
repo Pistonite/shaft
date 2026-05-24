@@ -36,7 +36,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     let v = check_pacman!("yay-bin");
     check_outdated!(&v, metadata[coreutils::yay]::VERSION);
 
-    check_version_cache!(common::ALIAS_VERSION);
+    check_config_version_cache!(common::ALIAS_VERSION);
     Ok(Verified::UpToDate)
 }
 

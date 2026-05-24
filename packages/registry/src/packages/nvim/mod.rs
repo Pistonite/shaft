@@ -25,7 +25,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
         return Ok(Verified::NotUpToDate);
     };
     check_outdated!(version, metadata[nvim]::VERSION);
-    check_version_cache!(CFG);
+    check_config_version_cache!(CFG);
     Ok(Verified::UpToDate)
 }
 

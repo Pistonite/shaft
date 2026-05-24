@@ -10,7 +10,7 @@ config_dependencies!(Terminal); // for clink
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     let v = check_cargo!("starship");
     check_outdated!(&v.version, metadata[starship]::VERSION);
-    check_version_cache!(CFG_VERSION);
+    check_config_version_cache!(CFG_VERSION);
     Ok(Verified::UpToDate)
 }
 
