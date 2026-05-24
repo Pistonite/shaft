@@ -16,8 +16,8 @@ binary_dependencies!(Scalar, _7z, CargoBinstall);
 
 mod common;
 mod lfmt;
-mod wget;
 mod viopen;
+mod wget;
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_shaft!("perl");
