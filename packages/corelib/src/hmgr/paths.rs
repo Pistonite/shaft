@@ -89,6 +89,7 @@ home! {
     temp_dir:                 temp_root / path,
     tools_root:            "tools",
     repo:                  "repo",
+    repo_registry_packages:   repo / "packages/registry/src/packages",
     dot_lock:              ".lock",
     environment_json:      "environment.json",
     install_cache_json:    "install_cache.json",

@@ -106,10 +106,10 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
 
     // copy config files
 
-    hmgr::tools::ensure_unpacked()?;
+    hmgr::repo::ensure_checkout()?;
     let config = ctx.load_config(CONFIG)?;
     let bundled_config_dir = {
-        let mut p = hmgr::paths::tools_root();
+        let mut p = hmgr::paths::repo_registry_packages();
         p.extend(["nvim", "config"]);
         p
     };

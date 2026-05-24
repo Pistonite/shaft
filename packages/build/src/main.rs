@@ -1,4 +1,3 @@
-mod build_corelib;
 mod build_registry;
 mod util;
 
@@ -20,7 +19,6 @@ fn main(args: Args) -> cu::Result<()> {
     if args.clean {
         util::set_clean();
     }
-    build_corelib::build_tools()?;
     build_registry::metadata::build_metadata()?;
     build_registry::packages::build_packages()?;
     Ok(())

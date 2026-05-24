@@ -15,8 +15,8 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     // copy zip for windows from registry
     hmgr::repo::ensure_checkout()?;
 
-    let mut zip_path = hmgr::paths::repo();
-    zip_path.extend(["packages", "registry", "src", "packages", "zip", "zip-win"]);
+    let mut zip_path = hmgr::paths::repo_registry_packages();
+    zip_path.extend(["zip", "zip-win"]);
     let install_path = ctx.install_dir();
     cu::check!(
         cu::fs::rec_copy_inefficiently(&zip_path, &install_path),

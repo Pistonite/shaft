@@ -21,15 +21,31 @@ tasks:
 
   check:
     - task: cargo:clippy-all
-    - task: check-rustfmt
+    - task: cargo:rustfmt-check
+      vars:
+        PATH: src/packages
     - task: cargo:fmt-check
 
-  check-rustfmt:
-    - rustfmt --check -l $(find src/packages -name '*.rs') --edition 2024
-
   fix:
-    - rustfmt $(find src/packages -name '*.rs') --edition 2024
+    - task: cargo:rustfmt-fix
+      vars:
+        PATH: src/packages
     - task: cargo:fmt-fix
 
   test:
     - cargo test
+
+  copy-nvim:
+    desc: Copy config directory from this machine (~/.config/nvim) to shaft. Only works on Unix
+    vars:
+      TARGET: src/packages/nvim/config
+    cmds:
+      - rm -rf {{.TARGET}}
+      - cp -R ~/.config/nvim {{.TARGET}}
+      - rm -rf {{.TARGET}}/.git
+      - rm -rf {{.TARGET}}/claudecode.nvim
+      - rm -rf {{.TARGET}}/lua/piston/cache
+      - rm -f {{.TARGET}}/.gitignore
+      - rm -f {{.TARGET}}/lazy-lock.json
+      - rm -f {{.TARGET}}/lua/piston/config_gen.lua
+      - CURRENT=$(grep -oP 'NVIM_CFG = "\K[0-9]+' metadata.toml) && sed -i "s/NVIM_CFG = \"$CURRENT\"/NVIM_CFG = \"$((CURRENT+1))\"/" metadata.toml
