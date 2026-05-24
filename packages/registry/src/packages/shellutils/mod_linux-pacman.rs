@@ -7,11 +7,12 @@ register_binaries!(
     "perl", "gpg", "curl", "wget",
     "fzf", "jq", "task", "x",
     "bat", "dust", "fd", "rg", "websocat", "zoxide", "c", "ci",
-    "viopen", "vibash", "vihosts", "n"
+    "viopen", "vibash", "vihosts", "n", "lfmt"
 );
 binary_dependencies!(CargoBinstall);
 
 mod common;
+mod lfmt;
 mod perl;
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
@@ -52,8 +53,8 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_outdated!(&v.version, metadata[shellutils::viopen]::VERSION);
     let v = check_cargo!("n");
     check_outdated!(&v.version, metadata[shellutils::n]::VERSION);
-    let v = check_cargo!("lfmt");
-    check_outdated!(&v.version, metadata[shellutils::lfmt]::VERSION);
+
+    check_verified!(lfmt::verify()?);
 
     check_config_version_cache!(common::ALIAS_VERSION);
     Ok(Verified::UpToDate)
@@ -96,12 +97,7 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
         metadata::shellutils::COMMIT,
         ctx.bar_ref(),
     )?;
-    epkg::cargo::install_git_commit(
-        "lfmt",
-        metadata::shellutils::REPO,
-        metadata::shellutils::COMMIT,
-        ctx.bar_ref(),
-    )?;
+    lfmt::install(ctx)?;
     Ok(())
 }
 
@@ -118,7 +114,7 @@ pub fn uninstall(ctx: &Context) -> cu::Result<()> {
     epkg::cargo::uninstall("zoxide")?;
     epkg::cargo::uninstall("viopen")?;
     epkg::cargo::uninstall("n")?;
-    epkg::cargo::uninstall("lfmt")?;
+    lfmt::uninstall(ctx)?;
     Ok(())
 }
 

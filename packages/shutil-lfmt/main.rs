@@ -80,10 +80,9 @@ async fn main(args: Cli) -> cu::Result<()> {
     let quieter_check = args.quieter_check;
 
     #[cfg(windows)]
-    let autocrlf = 
-    if args.no_autocrlf {
+    let autocrlf = if args.no_autocrlf {
         cu::co::spawn(async move { false })
-} else {
+    } else {
         cu::co::spawn(async move { get_autocrlf().await.unwrap_or(false) })
     };
 
@@ -119,7 +118,7 @@ async fn main(args: Cli) -> cu::Result<()> {
         let mut end = end;
         let autocrlf = autocrlf.co_join().await.unwrap_or(false);
         if autocrlf {
-            if end.is_none()  {
+            if end.is_none() {
                 if check {
                     cu::warn!("lfmt: skipped check because core.autocrlf is true");
                     return Ok(());
@@ -304,11 +303,13 @@ async fn process_file_internal(path: &Path, end: LineEnd, check: bool) -> cu::Re
 #[cfg(windows)]
 async fn get_autocrlf() -> cu::Result<bool> {
     let git = cu::which("git")?;
-    let (child, output) = 
-    git.command().args(["config", "core.autocrlf"])
+    let (child, output) = git
+        .command()
+        .args(["config", "core.autocrlf"])
         .stdout(cu::pio::string())
         .stdie_null()
-        .co_spawn().await?;
+        .co_spawn()
+        .await?;
     child.co_wait_nz().await?;
     let mut output = output.co_join().await??;
     output.make_ascii_lowercase();

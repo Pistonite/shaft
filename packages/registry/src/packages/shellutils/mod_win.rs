@@ -15,6 +15,7 @@ register_binaries!(
 binary_dependencies!(Scalar, _7z, CargoBinstall);
 
 mod common;
+mod lfmt;
 mod wget;
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {

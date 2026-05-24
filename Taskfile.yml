@@ -12,6 +12,7 @@ includes:
   registry:       { taskfile: ./packages/registry,        dir: ./packages/registry,       internal: true }
   shaftim:        { taskfile: ./packages/shaftim,         dir: ./packages/shaftim,        internal: true }
   shaftim-build:  { taskfile: ./packages/shaftim-build,   dir: ./packages/shaftim-build,  internal: true }
+  shutil-lfmt:    { taskfile: ./packages/shutil-lfmt,     dir: ./packages/shutil-lfmt,    internal: true }
 
 tasks:
   install:
@@ -29,20 +30,16 @@ tasks:
     - task: cli:check
     - task: shaftim-build:check
     - task: shaftim:check
-    - task: lfmt-check
+    - task: shutil-lfmt:check
+    - cargo run --bin lfmt -- -c
   fix:
     - task: registry:fix
     - cargo fmt
+    - cargo run --bin lfmt
   test:
     - task: corelib:test
     - task: registry:test
 
-  lfmt-check:
-    internal: true
-    platforms: [linux]
-    cmds:
-      - lfmt -c
-    
   clean:
     - task: registry:clean
     - cargo clean
