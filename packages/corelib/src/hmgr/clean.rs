@@ -17,13 +17,6 @@ pub fn clean_home() {
         bar.done();
     }
     {
-        let bar = bar.child("cleaning tools dir").keep(true).spawn();
-        if let Err(e) = cu::fs::rec_remove(hmgr::paths::tools_root()) {
-            cu::warn!("failed to remove tools dir: {e:?}");
-        }
-        bar.done();
-    }
-    {
         let bar = bar.child("cleaning temp dir").keep(true).spawn();
         if let Err(e) = cu::fs::rec_remove(hmgr::paths::temp_root()) {
             cu::warn!("failed to remove temp dir: {e:?}");

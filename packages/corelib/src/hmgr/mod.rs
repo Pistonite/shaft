@@ -12,7 +12,6 @@ mod download;
 pub use download::*;
 pub mod config;
 pub mod repo;
-pub mod tools;
 
 mod item;
 pub use item::{Item, ItemMgr};
