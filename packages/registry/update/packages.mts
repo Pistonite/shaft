@@ -80,8 +80,8 @@ export const pkg_shellutils: PackageFn = async (meta) => {
             repo, ref: commit, path: "packages/which/Cargo.toml",
             query: (v) => ({ "which.VERSION": v })
         }),
-        fetch_from_cargo_toml({
-            repo, ref: commit, path: "packages/viopen/Cargo.toml",
+        fetch_from_local_cargo_toml({
+            path: "../shutil-viopen/Cargo.toml",
             query: (v) => ({ "viopen.VERSION": v })
         }),
         fetch_from_cargo_toml({
