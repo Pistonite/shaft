@@ -7,7 +7,7 @@ register_binaries!(
     "perl", "gpg", "curl", "wget",
     "fzf", "jq", "task", "x",
     "bat", "dust", "fd", "rg", "websocat", "zoxide", "c", "ci",
-    "viopen", "vihosts", "n", "lfmt"
+    "viopen", "vihosts", "n", "lfmt",
     "vipath",
     "wsclip"
 );
