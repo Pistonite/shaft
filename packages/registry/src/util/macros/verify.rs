@@ -148,11 +148,7 @@ macro_rules! check_version_cache {
                 return Ok(Verified::NotInstalled);
             }
             Some(false) => {
-                cu::error!(
-                    "verify: {} is bumped: {}",
-                    cache.id(),
-                    cache.version()
-                );
+                cu::error!("verify: {} is bumped: {}", cache.id(), cache.version());
                 return Ok(Verified::NotUpToDate);
             }
             _ => {}

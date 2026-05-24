@@ -37,7 +37,14 @@ fn build_clink_cmd(ctx: &Context) -> cu::Result<()> {
     hmgr::repo::ensure_checkout()?;
     let clink_cmd_build_dir = {
         let mut p = hmgr::paths::repo();
-        p.extend(["packages", "registry", "src", "packages", "terminal", "clink-cmd"]);
+        p.extend([
+            "packages",
+            "registry",
+            "src",
+            "packages",
+            "terminal",
+            "clink-cmd",
+        ]);
         p
     };
     let mut cmd = cu::which("cmd.exe")?.into_utf8()?;
