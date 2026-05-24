@@ -94,62 +94,7 @@ fn build_clink_cmd(ctx: &Context) -> cu::Result<()> {
 }
 
 pub fn configure(ctx: &Context) -> cu::Result<()> {
-    let arch = detect_architecture()?;
-    hmgr::tools::ensure_unpacked()?;
-    let clink_cmd_build_dir = {
-        let mut p = hmgr::paths::tools_root();
-        p.extend(["__windows__", "clink-cmd"]);
-        p
-    };
-
-    let mut cmd = cu::which("cmd.exe")?.into_utf8()?;
-    cmd.make_ascii_lowercase();
-    let real_cmd = {
-        let mut system_root = cu::env_var("SystemRoot")?;
-        system_root.make_ascii_lowercase();
-        format!("{system_root}\\system32\\cmd.exe")
-    };
-    if cmd != real_cmd {
-        cu::bail!("not compiling clink-cmd because cmd.exe location seems suspicous: {cmd}");
-    }
-
-    let clink_exe = clink_dir(ctx)
-        .join(format!("clink_{arch}.exe"))
-        .into_utf8()?;
-    let init_cmd = hmgr::paths::init_cmd().into_utf8()?;
-
-    let clink_cmd_exe = {
-        let (child, bar, _) = cu::which("powershell")?
-            .command()
-            .envs([
-                ("CLINK_CMD_COMPILE_ARCH", arch),
-                ("CLINK_CMD_COMPILE_CMD_EXECUTABLE", &cmd),
-                ("CLINK_CMD_COMPILE_CLINK_EXECUTABLE", &clink_exe),
-                ("CLINK_CMD_COMPILE_INIT_CMD", &init_cmd),
-                ("CLINK_CMD_COMPILE_PRINT_INSTEAD", "0"),
-            ])
-            .args(["-NoLogo", "-c", "./build.ps1"])
-            .current_dir(&clink_cmd_build_dir)
-            .stdoe(
-                cu::pio::spinner("compiling clink-cmd")
-                    .info()
-                    .configure_spinner(|x| x.keep(true).parent(ctx.bar())),
-            )
-            .stdin_null()
-            .spawn()?;
-        child.wait_nz()?;
-        let output = clink_cmd_build_dir.join("clink-cmd.exe");
-        if !output.exists() {
-            cu::bail!(
-                "failed to build clink-cmd.exe: did not find output at '{}'",
-                output.display()
-            );
-        }
-        bar.done();
-        output
-    };
     let clink_cmd_exe_target = ctx.install_dir().join("clink-cmd.exe");
-    cu::fs::copy(clink_cmd_exe, &clink_cmd_exe_target)?;
     ctx.add_item(Item::link_bin(
         hmgr::paths::binary("clink-cmd.exe").into_utf8()?,
         clink_cmd_exe_target.into_utf8()?,
