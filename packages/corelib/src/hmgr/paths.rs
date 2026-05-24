@@ -87,7 +87,6 @@ home! {
     download_root:         "download",
     temp_root:             "temp",
     temp_dir:                 temp_root / path,
-    tools_root:            "tools",
     repo:                  "repo",
     repo_registry_packages:   repo / "packages/registry/src/packages",
     dot_lock:              ".lock",
