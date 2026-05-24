@@ -41,7 +41,7 @@ viopen.VERSION = "0.2.0"
 vipath.VERSION = "0.1.7"
 n.VERSION = "0.1.1"
 wsclip.VERSION = "0.1.7"
-lfmt.VERSION = "0.1.5"
+lfmt.VERSION = "0.2.0"
 
 [git]
 'cfg(windows)'.ALIAS_VERSION = "1"
