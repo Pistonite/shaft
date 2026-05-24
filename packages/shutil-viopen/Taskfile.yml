@@ -1,0 +1,20 @@
+version: '3'
+
+includes:
+  cargo:
+    taskfile: ../../mono-dev/task/cargo.yaml
+    internal: true
+    optional: true
+
+tasks:
+  check:
+    - task: cargo:clippy-package-feature
+      vars: { PACKAGE: shutil-viopen, FEATURES: default }
+    - task: cargo:clippy-package-feature
+      vars: { PACKAGE: shutil-viopen, FEATURES: print }
+    - task: cargo:clippy-package-feature
+      vars: { PACKAGE: shutil-viopen, FEATURES: coroutine }
+    - task: cargo:clippy-all
+    - task: cargo:fmt-check
+  fix:
+    - task: cargo:fmt-fix

@@ -28,7 +28,7 @@ after editing the config, please run `shaft sync`
         cu::bail!("please print the config location and manually edit it");
     }
     let content = cu::fs::read_string(&config_location).ok();
-    viopen::open(&config_location)?;
+    shutil_viopen::open(&config_location)?;
     let content_after = cu::fs::read_string(&config_location).ok();
     if content.is_some() && content == content_after {
         cu::info!("no change");
