@@ -1,0 +1,23 @@
+[package]
+name = "shutil-viopen"
+description = "Open editor and wait for finish"
+license = "MIT"
+version = "0.2.1"
+edition = "2024"
+publish = false
+
+[dependencies]
+cu = { workspace = true, features = [ "process" ] }
+shell-words.workspace = true
+
+[lib]
+path = "lib.rs"
+
+[[bin]]
+name = "viopen"
+path = "main.rs"
+
+[features]
+default = []
+print = ["cu/print"]
+coroutine = ["cu/coroutine"]

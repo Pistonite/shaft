@@ -19,7 +19,7 @@ registry = { package = "shaft-registry", path = "../registry" }
 serde.workspace = true
 enumset.workspace = true
 enum-map.workspace = true
-viopen.workspace = true
+shutil-viopen.path = "../shutil-viopen"
 itertools.workspace = true
 
 [target.'cfg(windows)'.dependencies]

@@ -22,6 +22,7 @@ jobs:
           ecma-node: true
       - run: task run-build
       - run: cargo build --bin shaft
+      - run: task build-shutil
       - run: task check
       - run: task test
   build-windows-arm-x64:
