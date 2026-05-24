@@ -141,7 +141,7 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     Ok(())
 }
 
-pub fn uninstall(_: &Context) -> cu::Result<()> {
+pub fn uninstall(ctx: &Context) -> cu::Result<()> {
     epkg::cargo::uninstall("bat")?;
     epkg::cargo::uninstall("du-dust")?;
     epkg::cargo::uninstall("fd-find")?;
