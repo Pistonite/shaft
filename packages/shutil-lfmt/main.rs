@@ -82,9 +82,9 @@ async fn main(args: Cli) -> cu::Result<()> {
     #[cfg(windows)]
     let autocrlf = 
     if args.no_autocrlf {
-    cu::co::spawn(async move { get_autocrlf().await.unwrap_or(false) })
+        cu::co::spawn(async move { false })
 } else {
-    cu::co::spawn(async move { false })
+        cu::co::spawn(async move { get_autocrlf().await.unwrap_or(false) })
     };
 
     let mut paths_iter = args.paths.into_iter();
@@ -121,7 +121,7 @@ async fn main(args: Cli) -> cu::Result<()> {
         if autocrlf {
             if end.is_none()  {
                 if check {
-                    cu::warn!("lfmt: skipped check because core.autocrlf is true and --end is LF");
+                    cu::warn!("lfmt: skipped check because core.autocrlf is true");
                     return Ok(());
                 } else {
                     cu::debug!("lfmt: using CRLF because core.autocrlf is true");
