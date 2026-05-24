@@ -14,7 +14,7 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
     check_in_path!("wt");
     check_verified!(windows_font::verify()?);
     check_verified!(windows_clink::verify(ctx)?);
-    check_version_cache!(CFG_VERSION);
+    check_config_version_cache!(CFG_VERSION);
 
     Ok(Verified::UpToDate)
 }

@@ -9,7 +9,7 @@ binary_dependencies!(Git);
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     let v = check_cargo!("delta" in crate "git-delta");
     check_outdated!(&v.version, metadata[git::delta]::VERSION);
-    check_version_cache!(VERSION);
+    check_config_version_cache!(VERSION);
     Ok(Verified::UpToDate)
 }
 pub fn install(ctx: &Context) -> cu::Result<()> {

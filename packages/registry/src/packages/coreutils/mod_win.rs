@@ -33,7 +33,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_outdated!(&v.version, metadata[shellutils::which]::VERSION);
     let v = check_cargo!("coreutils");
     check_outdated!(&v.version, metadata[coreutils::uutils]::VERSION);
-    check_version_cache!(common::ALIAS_VERSION);
+    check_config_version_cache!(common::ALIAS_VERSION);
     Ok(Verified::UpToDate)
 }
 

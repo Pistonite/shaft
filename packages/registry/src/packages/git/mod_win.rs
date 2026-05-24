@@ -18,7 +18,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     }
     check_in_path!("scalar");
     check_verified!(version::verify()?);
-    check_version_cache!(ALIAS_VERSION);
+    check_config_version_cache!(ALIAS_VERSION);
     check_verified!(verify_config! {
         check_in_path!("bash");
         Ok(Verified::UpToDate)

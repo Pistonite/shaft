@@ -27,46 +27,6 @@ fn make_tools_targz() -> cu::Result<Vec<u8>> {
     };
 
     let tools_path = util::tools_dir()?;
-    let repo_root = util::repo_root_dir()?;
-    let workspace_cargo_toml = repo_root.join("Cargo.toml");
-    let workspace_cargo_toml =
-        cu::toml::parse::<cu::toml::Table>(&cu::fs::read_string(&workspace_cargo_toml)?)?;
-
-    // Create a Cargo.toml for tools that inherit dependencies versions
-    // from shaft itself
-    let tools_cargo_content = {
-        let mut out = r#"
-[workspace]
-resolver = "2"
-members = [
-    "shaftim",
-    "shaftim-build",
-]
-"#
-        .to_string();
-        let mut new_table = cu::toml::Table::new();
-        if let Some(workspace) = workspace_cargo_toml.get("workspace") {
-            if let Some(deps) = workspace.get("dependencies") {
-                let mut ws = cu::toml::Table::new();
-                ws.insert("dependencies".to_string(), deps.clone());
-                new_table.insert("workspace".to_string(), cu::toml::Value::Table(ws));
-            }
-        }
-        out.push_str(&cu::toml::stringify_pretty(&new_table)?);
-        out
-    };
-    cu::fs::write(tools_path.join("Cargo.toml"), &tools_cargo_content)?;
-
-    // cargo.toml is gitignored so we need to add it specifically
-    {
-        let bytes = tools_cargo_content.as_bytes();
-        let mut header = tar::Header::new_gnu();
-        header.set_path("Cargo.toml")?;
-        header.set_size(bytes.len() as u64);
-        header.set_mode(0o644);
-        header.set_cksum();
-        tar_builder.append(&header, bytes)?;
-    }
 
     let mut builder = WalkBuilder::new(&tools_path);
     builder.filter_entry(|entry| {

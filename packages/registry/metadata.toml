@@ -111,12 +111,12 @@ VERSION = "3.4.0"
 SHA = "8ca33a60c791392d872b80d26c42f2bfa914a480f9eb2d7516d9f84373c36897"
 
 [terminal]
-'cfg(windows)'.CONFIG_VERSION = "9"
+'cfg(windows)'.CONFIG_VERSION = "10"
 clink.REPO = "https://github.com/chrisant996/clink"
 clink.VERSION = "1.9.21"
 clink.SHA = "01def804a2c7cd94f0122e708cc1d484eb307075502efaeca167f5bcaf742ff0"
 clink.URL = "https://github.com/chrisant996/clink/releases/download/v1.9.21/clink.1.9.21.3cc8b4.zip"
-clink.WRAPPER_VERSION = "2"
+clink.WRAPPER_VERSION = "3"
 
 [volta]
 REPO = "https://github.com/volta-cli/volta"

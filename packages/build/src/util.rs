@@ -9,10 +9,6 @@ pub fn set_clean() {
     CLEAN.store(true, std::sync::atomic::Ordering::Release);
 }
 
-pub fn repo_root_dir() -> cu::Result<PathBuf> {
-    packages_dir()?.parent_abs()
-}
-
 pub fn tools_dir() -> cu::Result<PathBuf> {
     Ok(packages_dir()?.join("tools"))
 }

@@ -3,7 +3,7 @@ use crate::pre::*;
 version_cache!(static VERSION = metadata::hack_font::VERSION);
 
 pub fn verify() -> cu::Result<Verified> {
-    check_version_cache!(VERSION);
+    check_config_version_cache!(VERSION);
     Ok(Verified::UpToDate)
 }
 

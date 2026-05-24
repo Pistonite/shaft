@@ -148,6 +148,28 @@ macro_rules! check_version_cache {
             }
             Some(false) => {
                 cu::error!(
+                    "verify: {} is bumped: {}",
+                    cache.id(),
+                    cache.version()
+                );
+                return Ok(Verified::NotUpToDate);
+            }
+            _ => {}
+        }
+    }};
+}
+pub(crate) use check_version_cache;
+
+macro_rules! check_config_version_cache {
+    ($cache:expr) => {{
+        let cache = $cache;
+        match cache.is_uptodate()? {
+            None => {
+                cu::error!("verify: new config: {} = {}", cache.id(), cache.version());
+                return Ok(Verified::NotInstalled);
+            }
+            Some(false) => {
+                cu::error!(
                     "verify: config {} is bumped: {}",
                     cache.id(),
                     cache.version()
@@ -158,7 +180,7 @@ macro_rules! check_version_cache {
         }
     }};
 }
-pub(crate) use check_version_cache;
+pub(crate) use check_config_version_cache;
 
 /// Create a scope where any verification failure (NotUpToDate or NotInstalled) will be turned into NeedsConfig
 #[allow(unused)]

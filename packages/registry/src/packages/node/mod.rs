@@ -10,7 +10,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_shaft!("node");
     check_in_shaft!("pnpm");
     check_in_shaft!("yarn");
-    check_version_cache!(ALIAS_VERSION);
+    check_config_version_cache!(ALIAS_VERSION);
     Ok(Verified::UpToDate)
 }
 
