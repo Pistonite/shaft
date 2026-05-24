@@ -1,0 +1,16 @@
+[package]
+name = "shutil-lfmt"
+description = "format line endings"
+license = "MIT"
+version = "0.2.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+cu = { workspace = true, features = ["cli", "process", "coroutine-heavy"] }
+ignore.workspace = true
+tokio.workspace = true
+
+[[bin]]
+name = "lfmt"
+path = "main.rs"

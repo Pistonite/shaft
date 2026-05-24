@@ -3,7 +3,7 @@ import type { MetafilePkg, MetaKeyValues } from "./metafile.mts"
 import { fetch_from_github_release } from "./fetch/github_release.mts";
 import { fetch_from_cratesio } from "./fetch/cratesio.mts";
 import { fetch_from_arch_linux, fetch_from_aur } from "./fetch/arch_linux.mts";
-import { fetch_from_cargo_toml } from "./fetch/github_cargo_toml.mts";
+import { fetch_from_cargo_toml, fetch_from_local_cargo_toml } from "./fetch/cargo_toml.mts";
 import { fetch_latest_commit } from "./fetch/latest_commit.mts";
 import { fetch_release_name } from "./fetch/release_description.mts";
 import { strip_v } from "./util.mts";
@@ -96,8 +96,8 @@ export const pkg_shellutils: PackageFn = async (meta) => {
             repo, ref: commit, path: "packages/wsclip/Cargo.toml",
             query: (v) => ({ "wsclip.VERSION": v })
         }),
-        fetch_from_cargo_toml({
-            repo, ref: commit, path: "packages/lfmt/Cargo.toml",
+        fetch_from_local_cargo_toml({
+            path: "../shutil-lfmt/Cargo.toml",
             query: (v) => ({ "lfmt.VERSION": v })
         }),
     ];

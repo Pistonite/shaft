@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::path::Path;
 use std::sync::Arc;
 
 use cu::pre::*;
@@ -124,6 +125,35 @@ pub fn install(package: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<
     child.wait_nz()?;
     bar.done();
     cu::info!("installed '{package}' with cargo");
+    state.installed_packages.clear();
+    Ok(())
+}
+
+/// Install a package locally using `cargo install`
+#[cu::context("failed to install '{bin}' with cargo")]
+pub fn install_local(path: &Path, bin: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
+    let mut state = cargo::instance()?;
+    let command = cu::which("cargo")?
+        .command()
+        .current_dir(hmgr::paths::home())
+        .args([
+            "install",
+            "--path",
+            path.as_utf8()?,
+            "--bin",
+            bin,
+            "--locked",
+        ]);
+    let command = add_platform_build_args(command);
+    let (child, bar) = command
+        .preset(
+            cu::pio::cargo(format!("cargo install '{bin}'"))
+                .configure_spinner(|builder| builder.keep(true).parent(bar.cloned())),
+        )
+        .spawn()?;
+    child.wait_nz()?;
+    bar.done();
+    cu::info!("installed '{bin}' with cargo");
     state.installed_packages.clear();
     Ok(())
 }

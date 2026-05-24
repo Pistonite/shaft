@@ -5,6 +5,10 @@ includes:
     taskfile: ../../mono-dev/task/cargo.yaml
     internal: true
     optional: true
+  git:
+    taskfile: ../../mono-dev/task/git.yaml
+    internal: true
+    optional: true
 
 tasks:
   install:
@@ -25,6 +29,7 @@ tasks:
       vars:
         PATH: src/packages
     - task: cargo:fmt-check
+    - task: check-shutil-meta
 
   fix:
     - task: cargo:rustfmt-fix
@@ -34,6 +39,13 @@ tasks:
 
   test:
     - cargo test
+
+  check-shutil-meta:
+    - node --experimental-strip-types update/main.mts shellutils
+    - task: git:check-modification
+      vars:
+        CHECK_PATH: metadata.toml
+        CHECK_MESSAGE: shellutils metadata is not up-to-date
 
   copy-nvim:
     desc: Copy config directory from this machine (~/.config/nvim) to shaft. Only works on Unix

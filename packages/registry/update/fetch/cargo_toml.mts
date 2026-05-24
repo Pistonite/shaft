@@ -1,3 +1,5 @@
+import fs from "node:fs/promises";
+
 import type { MetaKeyValues } from "../metafile.mts";
 import { from_toml_string, parse_github_repo } from "../util.mts";
 
@@ -5,6 +7,10 @@ import { from_toml_string, parse_github_repo } from "../util.mts";
 export type GitHubCargoTomlArgs = {
     repo: string;
     ref: string;
+    path: string;
+    query?: (version: string) => Promise<MetaKeyValues> | MetaKeyValues;
+};
+export type LocalCargoTomlArgs = {
     path: string;
     query?: (version: string) => Promise<MetaKeyValues> | MetaKeyValues;
 };
@@ -21,6 +27,19 @@ export const fetch_from_cargo_toml = async ({ repo, ref, path, query }: GitHubCa
         throw new Error(`failed to fetch ${raw_url}: ${response.status}`);
     }
     const content = await response.text();
+
+    // parse package.version from Cargo.toml
+    const version = parse_cargo_version(content);
+    console.log(`-- -- parsed version from ${path}: ${version}`);
+
+    return await query(version);
+};
+
+export const fetch_from_local_cargo_toml = async ({ path, query }: LocalCargoTomlArgs): Promise<MetaKeyValues> => {
+    query = query || ((VERSION) => ({ VERSION }));
+    console.log(`-- fetching Cargo.toml from local: ${path}`);
+
+    const content = await fs.readFile(path, "utf-8");
 
     // parse package.version from Cargo.toml
     const version = parse_cargo_version(content);
