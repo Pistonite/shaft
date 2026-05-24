@@ -138,6 +138,7 @@ macro_rules! check_verified {
 pub(crate) use check_verified;
 
 /// Check status if a version cache
+#[allow(unused)]
 macro_rules! check_version_cache {
     ($cache:expr) => {{
         let cache = $cache;
@@ -158,6 +159,7 @@ macro_rules! check_version_cache {
         }
     }};
 }
+#[allow(unused)]
 pub(crate) use check_version_cache;
 
 macro_rules! check_config_version_cache {
