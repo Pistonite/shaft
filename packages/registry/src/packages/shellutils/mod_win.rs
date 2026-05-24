@@ -17,6 +17,7 @@ binary_dependencies!(Scalar, _7z, CargoBinstall);
 mod common;
 mod lfmt;
 mod wget;
+mod viopen;
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_shaft!("perl");
@@ -59,8 +60,6 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_outdated!(&v.version, metadata[websocat]::VERSION);
     let v = check_cargo!("zoxide");
     check_outdated!(&v.version, metadata[zoxide]::VERSION);
-    let v = check_cargo!("viopen");
-    check_outdated!(&v.version, metadata[shellutils::viopen]::VERSION);
     let v = check_cargo!("n");
     check_outdated!(&v.version, metadata[shellutils::n]::VERSION);
     let v = check_cargo!("wsclip");
@@ -68,6 +67,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     let v = check_cargo!("vipath");
     check_outdated!(&v.version, metadata[shellutils::vipath]::VERSION);
 
+    check_verified!(viopen::verify()?);
     check_verified!(lfmt::verify()?);
 
     check_config_version_cache!(common::ALIAS_VERSION);
@@ -113,12 +113,6 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     epkg::cargo::install("websocat", ctx.bar_ref())?;
     epkg::cargo::install("zoxide", ctx.bar_ref())?;
     epkg::cargo::install_git_commit(
-        "viopen",
-        metadata::shellutils::REPO,
-        metadata::shellutils::COMMIT,
-        ctx.bar_ref(),
-    )?;
-    epkg::cargo::install_git_commit(
         "n",
         metadata::shellutils::REPO,
         metadata::shellutils::COMMIT,
@@ -137,6 +131,7 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
         ctx.bar_ref(),
     )?;
 
+    viopen::install(ctx)?;
     lfmt::install(ctx)?;
     Ok(())
 }
@@ -147,10 +142,10 @@ pub fn uninstall(ctx: &Context) -> cu::Result<()> {
     epkg::cargo::uninstall("fd-find")?;
     epkg::cargo::uninstall("websocat")?;
     epkg::cargo::uninstall("zoxide")?;
-    epkg::cargo::uninstall("viopen")?;
     epkg::cargo::uninstall("n")?;
     epkg::cargo::uninstall("wsclip")?;
     epkg::cargo::uninstall("vipath")?;
+    viopen::uninstall(ctx)?;
     lfmt::uninstall(ctx)?;
     Ok(())
 }

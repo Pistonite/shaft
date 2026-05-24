@@ -14,6 +14,7 @@ binary_dependencies!(CargoBinstall);
 mod common;
 mod lfmt;
 mod perl;
+mod viopen;
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_pacman!("perl");
@@ -49,11 +50,10 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_outdated!(&v.version, metadata[websocat]::VERSION);
     let v = check_cargo!("zoxide");
     check_outdated!(&v.version, metadata[zoxide]::VERSION);
-    let v = check_cargo!("viopen");
-    check_outdated!(&v.version, metadata[shellutils::viopen]::VERSION);
     let v = check_cargo!("n");
     check_outdated!(&v.version, metadata[shellutils::n]::VERSION);
 
+    check_verified!(viopen::verify()?);
     check_verified!(lfmt::verify()?);
 
     check_config_version_cache!(common::ALIAS_VERSION);
@@ -86,17 +86,12 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     epkg::cargo::install("websocat", ctx.bar_ref())?;
     epkg::cargo::install("zoxide", ctx.bar_ref())?;
     epkg::cargo::install_git_commit(
-        "viopen",
-        metadata::shellutils::REPO,
-        metadata::shellutils::COMMIT,
-        ctx.bar_ref(),
-    )?;
-    epkg::cargo::install_git_commit(
         "n",
         metadata::shellutils::REPO,
         metadata::shellutils::COMMIT,
         ctx.bar_ref(),
     )?;
+    viopen::install(ctx)?;
     lfmt::install(ctx)?;
     Ok(())
 }
@@ -112,8 +107,8 @@ pub fn uninstall(ctx: &Context) -> cu::Result<()> {
     epkg::cargo::uninstall("fd-find")?;
     epkg::cargo::uninstall("websocat")?;
     epkg::cargo::uninstall("zoxide")?;
-    epkg::cargo::uninstall("viopen")?;
     epkg::cargo::uninstall("n")?;
+    viopen::uninstall(ctx)?;
     lfmt::uninstall(ctx)?;
     Ok(())
 }

@@ -8,12 +8,12 @@ includes:
 
 tasks:
   check:
-    - task: cargo:clippy-feature
-      vars: { FEATURES: default }
-    - task: cargo:clippy-feature
-      vars: { FEATURES: print }
-    - task: cargo:clippy-feature
-      vars: { FEATURES: coroutine }
+    - task: cargo:clippy-package-feature
+      vars: { PACKAGE: shutil-viopen, FEATURES: default }
+    - task: cargo:clippy-package-feature
+      vars: { PACKAGE: shutil-viopen, FEATURES: print }
+    - task: cargo:clippy-package-feature
+      vars: { PACKAGE: shutil-viopen, FEATURES: coroutine }
     - task: cargo:clippy-all
     - task: cargo:fmt-check
   fix:
