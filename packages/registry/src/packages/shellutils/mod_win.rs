@@ -16,6 +16,7 @@ binary_dependencies!(Scalar, _7z, CargoBinstall);
 
 mod common;
 mod lfmt;
+mod n;
 mod viopen;
 mod wget;
 
