@@ -11,6 +11,8 @@ members = [
     "packages/shutil-lfmt",
     "packages/shutil-n",
     "packages/shutil-viopen",
+    "packages/shutil-vipath",
+    "packages/win-envedit",
 ]
 
 [workspace.dependencies.cu]
@@ -23,11 +25,6 @@ package = "pistonite-pm"
 version = "0.2.6"
 default-features = false
 # path = "../cu/packages/promethium"
-
-[workspace.dependencies.win-envedit]
-version = "0.1.6"
-git = "https://github.com/Pistonite/shellutils"
-branch = "main"
 
 [workspace.dependencies]
 enum-map = "2.7.3"
