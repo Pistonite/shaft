@@ -13,6 +13,7 @@ binary_dependencies!(CargoBinstall);
 
 mod common;
 mod lfmt;
+mod n;
 mod perl;
 mod viopen;
 
@@ -50,9 +51,8 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_outdated!(&v.version, metadata[websocat]::VERSION);
     let v = check_cargo!("zoxide");
     check_outdated!(&v.version, metadata[zoxide]::VERSION);
-    let v = check_cargo!("n");
-    check_outdated!(&v.version, metadata[shellutils::n]::VERSION);
 
+    check_verified!(n::verify()?);
     check_verified!(viopen::verify()?);
     check_verified!(lfmt::verify()?);
 
@@ -85,12 +85,8 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     epkg::cargo::binstall("ripgrep", ctx.bar_ref())?;
     epkg::cargo::install("websocat", ctx.bar_ref())?;
     epkg::cargo::install("zoxide", ctx.bar_ref())?;
-    epkg::cargo::install_git_commit(
-        "n",
-        metadata::shellutils::REPO,
-        metadata::shellutils::COMMIT,
-        ctx.bar_ref(),
-    )?;
+
+    n::install(ctx)?;
     viopen::install(ctx)?;
     lfmt::install(ctx)?;
     Ok(())
@@ -107,7 +103,8 @@ pub fn uninstall(ctx: &Context) -> cu::Result<()> {
     epkg::cargo::uninstall("fd-find")?;
     epkg::cargo::uninstall("websocat")?;
     epkg::cargo::uninstall("zoxide")?;
-    epkg::cargo::uninstall("n")?;
+
+    n::uninstall(ctx)?;
     viopen::uninstall(ctx)?;
     lfmt::uninstall(ctx)?;
     Ok(())

@@ -39,7 +39,7 @@ COMMIT = "11ced9625f35ba68c4eb3197490d48ef284efb2d"
 which.VERSION = "0.1.4"
 viopen.VERSION = "0.2.1"
 vipath.VERSION = "0.1.7"
-n.VERSION = "0.1.1"
+n.VERSION = "0.1.2"
 wsclip.VERSION = "0.1.7"
 lfmt.VERSION = "0.2.0"
 
