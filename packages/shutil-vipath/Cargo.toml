@@ -1,0 +1,16 @@
+[package]
+name = "shutil-vipath"
+description = "Simple tool for editing PATH environment on Windows in a text file"
+license = "MIT"
+version = "0.1.8"
+edition = "2024"
+publish = false
+
+[target.'cfg(windows)'.dependencies]
+cu = { workspace = true, features = ["cli"] }
+win-envedit.path = "../win-envedit"
+shutil-viopen.path = "../shutil-viopen"
+
+[[bin]]
+name = "vipath"
+path = "main.rs"

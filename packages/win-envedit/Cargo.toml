@@ -1,0 +1,14 @@
+[package]
+name = "win-envedit"
+description = "Simple wrapper for editing Windows environment variables"
+license = "MIT"
+version = "0.1.6"
+edition = "2024"
+publish = false
+
+[target.'cfg(windows)'.dependencies]
+cu.workspace = true
+winreg.workspace = true
+
+[lib]
+path = "lib.rs"

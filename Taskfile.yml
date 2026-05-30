@@ -15,6 +15,8 @@ includes:
   shutil-lfmt:    { taskfile: ./packages/shutil-lfmt,     dir: ./packages/shutil-lfmt,    internal: true }
   shutil-n:       { taskfile: ./packages/shutil-n,        dir: ./packages/shutil-n,       internal: true }
   shutil-viopen:  { taskfile: ./packages/shutil-viopen,   dir: ./packages/shutil-viopen,  internal: true }
+  shutil-vipath:  { taskfile: ./packages/shutil-vipath,   dir: ./packages/shutil-vipath,  internal: true }
+  win-envedit:    { taskfile: ./packages/win-envedit,     dir: ./packages/win-envedit,    internal: true }
 
 tasks:
   install:
@@ -35,6 +37,7 @@ tasks:
     - task: shutil-lfmt:check
     - task: shutil-n:check
     - task: shutil-viopen:check
+    - task: shutil-vipath:check
     - cargo run --bin lfmt -- -c
   fix:
     - task: registry:fix
@@ -58,6 +61,8 @@ tasks:
   build-shutil:
     - cargo build --bin lfmt
     - cargo build --bin viopen
+    - cargo build --bin n
+    - cargo build --bin vipath 
 
   upgrade:
     - cargo upgrade

@@ -25,7 +25,7 @@ zip.workspace = true
 xz2.workspace = true
 
 [target.'cfg(windows)'.dependencies]
-win-envedit.workspace = true
+win-envedit.path = "../win-envedit"
 windows = { workspace = true , features = [
     "Win32_Foundation",
     "Win32_Security",
