@@ -6,6 +6,7 @@ use crate::pre::*;
 
 mod common;
 mod eza;
+mod which;
 
 register_binaries!("ls", "diff", "find", "gzip", "sed", "grep", "tar");
 binary_dependencies!(Git, CargoBinstall);
@@ -29,10 +30,11 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
         cu::which("tar"),
         "tar.exe is bundled in Windows; your Windows version might be too low"
     )?;
-    let v = check_cargo!("which");
-    check_outdated!(&v.version, metadata[shellutils::which]::VERSION);
     let v = check_cargo!("coreutils");
     check_outdated!(&v.version, metadata[coreutils::uutils]::VERSION);
+
+    check_verified!(which::verify()?);
+
     check_config_version_cache!(common::ALIAS_VERSION);
     Ok(Verified::UpToDate)
 }
@@ -40,12 +42,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 pub fn install(ctx: &Context) -> cu::Result<()> {
     eza::install(ctx)?;
     epkg::cargo::binstall("coreutils", ctx.bar_ref())?;
-    epkg::cargo::install_git_commit(
-        "which",
-        metadata::shellutils::REPO,
-        metadata::shellutils::COMMIT,
-        ctx.bar_ref(),
-    )?;
+    which::install(ctx)?;
     Ok(())
 }
 
@@ -54,7 +51,7 @@ pub fn uninstall(_: &Context) -> cu::Result<()> {
     let coreutils_path = hmgr::paths::binary(bin_name!("coreutils"));
     cu::fs::remove(&coreutils_path)?;
     epkg::cargo::uninstall("coreutils")?;
-    epkg::cargo::uninstall("which")?;
+    which::uninstall(ctx)?;
     Ok(())
 }
 

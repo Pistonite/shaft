@@ -1,0 +1,15 @@
+[package]
+name = "shutil-which"
+description = "Crossplatform which"
+license = "MIT"
+version = "0.1.5"
+edition = "2024"
+publish = false
+
+[dependencies]
+clap = { workspace = true, features = ["derive"] }
+which.workspace = true
+
+[[bin]]
+path = "main.rs"
+name = "which"
