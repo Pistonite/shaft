@@ -2579,7 +2579,7 @@ dependencies = [
 
 [[package]]
 name = "shaft-cli"
-version = "0.3.16"
+version = "0.3.17"
 dependencies = [
  "enum-map",
  "enumset",
@@ -2670,6 +2670,10 @@ dependencies = [
  "pistonite-cu",
  "tokio",
 ]
+
+[[package]]
+name = "shutil-n"
+version = "0.1.2"
 
 [[package]]
 name = "shutil-viopen"

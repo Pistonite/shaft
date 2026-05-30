@@ -13,6 +13,7 @@ includes:
   shaftim:        { taskfile: ./packages/shaftim,         dir: ./packages/shaftim,        internal: true }
   shaftim-build:  { taskfile: ./packages/shaftim-build,   dir: ./packages/shaftim-build,  internal: true }
   shutil-lfmt:    { taskfile: ./packages/shutil-lfmt,     dir: ./packages/shutil-lfmt,    internal: true }
+  shutil-n:       { taskfile: ./packages/shutil-n,        dir: ./packages/shutil-n,       internal: true }
   shutil-viopen:  { taskfile: ./packages/shutil-viopen,   dir: ./packages/shutil-viopen,  internal: true }
 
 tasks:
@@ -32,6 +33,7 @@ tasks:
     - task: shaftim-build:check
     - task: shaftim:check
     - task: shutil-lfmt:check
+    - task: shutil-n:check
     - task: shutil-viopen:check
     - cargo run --bin lfmt -- -c
   fix:

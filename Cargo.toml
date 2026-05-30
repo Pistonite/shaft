@@ -9,6 +9,7 @@ members = [
     "packages/shaftim",
     "packages/shaftim-build",
     "packages/shutil-lfmt",
+    "packages/shutil-n",
     "packages/shutil-viopen",
 ]
 
