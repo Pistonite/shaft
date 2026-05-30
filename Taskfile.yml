@@ -38,6 +38,7 @@ tasks:
     - task: shutil-n:check
     - task: shutil-viopen:check
     - task: shutil-vipath:check
+    - task: win-envedit:check
     - cargo run --bin lfmt -- -c
   fix:
     - task: registry:fix
