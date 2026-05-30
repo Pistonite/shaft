@@ -46,7 +46,7 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     Ok(())
 }
 
-pub fn uninstall(_: &Context) -> cu::Result<()> {
+pub fn uninstall(ctx: &Context) -> cu::Result<()> {
     eza::uninstall()?;
     let coreutils_path = hmgr::paths::binary(bin_name!("coreutils"));
     cu::fs::remove(&coreutils_path)?;
