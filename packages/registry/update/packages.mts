@@ -76,8 +76,8 @@ export const pkg_shellutils: PackageFn = async (meta) => {
     const commit = await fetch_latest_commit(repo);
     return [
         Promise.resolve({ REPO: repo, COMMIT: commit, }),
-        fetch_from_cargo_toml({
-            repo, ref: commit, path: "packages/which/Cargo.toml",
+        fetch_from_local_cargo_toml({
+            path: "../shutil-which/Cargo.toml",
             query: (v) => ({ "which.VERSION": v })
         }),
         fetch_from_local_cargo_toml({
@@ -95,6 +95,10 @@ export const pkg_shellutils: PackageFn = async (meta) => {
         fetch_from_cargo_toml({
             repo, ref: commit, path: "packages/wsclip/Cargo.toml",
             query: (v) => ({ "wsclip.VERSION": v })
+        }),
+        fetch_from_local_cargo_toml({
+            path: "../shutil-lfmt/Cargo.toml",
+            query: (v) => ({ "lfmt.VERSION": v })
         }),
         fetch_from_local_cargo_toml({
             path: "../shutil-lfmt/Cargo.toml",

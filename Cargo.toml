@@ -12,6 +12,7 @@ members = [
     "packages/shutil-n",
     "packages/shutil-viopen",
     "packages/shutil-vipath",
+    "packages/shutil-which",
     "packages/win-envedit",
 ]
 
@@ -42,9 +43,11 @@ windows = "0.62.2"
 phf = "0.13.1"
 serde = "1"
 tokio = "1"
-sysinfo = "0.38.4"
-reqwest = "0.13.3"
+sysinfo = "0.39.3"
+reqwest = "0.13.4"
 boa_engine = "0.21.1"
 fs2 = "0.4.3"
 fxhash = "0.2.1"
 winreg = "0.56.0"
+which = "8.0.2"
+clap = "4.6.1"
