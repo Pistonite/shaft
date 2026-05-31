@@ -11,7 +11,12 @@ export class MetafilePkg {
         this.pkg = pkg;
     }
     public get(key: string): string { return this.file.get(this.pkg, key); }
-    public repo(): string { return this.get("REPO"); }
+    public repo(sub?: string): string {
+        if (sub) {
+            return this.get(sub+".REPO");
+        }
+        return this.get("REPO");
+    }
 }
 
 export class Metafile {
