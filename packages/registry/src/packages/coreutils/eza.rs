@@ -7,6 +7,9 @@ pub fn verify() -> cu::Result<Verified> {
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
+    if let Ok(Verified::UpToDate) = verify() {
+        return Ok(());
+    }
     epkg::cargo::install("eza", ctx.bar_ref())
 }
 

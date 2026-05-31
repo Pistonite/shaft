@@ -9,24 +9,24 @@ version_cache!(static ALIAS_VERSION = metadata::git::ALIAS_VERSION);
 register_binaries!("git", "scalar", "bash");
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
-    check_in_path!("git");
-    let version = command_output!("git", ["--version"]);
-    if !version.contains("vfs") {
-        cu::bail!(
-            "current 'git' is not the vfs version (microsoft.git); please uninstall it or use the 'system-git' package"
-        );
-    }
-    check_in_path!("scalar");
-    check_verified!(version::verify()?);
+    check_verified!(verify_git_installed()?);
     check_config_version_cache!(ALIAS_VERSION);
-    check_verified!(verify_config! {
-        check_in_path!("bash");
-        Ok(Verified::UpToDate)
-    }?);
+    check_in_path!("bash");
+    Ok(Verified::UpToDate)
+}
+
+// installing git is slow since winget doesn't have a normal "--needed" mode
+fn verify_git_installed() -> cu::Result<Verified> {
+    check_in_path!("git");
+    check_in_path!("scalar");
+    check_verified!(version::verify(true)?);
     Ok(Verified::UpToDate)
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
+    if verify_git_installed() == Ok(Verified::UpToDate) {
+        return Ok(());
+    }
     opfs::ensure_terminated("git.exe")?;
     opfs::ensure_terminated("scalar.exe")?;
     epkg::winget::install("Microsoft.Git", ctx.bar_ref())?;
