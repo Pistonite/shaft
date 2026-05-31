@@ -1,4 +1,3 @@
-
 #[cfg(windows)]
 pub fn set_clipboard(content: &str) -> cu::Result<()> {
     if let Err(ec) = clipboard_win::set_clipboard(clipboard_win::formats::Unicode, content) {

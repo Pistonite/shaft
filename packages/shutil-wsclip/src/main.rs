@@ -35,8 +35,7 @@ fn main(cli: Cli) -> cu::Result<()> {
         let running = Arc::clone(&running);
         let attempted = AtomicBool::new(false);
         let client_address = format!("ws://127.0.0.1:{}", cli.port);
-        let result = 
-        cu::cli::add_global_ctrlc_handler(move || {
+        let result = cu::cli::add_global_ctrlc_handler(move || {
             // CAS probably not needed, just in case :)
             if attempted
                 .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
