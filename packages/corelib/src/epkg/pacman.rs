@@ -123,6 +123,7 @@ pub fn install_aur(
 ) -> cu::Result<()> {
     let reason = format!("installing from AUR: {repo}");
     let bar = cu::progress(&reason).parent(bar.cloned()).spawn();
+    cu::fs::make_dir(clone_root)?;
     let clone_dir = clone_root.join(package);
     cu::fs::make_dir_absent_or_empty(&clone_dir)?;
     cu::which("git")?
@@ -176,7 +177,9 @@ fn sync_database(bar: Option<&Arc<cu::ProgressBar>>, reason: &str) -> cu::Result
             )
             .stdin_null()
             .spawn()?;
-        child.wait_nz()?;
+        if child.wait_nz().is_err() {
+            cu::warn!("failed to sync pacman database, continuing anyway");
+        }
         bar.done();
         state.db_synced_time = Some(Instant::now());
     }
