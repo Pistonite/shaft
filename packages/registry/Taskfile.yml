@@ -45,7 +45,7 @@ tasks:
     - task: git:check-modification
       vars:
         CHECK_PATH: metadata.toml
-        CHECK_MESSAGE: shellutils metadata is not up-to-date
+        CHECK_MESSAGE: shellutils metadata is not up-to-date or uncommited changes in metadata
 
   copy-nvim:
     desc: Copy config directory from this machine (~/.config/nvim) to shaft. Only works on Unix
