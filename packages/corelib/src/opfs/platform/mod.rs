@@ -1,5 +1,3 @@
-use std::sync::OnceLock;
-
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 #[path = "imp/unix.rs"]
 mod imp_unix;
@@ -24,7 +22,6 @@ pub use linux_flavor::*;
 #[cfg(target_os = "linux")]
 static CURRENT_FLAVOR: cu::Atomic<u8, LinuxFlavor> = cu::Atomic::new_u8(0);
 static CURRENT_ARCH: cu::Atomic<u8, CpuArch> = cu::Atomic::new_u8(0);
-static VERSION: OnceLock<String> = OnceLock::new();
 
 #[cfg(target_os = "linux")]
 pub fn linux_flavor() -> LinuxFlavor {
@@ -32,7 +29,7 @@ pub fn linux_flavor() -> LinuxFlavor {
 }
 
 pub fn cli_version() -> &'static str {
-    VERSION.get().expect("version not initialized")
+    include_str!("../../../../../VERSION").trim()
 }
 
 pub fn cpu_arch() -> CpuArch {
@@ -54,8 +51,7 @@ pub fn is_arm() -> bool {
 /// Initialize the platform variable. Called once at beginning when launching
 /// the package manager
 #[inline(always)]
-pub fn init(version: &str) -> cu::Result<()> {
+pub fn init() -> cu::Result<()> {
     crate::internal::ensure_main_thread()?; // record main thread ID
-    let _ = VERSION.set(version.to_string());
     imp::init()
 }

@@ -38,14 +38,13 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
-    epkg::pacman::install("gcc", ctx.bar_ref())?;
-    epkg::pacman::install("binutils", ctx.bar_ref())?;
-    epkg::pacman::install("gdb", ctx.bar_ref())?;
-    epkg::pacman::install("clang", ctx.bar_ref())?;
-    epkg::pacman::install("llvm", ctx.bar_ref())?;
-    epkg::pacman::install("lldb", ctx.bar_ref())?;
-    epkg::pacman::install("cmake", ctx.bar_ref())?;
-    epkg::pacman::install("ninja", ctx.bar_ref())?;
+    epkg::pacman::install_many(
+        &[
+            "gcc", "binutils", "gdb", "clang", "llvm", "lldb", "cmake", "ninja",
+        ],
+        "[cctools] installing c-compiler tools",
+        ctx.bar_ref(),
+    )?;
     Ok(())
 }
 

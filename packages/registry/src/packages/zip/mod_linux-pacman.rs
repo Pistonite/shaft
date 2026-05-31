@@ -12,8 +12,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
-    epkg::pacman::install("zip", ctx.bar_ref())?;
-    epkg::pacman::install("unzip", ctx.bar_ref())?;
+    epkg::pacman::install_many(&["zip", "unzip"], "install zip and unzip", ctx.bar_ref())?;
     Ok(())
 }
 
