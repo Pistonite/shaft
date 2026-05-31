@@ -34,7 +34,7 @@ impl CliApi {
         let run_version = self.version || matches!(&self.command, Some(CliCommand::Version(_)));
         if run_version {
             cu::lv::disable_print_time();
-            println!("{}", env!("CARGO_PKG_VERSION"));
+            println!("{}", opfs::cli_version());
             if !cu::lv::D.enabled() {
                 return Ok(());
             }
@@ -53,10 +53,7 @@ impl CliApi {
             corelib::check_requirements(),
             "core requirements not satisfied"
         )?;
-        cu::check!(
-            opfs::init(env!("CARGO_PKG_VERSION")),
-            "failed to init platform"
-        )?;
+        cu::check!(opfs::init(), "failed to init platform")?;
         cu::check!(crate::init::check_init_home(), "failed to init home")?;
         let config = crate::config::load_config()?;
         cu::check!(

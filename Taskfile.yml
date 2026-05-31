@@ -40,6 +40,7 @@ tasks:
     - task: shutil-wsclip:check
     - task: win-envedit:check
     - cargo run --bin lfmt -- -c
+    - task: check-version
   fix:
     - task: registry:fix
     - cargo fmt
@@ -66,6 +67,36 @@ tasks:
     - cargo build --bin vipath 
     - cargo build --bin which 
     - cargo build --bin wsclip 
+
+  check-version:
+    - silent: true
+      cmd: >
+        if grep -r CARGO_PKG_VERSION packages; then
+          echo "CARGO_PKG_VERSION found; DON'T use it; use the VERSION file at root instead";
+          exit 2;
+        fi;
+        upstream_version=$(curl https://raw.githubusercontent.com/Pistonite/shaft/refs/heads/main/VERSION) ;
+        current_version=$(cat VERSION);
+        if [[ "$upstream_version" == "$current_version" ]]; then
+          echo 'version must be bumped; please run the bump task';
+          exit 2;
+        else
+          echo "will bump version with this commit: $upstream_version -> $current_version";
+        fi
+
+  bump:
+    - silent: true
+      cmd: >
+        current=$(cat VERSION | tr -d '[:space:]');
+        major=$(echo "$current" | cut -d. -f1);
+        minor=$(echo "$current" | cut -d. -f2);
+        patch=$(echo "$current" | cut -d. -f3);
+        new_patch=$((patch + 1));
+        new_version="$major.$minor.$new_patch";
+        echo "$new_version" > VERSION;
+        echo "bumped version: $current -> $new_version";
+
+
 
   upgrade:
     - cargo upgrade

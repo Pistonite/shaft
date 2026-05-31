@@ -13,8 +13,11 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
     opfs::ensure_terminated("git")?;
-    epkg::pacman::install("pcre2", ctx.bar_ref())?;
-    epkg::pacman::install("git", ctx.bar_ref())?;
+    epkg::pacman::install_many(
+        &["pcre2", "git"],
+        "install git and dependencies",
+        ctx.bar_ref(),
+    )?;
     Ok(())
 }
 

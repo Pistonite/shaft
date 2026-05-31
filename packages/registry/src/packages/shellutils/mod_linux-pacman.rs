@@ -74,11 +74,12 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     opfs::unarchive(task_tgz, &task_temp, true)?;
     cu::fs::copy(task_temp.join("task"), install_dir.join("task"))?;
 
-    epkg::pacman::install("perl", ctx.bar_ref())?;
-    epkg::pacman::install("curl", ctx.bar_ref())?;
-    epkg::pacman::install("wget", ctx.bar_ref())?;
-    epkg::pacman::install("fzf", ctx.bar_ref())?;
-    epkg::pacman::install("jq", ctx.bar_ref())?;
+    epkg::pacman::install_many(
+        &["perl", "curl", "wget", "fzf", "jq"],
+        "[shellutils] installing common shell utilities",
+        ctx.bar_ref(),
+    )?;
+
     epkg::cargo::binstall("bat", ctx.bar_ref())?;
     epkg::cargo::binstall("du-dust", ctx.bar_ref())?;
     epkg::cargo::install("fd-find", ctx.bar_ref())?;

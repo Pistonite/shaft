@@ -183,26 +183,16 @@ pub fn local_update() -> cu::Result<()> {
 /// Get the current version of the CLI as specified in the repo (not the version
 /// of the running binary)
 pub fn get_cli_version() -> cu::Result<Option<String>> {
-    let mut repo_path = hmgr::paths::repo();
+    let path = {
+        let mut p = hmgr::paths::repo();
+        p.push("VERSION");
+        p
+    };
 
-    if !repo_path.exists() {
+    if !path.exists() {
         return Ok(None);
     }
 
-    #[derive(Deserialize)]
-    struct PartialManifest {
-        package: PartialManifestPackage,
-    }
-    #[derive(Deserialize)]
-    struct PartialManifestPackage {
-        version: String,
-    }
-
-    repo_path.extend(["packages", "cli", "Cargo.toml"]);
-    let manifest = cu::check!(
-        cu::fs::read_string(repo_path),
-        "failed to read CLI manifest"
-    )?;
-    let manifest = toml::parse::<PartialManifest>(&manifest)?;
-    Ok(Some(manifest.package.version))
+    let v = cu::fs::read_string(path)?.trim().to_string();
+    Ok(Some(v))
 }
