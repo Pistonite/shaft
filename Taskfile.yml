@@ -16,7 +16,8 @@ includes:
   shutil-n:       { taskfile: ./packages/shutil-n,        dir: ./packages/shutil-n,       internal: true }
   shutil-viopen:  { taskfile: ./packages/shutil-viopen,   dir: ./packages/shutil-viopen,  internal: true }
   shutil-vipath:  { taskfile: ./packages/shutil-vipath,   dir: ./packages/shutil-vipath,  internal: true }
-  shutil-which:   { taskfile: ./packages/shutil-which,    dir: ./packages/shutil-which,  internal: true }
+  shutil-which:   { taskfile: ./packages/shutil-which,    dir: ./packages/shutil-which,   internal: true }
+  shutil-wsclip:  { taskfile: ./packages/shutil-wsclip,   dir: ./packages/shutil-wsclip,  internal: true }
   win-envedit:    { taskfile: ./packages/win-envedit,     dir: ./packages/win-envedit,    internal: true }
 
 tasks:
@@ -25,10 +26,6 @@ tasks:
     - rm -rf mono-dev
     - git clone https://github.com/Pistonight/mono-dev --depth 1 mono-dev
     - echo 'fn main() {}' > packages/shaftim/main.rs
-  install-cargo-extra-tools:
-    alias: [icets]
-    cmds:
-      - cargo install lfmt --git https://github.com/Pistonite/shellutils
   check:
     - task: corelib:check
     - task: registry:check
@@ -40,6 +37,7 @@ tasks:
     - task: shutil-viopen:check
     - task: shutil-vipath:check
     - task: shutil-which:check
+    - task: shutil-wsclip:check
     - task: win-envedit:check
     - cargo run --bin lfmt -- -c
   fix:
@@ -49,11 +47,11 @@ tasks:
   test:
     - task: corelib:test
     - task: registry:test
-
+  regup:
+    - task: registry:update
   clean:
     - task: registry:clean
     - cargo clean
-
   shaft:
     - task: run-build
     - cargo run --bin shaft -- {{.CLI_ARGS}}
@@ -67,6 +65,7 @@ tasks:
     - cargo build --bin n
     - cargo build --bin vipath 
     - cargo build --bin which 
+    - cargo build --bin wsclip 
 
   upgrade:
     - cargo upgrade

@@ -1,0 +1,18 @@
+[package]
+name = "shutil-wsclip"
+description = "Websocket server to put received messages into Windows clipboard"
+license = "MIT"
+version = "0.1.8"
+edition = "2024"
+publish = false
+
+[dependencies]
+cu = { workspace = true, features = ["cli"] }
+tungstenite.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+clipboard-win.workspace = true
+
+[[bin]]
+name = "wsclip"
+path = "src/main.rs"

@@ -13,6 +13,7 @@ members = [
     "packages/shutil-viopen",
     "packages/shutil-vipath",
     "packages/shutil-which",
+    "packages/shutil-wsclip",
     "packages/win-envedit",
 ]
 
@@ -51,3 +52,5 @@ fxhash = "0.2.1"
 winreg = "0.56.0"
 which = "8.0.2"
 clap = "4.6.1"
+tungstenite = "0.29.0"
+clipboard-win = "5.4.1"

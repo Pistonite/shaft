@@ -71,11 +71,8 @@ export const pkg_coreutils: PackageFn = () => [
     fetch_from_arch_linux({ package: "bash-completion", query: (version) => ({ "bash_cmp.VERSION": version }) }),
     fetch_from_aur({ package: "yay-bin", query: (version) => ({ "yay.VERSION": version })}),
 ];
-export const pkg_shellutils: PackageFn = async (meta) => {
-    const repo = meta.repo();
-    const commit = await fetch_latest_commit(repo);
+export const pkg_shellutils: PackageFn = async () => {
     return [
-        Promise.resolve({ REPO: repo, COMMIT: commit, }),
         fetch_from_local_cargo_toml({
             path: "../shutil-which/Cargo.toml",
             query: (v) => ({ "which.VERSION": v })
@@ -92,8 +89,8 @@ export const pkg_shellutils: PackageFn = async (meta) => {
             path: "../shutil-n/Cargo.toml",
             query: (v) => ({ "n.VERSION": v })
         }),
-        fetch_from_cargo_toml({
-            repo, ref: commit, path: "packages/wsclip/Cargo.toml",
+        fetch_from_local_cargo_toml({
+            path: "../shutil-wsclip/Cargo.toml",
             query: (v) => ({ "wsclip.VERSION": v })
         }),
         fetch_from_local_cargo_toml({
