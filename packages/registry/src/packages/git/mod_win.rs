@@ -24,7 +24,7 @@ fn verify_git_installed() -> cu::Result<Verified> {
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
-    if verify_git_installed() == Ok(Verified::UpToDate) {
+    if let Ok(Verified::UpToDate) = verify_git_installed() {
         return Ok(());
     }
     opfs::ensure_terminated("git.exe")?;
