@@ -20,6 +20,7 @@ mod n;
 mod viopen;
 mod vipath;
 mod wget;
+mod wsclip;
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_shaft!("perl");
@@ -62,14 +63,13 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_outdated!(&v.version, metadata[websocat]::VERSION);
     let v = check_cargo!("zoxide");
     check_outdated!(&v.version, metadata[zoxide]::VERSION);
-    let v = check_cargo!("wsclip");
-    check_outdated!(&v.version, metadata[shellutils::wsclip]::VERSION);
 
     check_verified!(n::verify()?);
     check_verified!(viopen::verify()?);
     check_verified!(lfmt::verify()?);
 
     check_verified!(vipath::verify()?);
+    check_verified!(wsclip::verify()?);
 
     check_config_version_cache!(common::ALIAS_VERSION);
     Ok(Verified::UpToDate)
@@ -113,18 +113,13 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     epkg::cargo::binstall("ripgrep", ctx.bar_ref())?;
     epkg::cargo::install("websocat", ctx.bar_ref())?;
     epkg::cargo::install("zoxide", ctx.bar_ref())?;
-    epkg::cargo::install_git_commit(
-        "wsclip",
-        metadata::shellutils::REPO,
-        metadata::shellutils::COMMIT,
-        ctx.bar_ref(),
-    )?;
 
     n::install(ctx)?;
     viopen::install(ctx)?;
     lfmt::install(ctx)?;
 
     vipath::install(ctx)?;
+    wsclip::install(ctx)?;
     Ok(())
 }
 
@@ -134,13 +129,13 @@ pub fn uninstall(ctx: &Context) -> cu::Result<()> {
     epkg::cargo::uninstall("fd-find")?;
     epkg::cargo::uninstall("websocat")?;
     epkg::cargo::uninstall("zoxide")?;
-    epkg::cargo::uninstall("wsclip")?;
 
     n::uninstall(ctx)?;
     viopen::uninstall(ctx)?;
     lfmt::uninstall(ctx)?;
 
     vipath::uninstall(ctx)?;
+    wsclip::uninstall(ctx)?;
     Ok(())
 }
 
