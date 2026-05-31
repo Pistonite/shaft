@@ -8,7 +8,7 @@ register_binaries!("git");
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_pacman!("git");
-    version::verify()
+    version::verify(false)
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
