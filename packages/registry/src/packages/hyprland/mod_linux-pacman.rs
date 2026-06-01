@@ -4,6 +4,7 @@ use crate::pre::*;
 
 version_cache!(static CFG_VERSION = metadata::hyprland::CFG_VERSION);
 binary_dependencies!(
+    Kitty,
     Viopen, 
     Python,
     // build dependencies
@@ -24,10 +25,8 @@ static PACKAGES: &[&str] = &[
     "noto-fonts-emoji",
     "noto-fonts-cjk",
     "noto-fonts-extra",
-    "ttf-hack-nerd",
     "sddm",
     "hyprland",
-    "kitty", // ~/.config/kitty/kitty.conf
     // audio/video/hardware stuff
     "pipewire",
     "wireplumber",
@@ -36,21 +35,19 @@ static PACKAGES: &[&str] = &[
     "xdg-desktop-portal-hyprland",
     "brightnessctl",
     // DE stuff
-    "hyprpaper", // wall paper
-    "hyprlock", // lock screen
-    "hypridle", // idle management
+    "hyprpaper", // wall paper -- TODO: config
+    "hyprlock", // lock screen -- TODO: config
+    "hypridle", // idle management -- TODO: config
     "qt5-wayland",
     "qt6-wayland",
     "polkit",
     "polkit-gnome", // authentication agent (password prompt)
-    "waybar", // status bar ~/.config/waybar
-    "rofi", // menu ~/.config/rofi/config.rasi
+    "waybar", // status bar ~/.config/waybar -- TODO: config
+    "rofi", // menu ~/.config/rofi/config.rasi -- TODO: config
     "networkmanager-dmenu", // wifi settings
     "swaync", // notification
     "cliphist", // clipboard
     "nautilus", // file manager
-    //
-    // TODO: https://github.com/paco3346/fw16-kbd-uleds
 ];
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
