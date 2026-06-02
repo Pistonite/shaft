@@ -206,3 +206,13 @@ kitty.VERSION = "0.46.2"
 [framework16]
 kbd_uleds.REPO = "https://github.com/paco3346/fw16-kbd-uleds"
 kbd_uleds.COMMIT = "51af3af4b857edb73117898369fe4658d0113703"
+
+[vcpkg]
+REPO = "https://github.com/microsoft/vcpkg-tool"
+VERSION = "2026-04-08"
+source.REPO = "https://github.com/microsoft/vcpkg"
+source.TAG = "2026.04.27"
+'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
+'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "6828f600ddd9de0269e7c68d2d264abee37fa2a16cad86b14b8e91fe225d530b"
+'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "f1edbf3a39de350e2bb065214fdc057111aa87a2e2ed9a7dcb8ddc86e17751b9"
+

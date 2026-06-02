@@ -334,3 +334,20 @@ export const pkg_framework16: PackageFn = async (meta) => {
         Promise.resolve({ "kbd_uleds.COMMIT": kbd_commit })
     ];
 }
+export const pkg_vcpkg: PackageFn = (meta) => [
+    fetch_from_github_release({
+        repo: meta.repo(),
+        artifacts: () => [
+            "vcpkg.exe",
+            "vcpkg-arm64.exe"
+        ],
+        query: (_, tag, [x64, arm]) => ({
+            "VERSION": tag,
+            ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
+        })
+    }),
+    fetch_from_github_release({
+        repo: meta.repo("source"),
+        query: (_, tag) => ({ "source.TAG": tag })
+    }),
+]
