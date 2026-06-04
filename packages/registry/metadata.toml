@@ -4,30 +4,30 @@ CONFIG_VERSION = "3"
 
 [_7z]
 REPO = "https://github.com/ip7z/7zip"
-VERSION = "26.00"
+VERSION = "26.01"
 SHA.__match__ = "opfs::cpu_arch()"
-SHA.'opfs::CpuArch::Arm64' = "92fac666911336f3bbf3d99fdc48ec36fe20ac7a4200556936e61a8076ae6493"
-SHA.'opfs::CpuArch::X64' = "6fe18d5b3080e39678cabfa6cef12cfb25086377389b803a36a3c43236a8a82c"
+SHA.'opfs::CpuArch::Arm64' = "1fecf4e3407950939c8ffcc3e42e3039821997dea155301c75369474e5f15175"
+SHA.'opfs::CpuArch::X64' = "d64a0468f5b5b0b0fc5b2188450bcd655b70809d97b1c4535f2884635094377d"
 
 [pwsh]
 # using preview version to enable tilde (~) expansion
 REPO = "https://github.com/PowerShell/PowerShell"
-VERSION = "7.6.0-preview.6"
+VERSION = "7.7.0-preview.2"
 SHA.__match__ = "opfs::cpu_arch()"
-SHA.'opfs::CpuArch::Arm64' = "36dc90e7f0e7870b0970c9a58790de4de4217e65acafaf790e87b7c97d93649f"
-SHA.'opfs::CpuArch::X64' = "481ce45bd9ebfab9a5b254a35f145fb6259bd452ae67d92ab1d231b6367987d9"
+SHA.'opfs::CpuArch::Arm64' = "8d54e5c754ab34e8c979686854ff110d1f9a81d54d629b6f48cbda2b1f45699d"
+SHA.'opfs::CpuArch::X64' = "9965153b4d3308dd5b3cb3d1a800b89b7b93a345b09f208e0f9b2123119b28e9"
 
 [cargo_binstall]
-VERSION = "1.17.7"
+VERSION = "1.19.1"
 
 [coreutils]
 ALIAS_VERSION = "13"
 eza.VERSION = "0.23.4"
-uutils.VERSION = "0.6.0"
+uutils.VERSION = "0.9.0"
 zip.VERSION = "3.0"
 unzip.VERSION = "6.0"
 tar.VERSION = "1.35"
-which.VERSION = "2.23"
+which.VERSION = "2.25"
 bash.VERSION = "5.3.9"
 bash_cmp.VERSION = "2.17.0"
 yay.VERSION = "12.5.7"
@@ -44,15 +44,15 @@ lfmt.VERSION = "0.2.0"
 [git]
 'cfg(windows)'.ALIAS_VERSION = "1"
 'cfg(windows)'.VERSION = "2.52.0"
-'cfg(target_os="linux")'.VERSION = "2.53.0"
-delta.VERSION = "0.18.2"
+'cfg(target_os="linux")'.VERSION = "2.54.0"
+delta.VERSION = "0.19.2"
 CFG_VERSION = "2"
 
 [perl]
-'cfg(target_os="linux")'.VERSION = "5.42.0"
+'cfg(target_os="linux")'.VERSION = "5.42.2"
 
 [curl]
-'cfg(target_os="linux")'.VERSION = "8.18.0"
+'cfg(target_os="linux")'.VERSION = "8.20.0"
 # Windows ships with curl.exe
 
 [wget]
@@ -64,10 +64,10 @@ CFG_VERSION = "2"
 
 [fzf]
 REPO = "https://github.com/junegunn/fzf"
-VERSION = "0.70.0"
+VERSION = "0.72.0"
 'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
-'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "eaa12ca2e072ef8e8f89ca3d961fd886e46fbbc254c0c85c4786d813416a95d5"
-'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "7465a6738e2c844742df973459c7509aed2d10d7a72bfd6de201b867b4eda4cd"
+'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "186af4f9d30434b4eb34d670312d96fb7886a10c4c1ce9c64453dd0fa19aedec"
+'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "cce66ae7e442030334927bfbfd917690713e63d215aba93027f99807828fe239"
 
 [jq]
 REPO = "https://github.com/jqlang/jq"
@@ -76,13 +76,13 @@ VERSION = "1.8.1"
 
 [task]
 REPO = "https://github.com/go-task/task"
-VERSION = "3.50.0"
+VERSION = "3.51.1"
 'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
-'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "e41ecc600429b9673ecdb45d35f04d96b4f148d83d3d1af496b8177f86ef8d83"
-'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "82c20fbd19ac62073b8ecf89e026fbd209f702a2922106e4ff2ed6934d193038"
+'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "d92bf9561a8a1db591487995eb76a08951de15134c40299a98d77460be4e4e1d"
+'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "422d79dff5afd5a55fb46ae1cfacc7350ec96d4ef27a63a3ec77a5c30a7b0f03"
 'cfg(target_os="linux")'.SHA.__match__ = "opfs::cpu_arch()"
 'cfg(target_os="linux")'.SHA.'opfs::CpuArch::Arm64' = "<unsupported>"
-'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "d449ba85ab85a0769989d78f8b9872938e4ba9347f7f4f925f73d98272a0a655"
+'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "da7e92f0ff961ef2aae7cfecbad8d1fd2a08d7b09ba968673adf7ff389b243b5"
 
 [bat]
 VERSION = "0.26.1"
@@ -91,7 +91,7 @@ VERSION = "0.26.1"
 VERSION = "1.2.4"
 
 [fd]
-VERSION = "10.4.1"
+VERSION = "10.4.2"
 
 [rg]
 VERSION = "15.1.0"
@@ -111,9 +111,9 @@ SHA = "8ca33a60c791392d872b80d26c42f2bfa914a480f9eb2d7516d9f84373c36897"
 [terminal]
 'cfg(windows)'.CONFIG_VERSION = "10"
 clink.REPO = "https://github.com/chrisant996/clink"
-clink.VERSION = "1.9.21"
-clink.SHA = "01def804a2c7cd94f0122e708cc1d484eb307075502efaeca167f5bcaf742ff0"
-clink.URL = "https://github.com/chrisant996/clink/releases/download/v1.9.21/clink.1.9.21.3cc8b4.zip"
+clink.VERSION = "1.9.23"
+clink.SHA = "ef6102aea6f6350804c32428ce04ad82eb185b0387424f62fe0f6f1e8c19737d"
+clink.URL = "https://github.com/chrisant996/clink/releases/download/v1.9.23/clink.1.9.23.37616c.zip"
 clink.WRAPPER_VERSION = "3"
 
 [volta]
@@ -127,44 +127,44 @@ VERSION = "2.0.2"
 'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "6cec054c911fb925b629a09455775af6e95dc0f5694a4c28b63979ab9ef18037"
 ALIAS_VERSION = "1"
 pnpm.REPO = "https://github.com/pnpm/pnpm"
-pnpm.VERSION = "10.31.0"
+pnpm.VERSION = "11.2.1"
 node.VERSION = "24"
 yarn.VERSION = "4"
 
 [uv]
 ALIAS_VERSION = "1"
-VERSION = "0.10.9"
+VERSION = "0.11.19"
 
 [gnucc]
-gcc.VERSION = "15.2.1"
+gcc.VERSION = "16.1.1"
 binutils.VERSION = "2.46"
-gdb.VERSION = "17.1"
+gdb.VERSION = "17.2"
 
 [clang]
 REPO = "https://github.com/llvm/llvm-project"
 'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
-'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "54897a70f7c4fa9d66cd1cb280a3a223a0c70f7abaee1322c78beeeb89af4682"
-'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "186f17ebedf13bae2835b2c0d5111a2a469ac241e7fc6387c9ce4585d6ef56ed"
-'cfg(windows)'.LLVM_VERSION = "22.1.1"
-'cfg(target_os="linux")'.LLVM_VERSION = "22.1.1"
+'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "841278d0f7e091653af22cea7643fbeba587f702edf19247713180036c5b4cdb"
+'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "657343edf361ca463bd642e39c74b251c6338b96cdbd55ff277555298b027696"
+'cfg(windows)'.LLVM_VERSION = "22.1.6"
+'cfg(target_os="linux")'.LLVM_VERSION = "22.1.6"
 
 [llvm_mingw]
 REPO = "https://github.com/mstorsjo/llvm-mingw"
-TAG = "20260311"
+TAG = "20260519"
 'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
-'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "33cd916b991cbeb0b44bcb51f58c20c999f074410d2802afdbfbf5d8b51402ca"
-'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "dd4c67d98959479c7be2fb6709ba074475991590848cb9d0eb2620be06b182e1"
-'cfg(windows)'.LLVM_VERSION = "22.1.1"
+'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "7bb5e3c9964dc29555cababb55e69eea02a51e98e1240eb9513e6540c7bae0ea"
+'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "72dbd6e64614e3b3401998992d1bd9c8ace29e74611d71c80309ea71c3fb26f9"
+'cfg(windows)'.LLVM_VERSION = "22.1.6"
 
 
 [cmake]
 # this is official
 REPO = "https://github.com/Kitware/CMake"
-'cfg(windows)'.VERSION = "4.3.0"
-'cfg(target_os="linux")'.VERSION = "4.3.0"
+'cfg(windows)'.VERSION = "4.3.2"
+'cfg(target_os="linux")'.VERSION = "4.3.3"
 'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
-'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "174cdb8a877ce9d27ce2e7bd5ed74e48b333fb87b82ed7962c6c2325d35065e1"
-'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "0f664f44eeb5b35b77f83e0984459c0dfa70539bd215c54ae1059604fd4f77ea"
+'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "42a2a88fc57e70d04a92f6eaaac2094241995f53584bc2afdae7e6ef982b3781"
+'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "83d20c23f5c5f64b3b328785e35b23c532e33057a97ed6294acaca3781b78a01"
 
 [ninja]
 REPO = "https://github.com/ninja-build/ninja"
@@ -175,33 +175,33 @@ REPO = "https://github.com/ninja-build/ninja"
 'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "07fc8261b42b20e71d1720b39068c2e14ffcee6396b76fb7a795fb460b78dc65"
 
 [starship]
-VERSION = "1.24.2"
+VERSION = "1.25.1"
 CFG_VERSION = "10"
 
 [nvim]
 REPO = "https://github.com/neovim/neovim"
-VERSION = "0.11.6"
+VERSION = "0.12.2"
 'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
-'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "67a4e1da1f0d99e71c5e7b2dfd95f8c34721bd8c139eec99bb3e9034c2766301"
-'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "90fc6d7cdf3d3388737caab1e2c554aa24b468f3a5cc38ef63857ddf1103513c"
+'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "ed3e2844708878221325b6f0fd07bbca06c01700d4c4f72f4a100b026e84dfd2"
+'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "23fe150edbcc976eabe55092e1e9d2e5e237afde69553d170e936f776b405d53"
 'cfg(target_os="linux")'.SHA.__match__ = "opfs::cpu_arch()"
 'cfg(target_os="linux")'.SHA.'opfs::CpuArch::Arm64' = "<unsupported>"
-'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "2fc90b962327f73a78afbfb8203fd19db8db9cdf4ee5e2bef84704339add89cc"
+'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "31cf85945cb600d96cdf69f88bc68bec814acbff50863c5546adef3a1bcef260"
 NVIM_CFG = "13"
 
 [tree_sitter]
-VERSION = "0.26.7"
+VERSION = "0.26.9"
 REPO = "https://github.com/tree-sitter/tree-sitter"
 'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
-'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "e7ea8f67db49c288f697d89a5538860ea1c219c92dfc366010d00b8b19d54d7f"
-'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "5cea52c5e8000fbe56c41148dd3124fded2fe7cd0f66e4194bf92532905c55ff"
+'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "77422e257649158b91296d340d8430b7a0b469df41734efc9b261f1a16a33e95"
+'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "dbb5309fcc76eaeb4ec358fcb72ac2eae5cd653e12967246cc63f84038d16cd8"
 'cfg(target_os="linux")'.SHA.__match__ = "opfs::cpu_arch()"
 'cfg(target_os="linux")'.SHA.'opfs::CpuArch::Arm64' = "<unsupported>"
-'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "4367a46bc8abbb8328d6efbeb26e86807af0a3a7e462548a3924f87289ee1e9c"
+'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "9ce82137caa65864e7ca8b869fd391cef88c9bd2a01c4371b9c4dd26c2585efb"
 
 [hyprland]
 kitty.CFG_VERSION = "1"
-kitty.VERSION = "0.46.2"
+kitty.VERSION = "0.47.1"
 
 [framework16]
 kbd_uleds.REPO = "https://github.com/paco3346/fw16-kbd-uleds"
