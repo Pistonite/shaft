@@ -13,7 +13,9 @@ export const fetch_from_cratesio = async ({ crate, query }: CratesIoArgs): Promi
     const response = await fetch(`${CRATESIO_API}crates/${crate}`, {
         headers: { "User-Agent": "shaft-registry-updater" } // crates.io requires UA
     });
-    if (!response.ok) { throw new Error(`failed to fetch crate ${crate}: ${response.status}`); }
+    if (!response.ok) {
+        throw new Error(`failed to fetch crate ${crate}: ${response.status}`);
+    }
     const data = await response.json() as CratesIoResponse;
     const version = data.crate.newest_version;
     console.log(`-- -- latest version of ${crate}: ${version}`);

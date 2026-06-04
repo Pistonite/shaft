@@ -1,4 +1,4 @@
-import { GITHUB_API, parse_github_repo } from "../util.mts";
+import { fetch_with_retry, get_github_headers, GITHUB_API, parse_github_repo } from "../util.mts";
 
 type GitHubRepoResponse = { default_branch: string };
 type GitHubBranchResponse = { commit: { sha: string } };
@@ -8,14 +8,20 @@ export const fetch_latest_commit = async (repo: string): Promise<string> => {
     const repo_path = parse_github_repo(repo);
     console.log(`-- fetching latest commit for ${repo_path}`);
     // get repo info to find default branch
-    const repo_response = await fetch(`${GITHUB_API}repos/${repo_path}`);
+    const repo_response = await fetch_with_retry(
+        `${GITHUB_API}repos/${repo_path}`,
+         { headers: get_github_headers() }
+    );
     if (!repo_response.ok) {
         throw new Error(`failed to fetch repo info for ${repo_path}: ${repo_response.status}`);
     }
     const repo_data = await repo_response.json() as GitHubRepoResponse;
     const default_branch = repo_data.default_branch;
     // get the latest commit on the default branch
-    const branch_response = await fetch(`${GITHUB_API}repos/${repo_path}/branches/${default_branch}`);
+    const branch_response = await fetch(
+        `${GITHUB_API}repos/${repo_path}/branches/${default_branch}`,
+        { headers: get_github_headers() }
+    );
     if (!branch_response.ok) {
         throw new Error(`failed to fetch branch ${default_branch} for ${repo_path}: ${branch_response.status}`);
     }

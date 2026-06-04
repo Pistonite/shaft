@@ -1,6 +1,6 @@
 /// <reference types="node" />
-import * as fs from "node:fs";
-import * as path from "node:path";
+import fs from "node:fs";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
 
@@ -21,15 +21,24 @@ const do_backoff = async (): Promise<void> => {
         remaining = Math.min(remaining - 1000, global_backoff);
     }
 }
-export const fetch_with_retry = async (url: string, max_retries = 5): Promise<Response> => {
+
+type FetchWithRetryOptions = RequestInit & {
+    maxRetries?: number
+};
+
+export const fetch_with_retry = async (url: string, options?: FetchWithRetryOptions): Promise<Response> => {
     if (global_backoff > 0) {
         console.log(`-- ${url}: waiting ${global_backoff}ms`);
         await do_backoff();
     }
+    const max_retries = options?.maxRetries || 5;
     for (let attempt = 0; attempt <= max_retries; attempt++) {
-        const response = await fetch(url);
+        const response = await fetch(url, options);
         if (response.ok) { global_backoff = 0; return response; }
-        if (response.status === 429 || response.status >= 500) {
+        if (response.status === 429 || response.status >= 500 ||
+            // github rate limit
+            (response.status === 403 && url.startsWith(GITHUB_API))
+        ) {
             if (attempt < max_retries) {
                 if (global_backoff) {
                     global_backoff = global_backoff * 2;
@@ -124,3 +133,29 @@ export const to_toml_string = (str: string): string => {
     }
     throw new Error("why does the input have triple single quote");
 };
+
+export const get_github_token = (): string => {
+    const t = process.env.GITHUB_TOKEN;
+    if (t) {
+        return t;
+    }
+    try {
+        const t2 = fs.readFileSync("update/.token", "utf-8");
+        return t2.trim();
+    } catch {
+        // ignore
+    }
+    return "";
+}
+
+export const get_github_headers = (): Record<string, string> => {
+    const token = get_github_token();
+    if (!token) {
+        return {};
+    }
+    return {
+        ["Authorization"]: `Bearer ${token}`,
+        ["Accept"]: "application/vnd.github+json",
+        ["User-Agent"]: "shaft-registry-updater",
+    };
+}

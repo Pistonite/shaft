@@ -1,5 +1,5 @@
 import type { MetaKeyValues } from "../metafile.mts";
-import { GITHUB_API, parse_github_repo, sha256_from_url } from "../util.mts";
+import { fetch_with_retry, get_github_headers, GITHUB_API, parse_github_repo, sha256_from_url } from "../util.mts";
 
 export type GitHubReleaseArgs = {
     /** repo to fetch from */
@@ -39,11 +39,16 @@ export const fetch_from_github_release = async ({
     console.log(`-- fetching from github repo: ${repo}`);
     const repo_path = parse_github_repo(repo);
 
+    const headers = get_github_headers();
+
     let selected_tag: string;
 
     if (tag_picker) {
         // fetch all tags and let the picker choose
-        const tags_response = await fetch(`${GITHUB_API}repos/${repo_path}/tags`);
+        const tags_response = await fetch_with_retry(
+            `${GITHUB_API}repos/${repo_path}/tags`,
+            { headers }
+        );
         if (!tags_response.ok) {
             throw new Error(`failed to fetch tags for ${repo_path}: ${tags_response.status}`);
         }
@@ -58,7 +63,10 @@ export const fetch_from_github_release = async ({
         const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
         let page = 1;
         outer: while (true) {
-            const releases_response = await fetch(`${GITHUB_API}repos/${repo_path}/releases?per_page=30&page=${page}`);
+            const releases_response = await fetch_with_retry(
+                `${GITHUB_API}repos/${repo_path}/releases?per_page=30&page=${page}`,
+                { headers }
+            );
             if (!releases_response.ok) {
                 throw new Error(`failed to fetch releases for ${repo_path}: ${releases_response.status}`);
             }
@@ -85,7 +93,10 @@ export const fetch_from_github_release = async ({
     if (all || artifact_names.length) {
         // fetch the release for this tag to get artifacts
         console.log(`-- fetching release '${selected_tag}' from ${repo}`);
-        const release_response = await fetch(`${GITHUB_API}repos/${repo_path}/releases/tags/${selected_tag}`);
+        const release_response = await fetch_with_retry(
+            `${GITHUB_API}repos/${repo_path}/releases/tags/${selected_tag}`,
+            { headers }
+        );
         if (!release_response.ok) {
             throw new Error(`failed to fetch release ${selected_tag} for ${repo_path}: ${release_response.status}`);
         }
