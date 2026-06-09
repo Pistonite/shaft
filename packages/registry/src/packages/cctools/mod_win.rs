@@ -45,7 +45,7 @@ static CLANG_LLVM_LINK_DLL: &[&str] = &[
     "libclang"
 ];
 
-binary_dependencies!(Scalar, Python, Cmake);
+binary_dependencies!(_7z, Scalar, Python, Cmake);
 
 mod clang;
 pub fn verify(ctx: &Context) -> cu::Result<Verified> {

@@ -3,7 +3,7 @@ use crate::pre::*;
 
 register_binaries!("vi", "vim", "nvim");
 binary_dependencies!(
-    TreeSitter, Git,      // various
+    _7z, TreeSitter, Git,      // various
     Clang,    // compile tree sitter
     Diff,     // undo tree
     Websocat, // yank to host

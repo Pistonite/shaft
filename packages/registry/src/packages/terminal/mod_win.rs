@@ -4,7 +4,7 @@ use crate::pre::*;
 
 register_binaries!("clink-cmd");
 version_cache!(static CFG_VERSION = metadata::terminal::CONFIG_VERSION);
-binary_dependencies!(Cmake); // used to compile clink-cmd
+binary_dependencies!(_7z, Cmake); // used to compile clink-cmd
 config_dependencies!(Pwsh, Git);
 
 mod windows_clink;
