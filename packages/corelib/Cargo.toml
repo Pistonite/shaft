@@ -20,9 +20,6 @@ shell-words.workspace = true
 sysinfo.workspace = true
 tokio.workspace = true
 flate2.workspace = true
-tar.workspace = true
-zip.workspace = true
-xz2.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 win-envedit.path = "../win-envedit"

@@ -45,10 +45,16 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     let file_stem = Path::new(file_stem).file_stem().unwrap_or(file_stem); // for .tar.gz
     let archive_path = hmgr::paths::download(file_name, nvim_url()?);
     let temp_dir = hmgr::paths::temp_dir("nvim-extract");
-    opfs::unarchive(archive_path, &temp_dir, true)?;
     ctx.move_install_to_old_if_exists()?;
     let install_dir = ctx.install_dir();
-    cu::fs::rename(temp_dir.join(file_stem), install_dir)?;
+    opfs::unarchive_rename(
+        archive_path,
+        &temp_dir,
+        temp_dir.join(file_stem),
+        install_dir,
+        true,
+        None,
+    )?;
     Ok(())
 }
 

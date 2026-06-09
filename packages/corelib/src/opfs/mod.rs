@@ -6,5 +6,7 @@ mod sysinfo;
 pub use sysinfo::*;
 mod fs_util;
 pub use fs_util::*;
+mod unarchive;
+pub use unarchive::*;
 mod ini_file;
 pub use ini_file::*;

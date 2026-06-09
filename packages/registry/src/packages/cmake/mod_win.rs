@@ -53,9 +53,14 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
             .spawn();
         let temp_extract_dir = hmgr::paths::temp_dir("cmake-extract");
         let cmake_zip = hmgr::paths::download("cmake.zip", cmake_url());
-        opfs::unarchive(&cmake_zip, &temp_extract_dir, true)?;
-        let cmake_dir_from = temp_extract_dir.join(release_name());
-        cu::fs::rename(cmake_dir_from, ctx.install_dir())?;
+        opfs::unarchive_rename(
+            &cmake_zip,
+            &temp_extract_dir,
+            temp_extract_dir.join(release_name()),
+            ctx.install_dir(),
+            true,
+            None,
+        )?;
         bar.done();
     }
     Ok(())
