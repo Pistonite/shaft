@@ -1,5 +1,5 @@
 //! Windows GNU (via MinGW) and LLVM C/C++ Toolchain
-use std::{collections::BTreeSet, time::Duration};
+use std::collections::BTreeSet;
 
 use crate::pre::*;
 
@@ -45,7 +45,7 @@ static CLANG_LLVM_LINK_DLL: &[&str] = &[
     "libclang"
 ];
 
-binary_dependencies!(Scalar, Python, Cmake);
+binary_dependencies!(_7z, Scalar, Python, Cmake);
 
 mod clang;
 pub fn verify(ctx: &Context) -> cu::Result<Verified> {
@@ -130,38 +130,14 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
             .parent(ctx.bar())
             .spawn();
         let clang_zip = hmgr::paths::download("llvm.txz", llvm_url());
-        opfs::unarchive(&clang_zip, &install_dir, false)?;
-        let dir_name = install_dir.join(llvm_release_name());
-        // rename could fail after high disk usage - retry up to 3 times
-        if let Err(e) = cu::fs::rename(&dir_name, &llvm_dir) {
-            let mut success = false;
-            cu::warn!("rename after unpacking llvm failed: {e:?}");
-            for i in 1..=3 {
-                let retry_secs = i * 10;
-                let bar = bar
-                    .child(format!("retrying after {retry_secs} seconds"))
-                    .total(retry_secs)
-                    .eta(false)
-                    .percentage(false)
-                    .spawn();
-                for _ in 0..retry_secs {
-                    std::thread::sleep(Duration::from_secs(1));
-                    cu::progress!(bar += 1);
-                }
-                match cu::fs::rename(&dir_name, &llvm_dir) {
-                    Ok(_) => {
-                        success = true;
-                        break;
-                    }
-                    Err(e) => {
-                        cu::error!("[retry #{i}] rename after unpacking llvm failed: {e:?}");
-                    }
-                }
-            }
-            if !success {
-                cu::bail!("rename after unpacking llvm failed; please see errors above");
-            }
-        }
+        opfs::unarchive_rename(
+            &clang_zip,
+            &install_dir,
+            install_dir.join(llvm_release_name()),
+            &llvm_dir,
+            false,
+            Some(bar.clone()),
+        )?;
         bar.done();
     }
 
@@ -179,38 +155,14 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
             .parent(ctx.bar())
             .spawn();
         let clang_zip = hmgr::paths::download("llvm-mingw.zip", llvm_mingw_url());
-        opfs::unarchive(&clang_zip, &install_dir, false)?;
-        let dir_name = install_dir.join(llvm_mingw_release_name());
-        // rename could fail after high disk usage - retry up to 3 times
-        if let Err(e) = cu::fs::rename(&dir_name, &llvm_dir) {
-            let mut success = false;
-            cu::warn!("rename after unpacking llvm-mingw failed: {e:?}");
-            for i in 1..=3 {
-                let retry_secs = i * 10;
-                let bar = bar
-                    .child(format!("retrying after {retry_secs} seconds"))
-                    .total(retry_secs)
-                    .eta(false)
-                    .percentage(false)
-                    .spawn();
-                for _ in 0..retry_secs {
-                    std::thread::sleep(Duration::from_secs(1));
-                    cu::progress!(bar += 1);
-                }
-                match cu::fs::rename(&dir_name, &llvm_dir) {
-                    Ok(_) => {
-                        success = true;
-                        break;
-                    }
-                    Err(e) => {
-                        cu::error!("[retry #{i}] rename after unpacking llvm-mingw failed: {e:?}");
-                    }
-                }
-            }
-            if !success {
-                cu::bail!("rename after unpacking llvm-mingw failed; please see errors above");
-            }
-        }
+        opfs::unarchive_rename(
+            &clang_zip,
+            &install_dir,
+            install_dir.join(llvm_mingw_release_name()),
+            &llvm_dir,
+            false,
+            Some(bar.clone()),
+        )?;
         bar.done();
     }
 

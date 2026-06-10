@@ -3,6 +3,7 @@
 use crate::pre::*;
 
 register_binaries!("node", "volta", "pnpm", "yarn");
+binary_dependencies!(_7z);
 version_cache!(static ALIAS_VERSION = metadata::volta::ALIAS_VERSION);
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
