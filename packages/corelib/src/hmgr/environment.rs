@@ -9,7 +9,7 @@ pub mod windows {
     use std::collections::BTreeMap;
     use std::sync::Mutex;
 
-    pub use win_envedit::get_user;
+    pub use win_envedit::{get_system, get_user};
     static USER_THIS_SESSION: Mutex<BTreeMap<String, String>> = Mutex::new(BTreeMap::new());
     /// Get user environment variable at the start of the session,
     /// before any set calls

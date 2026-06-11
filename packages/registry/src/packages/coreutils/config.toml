@@ -3,33 +3,11 @@ key = ["windows"]
 comment = "Options for Windows-specific settings"
 children = [
     {
-        key = ["exclude-coreutils"],
-        value = [],
+        key = ["prefer-gnu"],
+        value = true,
         comment = """
-Exclude creating shim executables for coreutils listed.
-You would have to run coreutils <util> to run the util.
-Set it to the following to avoid conflicts with CMD and
-native Windows utilities with the same names:
-exclude-coreutils = [
-    # System32
-    'expand',
-    'hostname',
-    'more',
-    'whoami',
-    'sort',
-    'find',
-    # CMD
-    'rmdir',
-    'dir',
-    'type',
-]
-
-'diff' and 'find' can also be excluded (despite not being actually coreutils)
-
-The following utils are usually not used, and often conflicts,
-so they are always removed:
-- `link.exe` - conflicts with MSVC
-
+For commands with compatibility for both DOS and GNU,
+prefer GNU when ambiguous
 """
     },
     {
@@ -38,7 +16,6 @@ so they are always removed:
         comment = """
 Add a doskey macro to make the mkdir command in CMD GNU-compatible.
 (Essentially alias mkdir in CMD to mkdir -p)
-This will work even if mkdir is excluded in exclude-coreutils
 """
     }
 ]

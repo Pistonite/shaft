@@ -66,6 +66,8 @@ pub(crate) fn home() -> &'static Path {
 home! {
     bin_root:              "bin",
     binary:                   bin_root / file,
+    sbin_root:             "sbin",
+    system_binary:            sbin_root / file,
     config_root:           "config",
     config_toml:              config_root / "core.toml",
     install_root:          "install",

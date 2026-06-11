@@ -62,7 +62,6 @@ export const pkg_pwsh: PackageFn = (meta) =>
 export const pkg_cargo_binstall = default_cratesio_fetcher("cargo-binstall");
 export const pkg_coreutils: PackageFn = () => [
     fetch_from_cratesio({ crate: "eza", query: (v) => ({ "eza.VERSION": v }) }),
-    fetch_from_cratesio({ crate: "coreutils", query: (v) => ({ "uutils.VERSION": v }) }),
     fetch_from_arch_linux({ package: "zip", query: (version) => ({ "zip.VERSION": version }) }),
     fetch_from_arch_linux({ package: "unzip", query: (version) => ({ "unzip.VERSION": version }) }),
     fetch_from_arch_linux({ package: "tar", query: (version) => ({ "tar.VERSION": version }) }),
@@ -70,6 +69,7 @@ export const pkg_coreutils: PackageFn = () => [
     fetch_from_arch_linux({ package: "bash", query: (version) => ({ "bash.VERSION": version }) }),
     fetch_from_arch_linux({ package: "bash-completion", query: (version) => ({ "bash_cmp.VERSION": version }) }),
     fetch_from_aur({ package: "yay-bin", query: (version) => ({ "yay.VERSION": version })}),
+    fetch_from_cratesio({ crate: "sed", query: (v) => ({ "uutils_sed.VERSION": v }) }),
 ];
 export const pkg_shellutils: PackageFn = async () => {
     return [

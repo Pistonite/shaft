@@ -187,6 +187,7 @@ impl Env {
             Item::Bash(_) => self.bash_dirty = true,
             Item::Zsh(_) => self.zsh_dirty = true,
             Item::LinkBin(_, _, _) => {}
+            Item::LinkSysBin(_, _) => {}
             Item::ShimBin(_, _) => {}
             Item::Pwsh(_) => {}
             Item::Cmd(_) => {}

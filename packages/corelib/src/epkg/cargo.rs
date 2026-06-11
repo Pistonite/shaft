@@ -84,6 +84,7 @@ pub fn install_git_commit(
     package: &str,
     git: &str,
     rev: &str,
+    root: Option<&str>,
     bar: Option<&Arc<cu::ProgressBar>>,
 ) -> cu::Result<()> {
     let mut state = cargo::instance()?;
@@ -93,6 +94,10 @@ pub fn install_git_commit(
         // rust-toolchain file, which will override the rust toolchain being used
         .current_dir(hmgr::paths::home())
         .args(["install", package, "--git", git, "--rev", rev, "--locked"]);
+    let command = match root {
+        None => command,
+        Some(root) => command.args(["--force", "-q", "--root", root]),
+    };
     let command = add_platform_build_args(command);
     let (child, bar) = command
         .preset(
@@ -109,12 +114,20 @@ pub fn install_git_commit(
 
 /// Install a package using `cargo install`
 #[cu::context("failed to install '{package}' with cargo")]
-pub fn install(package: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
+pub fn install(
+    package: &str,
+    root: Option<&str>,
+    bar: Option<&Arc<cu::ProgressBar>>,
+) -> cu::Result<()> {
     let mut state = cargo::instance()?;
     let command = cu::which("cargo")?
         .command()
         .current_dir(hmgr::paths::home())
         .args(["install", package, "--locked"]);
+    let command = match root {
+        None => command,
+        Some(root) => command.args(["-q", "--root", root]),
+    };
     let command = add_platform_build_args(command);
     let (child, bar) = command
         .preset(

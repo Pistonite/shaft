@@ -203,6 +203,7 @@ impl Env {
             Item::Pwsh(_) => self.pwsh_dirty = true,
             Item::Cmd(_) => self.cmd_dirty = true,
             Item::LinkBin(_, _, _) => {}
+            Item::LinkSysBin(_, _) => {}
             Item::ShimBin(_, _) => {}
             Item::Bash(_) => {}
             Item::Zsh(_) => {}

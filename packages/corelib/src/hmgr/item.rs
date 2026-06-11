@@ -70,6 +70,7 @@ impl ItemMgr {
             #[cfg(target_os = "linux")]
             Item::SessionEnvVar(_, _, _) => {}
             Item::LinkBin(_, _, _) => self.link_dirty = true,
+            Item::LinkSysBin(_, _) => self.link_dirty = true,
             Item::ShimBin(_, _) => self.shim_dirty = true,
             Item::Pwsh(_) => {}
             Item::Bash(_) => {}
@@ -94,6 +95,7 @@ impl ItemMgr {
         package: Option<&str>, // none for removing all
     ) -> cu::Result<()> {
         let mut bin_to_remove = vec![];
+        let mut sbin_to_remove = vec![];
         #[cfg(windows)]
         let mut env_to_remove = BTreeMap::new();
         #[cfg(windows)]
@@ -128,6 +130,10 @@ impl ItemMgr {
                     bin_to_remove.push(bin.to_string());
                     // removing a link does not make links dirty
                 }
+                Item::LinkSysBin(bin, _) => {
+                    sbin_to_remove.push(bin.to_string());
+                    // removing a link does not make links dirty
+                }
                 Item::ShimBin(bin, _) => {
                     bin_to_remove.push(bin.to_string());
                     self.shim_dirty = true;
@@ -145,6 +151,14 @@ impl ItemMgr {
         if !bin_to_remove.is_empty() {
             let bin_root = hmgr::paths::bin_root();
             for bin in bin_to_remove {
+                if let Err(e) = opfs::safe_remove_link(&bin_root.join(bin)) {
+                    cu::warn!("failed to remove old link: {e}");
+                }
+            }
+        }
+        if !sbin_to_remove.is_empty() {
+            let bin_root = hmgr::paths::sbin_root();
+            for bin in sbin_to_remove {
                 if let Err(e) = opfs::safe_remove_link(&bin_root.join(bin)) {
                     cu::warn!("failed to remove old link: {e}");
                 }
@@ -215,25 +229,40 @@ impl ItemMgr {
     #[cu::context("failed to build binary links")]
     fn rebuild_links(&mut self) -> cu::Result<()> {
         let bin_root = hmgr::paths::bin_root();
+        let sbin_root = hmgr::paths::sbin_root();
         cu::fs::make_dir(&bin_root)?;
+        cu::fs::make_dir(&sbin_root)?;
         let mut link_paths = vec![];
+        let mut sys_link_paths = vec![];
         for entry in &self.items {
-            let Item::LinkBin(from, to, non_exe) = &entry.item else {
-                continue;
-            };
-            let link_path = bin_root.join(from);
-            if link_path.exists() {
-                // assume existing file is from linking previously
-                continue;
+            match &entry.item {
+                Item::LinkBin(from, to, non_exe) => {
+                    let link_path = bin_root.join(from);
+                    if link_path.exists() {
+                        // assume existing file is from linking previously
+                        continue;
+                    }
+                    link_paths.push((link_path, to, non_exe));
+                }
+                Item::LinkSysBin(from, to) => {
+                    let link_path = sbin_root.join(from);
+                    if link_path.exists() {
+                        // assume existing file is from linking previously
+                        continue;
+                    }
+                    sys_link_paths.push((link_path, to));
+                }
+                _ => {}
             }
-            link_paths.push((link_path, to, non_exe));
         }
-        let link_paths2: Vec<(&Path, &Path)> = link_paths
+        let link_paths_iter = link_paths
             .iter()
-            .map(|(x, y, _)| (x.as_path(), y.as_ref()))
-            .collect();
-
-        opfs::hardlink_files(&link_paths2)?;
+            .map(|(x, y, _)| (x.as_path(), Path::new(y)));
+        opfs::hardlink_files(link_paths_iter)?;
+        let sys_link_paths_iter = sys_link_paths
+            .iter()
+            .map(|(x, y)| (x.as_path(), Path::new(y)));
+        opfs::hardlink_files(sys_link_paths_iter)?;
 
         #[cfg(not(windows))]
         {
@@ -315,7 +344,7 @@ impl ItemMgr {
         let shim_binary_old = hmgr::paths::shim_binary_old();
         if shim_binary.exists() {
             // hardlink the old binary, so we can start deleting the old links
-            opfs::hardlink_files(&[(&shim_binary_old, &shim_binary)])?;
+            opfs::hardlink_files([(&shim_binary_old, &shim_binary)].into_iter())?;
         }
 
         // the old binary could be in use, which will not allow us to copy it,
@@ -333,10 +362,9 @@ impl ItemMgr {
         }
         let link_paths = link_paths
             .iter()
-            .map(|x| (x.as_path(), shim_binary.as_path()))
-            .collect::<Vec<_>>();
+            .map(|x| (x.as_path(), shim_binary.as_path()));
         cu::check!(
-            opfs::hardlink_files(&link_paths),
+            opfs::hardlink_files(link_paths),
             "failed to create hardlinks for shim binaries"
         )?;
 
@@ -381,6 +409,10 @@ pub enum Item {
     /// Link a binary (in the HOME/bin directory) to a location
     /// in the install directory.
     LinkBin(String, String, bool /* non_executable */),
+
+    /// Link a system binary (in the HOME/sbin directory) to a location
+    /// in the install directory.
+    LinkSysBin(String, String),
 
     /// Create a shim binary that invokes a command.
     ///
@@ -434,6 +466,11 @@ impl Item {
     #[inline(always)]
     pub fn link_bin(name: impl Into<String>, target: impl Into<String>) -> Self {
         Self::LinkBin(name.into(), target.into(), false)
+    }
+
+    #[inline(always)]
+    pub fn link_sys_bin(name: impl Into<String>, target: impl Into<String>) -> Self {
+        Self::LinkSysBin(name.into(), target.into())
     }
 
     #[inline(always)]
