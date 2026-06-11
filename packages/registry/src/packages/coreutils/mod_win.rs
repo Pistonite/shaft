@@ -24,9 +24,9 @@ register_binaries!(
 );
 binary_dependencies!(Git, CargoBinstall);
 
-static PS_ALIASES: &[&str] = &[
-    "cat", "cp", "dir", "echo", "ls", "mv", "pwd", "rm", "rmdir", "sort", "sleep", "tee",
-];
+// static PS_ALIASES: &[&str] = &[
+//     "cat", "cp", "dir", "echo", "ls", "mv", "pwd", "rm", "rmdir", "sort", "sleep", "tee",
+// ];
 // keep in sync with pwsh-install-template.ps1
 #[rustfmt::skip]
 static MS_COREUTILS_LIST: &[&str] = &[
