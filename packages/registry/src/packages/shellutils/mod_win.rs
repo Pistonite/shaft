@@ -109,10 +109,10 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
 
     epkg::cargo::binstall("bat", ctx.bar_ref())?;
     epkg::cargo::binstall("du-dust", ctx.bar_ref())?;
-    epkg::cargo::install("fd-find", ctx.bar_ref())?;
+    epkg::cargo::install("fd-find", None, ctx.bar_ref())?;
     epkg::cargo::binstall("ripgrep", ctx.bar_ref())?;
-    epkg::cargo::install("websocat", ctx.bar_ref())?;
-    epkg::cargo::install("zoxide", ctx.bar_ref())?;
+    epkg::cargo::install("websocat", None, ctx.bar_ref())?;
+    epkg::cargo::install("zoxide", None, ctx.bar_ref())?;
 
     n::install(ctx)?;
     viopen::install(ctx)?;

@@ -14,7 +14,7 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     if cu::which("cargo-binstall").is_ok() {
         epkg::cargo::binstall("cargo-binstall", ctx.bar_ref())
     } else {
-        epkg::cargo::install("cargo-binstall", ctx.bar_ref())
+        epkg::cargo::install("cargo-binstall", None, ctx.bar_ref())
     }
 }
 

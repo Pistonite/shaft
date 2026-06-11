@@ -1,34 +1,37 @@
 use crate::pre::*;
 
 pub fn verify() -> cu::Result<Verified> {
-    let v = check_cargo!("eza");
-    check_outdated!(&v.version, metadata[coreutils::eza]::VERSION);
+    check_in_shaft!("eza");
+    let version = get_version()?;
+    check_outdated!(&version, metadata[coreutils::eza]::VERSION);
     Ok(Verified::UpToDate)
+}
+
+fn get_version() -> cu::Result<String> {
+    let output = command_output!("eza", ["--version"]);
+    let output = cu::check!(output.lines().find(|l|l.starts_with("v")), "failed to parse eza --version output: failed to find version line")?;
+    let version = output.strip_prefix('v').unwrap_or(output);
+    let version = version.split_once(' ').map(|a| a.0).unwrap_or(version);
+    Ok(version.trim().to_string())
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
     if let Ok(Verified::UpToDate) = verify() {
         return Ok(());
     }
-    epkg::cargo::install("eza", ctx.bar_ref())
-}
-
-pub fn uninstall() -> cu::Result<()> {
-    let eza_path = hmgr::paths::binary(bin_name!("eza"));
-    cu::fs::remove(&eza_path)?;
-    epkg::cargo::uninstall("eza")
+    let install_dir = cu::path!((ctx.install_dir()) / "eza").into_utf8()?;
+    epkg::cargo::install("eza", Some(&install_dir), ctx.bar_ref())
 }
 
 pub fn configure(ctx: &Context) -> cu::Result<()> {
-    // Delete existing eza binary to find the original
-    let eza_path = hmgr::paths::binary(bin_name!("eza"));
-    cu::fs::remove(&eza_path)?;
-    let eza_src = cu::which("eza")?;
-    cu::fs::copy(&eza_src, &eza_path)?;
-
-    ctx.add_item(Item::shim_bin(
+    let bin = cu::path!((ctx.install_dir()) / "eza" / "bin" / bin_name!("eza")).into_utf8()?;
+    ctx.add_item(Item::link_bin(
         bin_name!("ls"),
-        ShimCommand::target(eza_path.into_utf8()?),
+        bin.clone(),
+    ))?;
+    ctx.add_item(Item::link_bin(
+        bin_name!("eza"),
+        bin,
     ))?;
     Ok(())
 }

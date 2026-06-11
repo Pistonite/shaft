@@ -60,15 +60,22 @@ pub fn symlink_files(paths: &[(&Path, &Path)]) -> cu::Result<()> {
 /// Create hardlinks. `from` is where the link will be and `to` is the target of the link
 #[cfg(windows)]
 #[cu::context("failed to create hard links")]
-pub fn hardlink_files(paths: &[(&Path, &Path)]) -> cu::Result<()> {
+pub fn hardlink_files(paths: impl Iterator<Item=(impl AsRef<Path>, impl AsRef<Path>)>) -> cu::Result<()> {
     let mut script = String::new();
+    let mut empty = true;
     for (from, to) in paths {
+        empty = false;
+        let from = from.as_ref();
+        let to = to.as_ref();
         safe_remove_link(from)?;
         let from_abs = from.normalize()?;
         let to_abs = to.normalize()?;
         let from_str = from_abs.as_utf8()?;
         let to_str = to_abs.as_utf8()?;
         build_link_powershell(&mut script, "HardLink", from_str, to_str);
+    }
+    if empty {
+        return Ok(());
     }
     cu::which("powershell")?
         .command()
@@ -90,8 +97,9 @@ fn build_link_powershell(out: &mut String, link_type: &str, from: &str, to: &str
 /// Create hardlinks. `from` is where the link will be and `to` is the target of the link
 #[cfg(not(windows))]
 #[cu::context("failed to create hard links")]
-pub fn hardlink_files(paths: &[(&Path, &Path)]) -> cu::Result<()> {
+pub fn hardlink_files(paths: impl Iterator<Item=(impl AsRef<Path>, impl AsRef<Path>)>) -> cu::Result<()> {
     for (from, to) in paths {
+        let from = from.as_ref();
         cu::fs::remove(from)?;
         std::fs::hard_link(to, from)?;
     }

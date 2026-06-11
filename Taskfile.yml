@@ -96,7 +96,5 @@ tasks:
         echo "$new_version" > VERSION;
         echo "bumped version: $current -> $new_version";
 
-
-
   upgrade:
     - cargo upgrade

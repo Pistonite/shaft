@@ -19,6 +19,28 @@ pub(crate) use check_in_path;
 ///
 /// Optionally, takes the name of the system package that can be used as alternative
 macro_rules! check_in_shaft {
+    (#[sbin] $bin:literal) => {{
+        match cu::which($bin) {
+            Err(e) => {
+                cu::error!("verify: not found in PATH: '{}'", $bin);
+                cu::debug!("check_in_shaft failed: {e:?}");
+                return Ok(Verified::NotInstalled);
+            }
+            Ok(path) => {
+                if path != hmgr::paths::system_binary(bin_name!($bin)) {
+                    // ignore system32 ones since we are checking sbin
+                    if cfg!(not(windows)) || !path.as_os_str().to_string_lossy().to_lowercase().ends_with(&format!("system32\\{}.exe", $bin)) {
+                        cu::bail!(
+                            "found existing '{}' installed outside of shaft, please uninstall it first (at '{}'), or ensure the shaft bin has higher priority in PATH",
+                            $bin,
+                            path.display()
+                        );
+                    }
+                }
+                path
+            }
+        }
+    }};
     ($bin:literal) => {{
         match cu::which($bin) {
             Err(e) => {

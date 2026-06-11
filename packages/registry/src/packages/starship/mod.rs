@@ -17,7 +17,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 pub fn install(ctx: &Context) -> cu::Result<()> {
     let config = ctx.load_config(CONFIG)?;
     if config.build_from_source {
-        epkg::cargo::install("starship", ctx.bar_ref())?;
+        epkg::cargo::install("starship", None, ctx.bar_ref())?;
     } else {
         epkg::cargo::binstall("starship", ctx.bar_ref())?;
     }

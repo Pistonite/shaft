@@ -9,6 +9,7 @@ register_binaries!(
     "ls",
     "diff",
     "find",
+    "xargs",
     "gzip",
     "sed",
     "grep",
