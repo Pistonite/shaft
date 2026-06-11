@@ -63,7 +63,6 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
 }
 
 pub fn uninstall(_: &Context) -> cu::Result<()> {
-    eza::uninstall()?;
     cu::warn!("not uninstalling the essential packages for your sanity");
     Ok(())
 }

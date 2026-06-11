@@ -9,7 +9,7 @@ mod which;
 
 register_binaries!(
     "tar", // builtin
-    "ls", // eza
+    "ls",  // eza
     // uutils/sed
     "sed",
     // ms-coreutils
@@ -48,9 +48,7 @@ static MS_COREUTILS_LIST: &[&str] = &[
     "wc", "xargs", "yes"
 ];
 // these are compatible with DOS and will be put in sbin/ to superceed System32/ ones
-static MS_COREUTILS_SBIN_LIST: &[&str] = &[
-    "find", "sort", "hostname"
-];
+static MS_COREUTILS_SBIN_LIST: &[&str] = &["find", "sort", "hostname"];
 // static PS_REMOVE_SYSTEM32_EXES: &[&str] = &["expand", "hostname", "sort", ];
 
 // static PS_FUNCTIONS: &[&str] = &["mkdir"];
@@ -71,8 +69,14 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 
     // ms-coreutils: uutils/coreutils + findutils + grep
     check_verified!(verify_coreutils_version()?);
-    check_in_shaft!(#[sbin] "find");
-    check_in_shaft!(#[sbin] "sort");
+    check_in_shaft!(
+        #[sbin]
+        "find"
+    );
+    check_in_shaft!(
+        #[sbin]
+        "sort"
+    );
     check_in_shaft!("grep");
 
     // mingw
@@ -110,12 +114,16 @@ fn check_sbin_path() -> cu::Result<()> {
             // sbin path verified to exist and be before system_root/system32
             return Ok(());
         }
-        if p == system_path_expected || p == "%systemroot%\\system32"
-        || p == "%systemdrive%\\windows\\system32" {
+        if p == system_path_expected
+            || p == "%systemroot%\\system32"
+            || p == "%systemdrive%\\windows\\system32"
+        {
             break;
         }
     }
-    cu::bail!("path check failed: $SHAFT_HOME\\sbin should appear before {system_path_expected} for coreutils to work. Please fix the SYSTEM PATH");
+    cu::bail!(
+        "path check failed: $SHAFT_HOME\\sbin should appear before {system_path_expected} for coreutils to work. Please fix the SYSTEM PATH"
+    );
 }
 
 fn verify_coreutils_version() -> cu::Result<Verified> {
@@ -129,7 +137,7 @@ fn verify_coreutils_version() -> cu::Result<Verified> {
 fn get_coreutils_version() -> cu::Result<String> {
     let output = command_output!("coreutils", ["--version"]);
     let output = output.strip_prefix("coreutils ").unwrap_or(&output);
-    let output = output.split_once(' ').map(|a|a.0).unwrap_or(output);
+    let output = output.split_once(' ').map(|a| a.0).unwrap_or(output);
     Ok(output.trim().to_string())
 }
 
@@ -139,14 +147,19 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     sed::install(ctx)?;
     let coreutils_dir = cu::path!((ctx.install_dir()) / "coreutils");
     let coreutils_bin = cu::path!(&coreutils_dir / "bin" / bin_name!("coreutils"));
-    if coreutils_bin.exists() && let Ok(Verified::UpToDate) = verify_coreutils_version() {
+    if coreutils_bin.exists()
+        && let Ok(Verified::UpToDate) = verify_coreutils_version()
+    {
         return Ok(());
     }
 
-    epkg::cargo::install_git_commit("coreutils", 
-                metadata::coreutils::ms_coreutils::REPO,
-        metadata::coreutils::ms_coreutils::COMMIT
-        , Some(coreutils_dir.as_utf8()?), ctx.bar_ref())?;
+    epkg::cargo::install_git_commit(
+        "coreutils",
+        metadata::coreutils::ms_coreutils::REPO,
+        metadata::coreutils::ms_coreutils::COMMIT,
+        Some(coreutils_dir.as_utf8()?),
+        ctx.bar_ref(),
+    )?;
 
     MS_COREUTILS_COMMIT.update()?;
     Ok(())
@@ -173,11 +186,14 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         || curr_prefer_gnu_sort != config.windows.prefer_gnu;
     if need_set_reg {
         cu::debug!("setting registry for ms-coreutils");
-        let script = format!(concat!(
-r"New-Item -Path 'HKLM:\SOFTWARE\Microsoft\coreutils' -Force | Out-Null;",
-r"New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\coreutils' -Name 'DefaultFind' -PropertyType DWord -Value {0} -Force | Out-Null;",
-r"New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\coreutils' -Name 'DefaultSort' -PropertyType DWord -Value {0} -Force | Out-Null;",
-    ), if config.windows.prefer_gnu { "1" } else { "0" });
+        let script = format!(
+            concat!(
+                r"New-Item -Path 'HKLM:\SOFTWARE\Microsoft\coreutils' -Force | Out-Null;",
+                r"New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\coreutils' -Name 'DefaultFind' -PropertyType DWord -Value {0} -Force | Out-Null;",
+                r"New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\coreutils' -Name 'DefaultSort' -PropertyType DWord -Value {0} -Force | Out-Null;",
+            ),
+            if config.windows.prefer_gnu { "1" } else { "0" }
+        );
 
         opfs::sudo("powershell", "setting registry values for ms-coreutils")?
             .args(["-NoLogo", "-NoProfile", "-Command", &script])
@@ -202,9 +218,15 @@ r"New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\coreutils' -Name 'DefaultSort
         let link_target = format!("{coreutils_cmd_dir}\\{util}.cmd");
         link_paths.push((link_target, &coreutils_bin));
     }
-    cu::check!(opfs::hardlink_files(link_paths.into_iter()), "failed to create cmd links for ms-coreutils")?;
+    cu::check!(
+        opfs::hardlink_files(link_paths.into_iter()),
+        "failed to create cmd links for ms-coreutils"
+    )?;
     // link bins
-    ctx.add_item(Item::link_bin(bin_name!("coreutils"), coreutils_bin.clone()))?;
+    ctx.add_item(Item::link_bin(
+        bin_name!("coreutils"),
+        coreutils_bin.clone(),
+    ))?;
     for util in MS_COREUTILS_LIST {
         ctx.add_item(Item::link_bin(bin_name!(util), coreutils_bin.clone()))?;
     }
@@ -214,7 +236,8 @@ r"New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\coreutils' -Name 'DefaultSort
     // add the pwsh injection script
     // need to refer to https://github.com/microsoft/coreutils/blob/main/src/pwsh-install.ps1
     // if changes in the future
-    let pwsh_injection_script = include_str!("pwsh-install-template.ps1").replace("!!CMDDIR!!", &coreutils_cmd_dir);
+    let pwsh_injection_script =
+        include_str!("pwsh-install-template.ps1").replace("!!CMDDIR!!", &coreutils_cmd_dir);
     ctx.add_item(Item::pwsh(pwsh_injection_script))?;
     if config.windows.cmd_mkdir {
         let link_path = hmgr::paths::binary(bin_name!("mkdir")).into_utf8()?;
@@ -240,7 +263,8 @@ r"New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\coreutils' -Name 'DefaultSort
 }
 
 fn get_ms_coreutils_reg_value(value: &str) -> cu::Result<String> {
-    let script = format!("(Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\coreutils').{value}");
+    let script =
+        format!("(Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\coreutils').{value}");
     let (child, output) = cu::which("powershell")?
         .command()
         .args(["-NoLogo", "-NoProfile", "-Command", &script])
