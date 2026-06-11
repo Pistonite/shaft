@@ -37,7 +37,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_shaft!("task");
     check_in_shaft!("x");
     let v = command_output!("task", ["--version"]);
-    check_outdated!(&v, metadata[task]::VERSION);
+    check_outdated!(v.trim(), metadata[task]::VERSION);
 
     let v = check_cargo!("bat");
     check_outdated!(&v.version, metadata[bat]::VERSION);

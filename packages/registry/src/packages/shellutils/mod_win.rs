@@ -39,17 +39,17 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_shaft!("fzf");
     let v = command_output!("fzf", ["--version"]);
     let v = v.split_once(' ').map(|x| x.0).unwrap_or(&v);
-    check_outdated!(v, metadata[fzf]::VERSION);
+    check_outdated!(v.trim(), metadata[fzf]::VERSION);
 
     check_in_shaft!("jq");
     let v = command_output!("jq", ["--version"]);
     let v = v.strip_prefix("jq-").unwrap_or(&v);
-    check_outdated!(v, metadata[jq]::VERSION);
+    check_outdated!(v.trim(), metadata[jq]::VERSION);
 
     check_in_shaft!("task");
     check_in_shaft!("x");
     let v = command_output!("task", ["--version"]);
-    check_outdated!(&v, metadata[task]::VERSION);
+    check_outdated!(v.trim(), metadata[task]::VERSION);
 
     let v = check_cargo!("bat");
     check_outdated!(&v.version, metadata[bat]::VERSION);
