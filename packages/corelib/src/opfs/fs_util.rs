@@ -105,7 +105,13 @@ pub fn hardlink_files(
     for (from, to) in paths {
         let from = from.as_ref();
         cu::fs::remove(from)?;
-        std::fs::hard_link(to, from)?;
+        let to = to.as_ref();
+        cu::check!(
+            std::fs::hard_link(to, from),
+            "failed to create hard link: '{}' -> '{}'",
+            from.display(),
+            to.display()
+        )?;
     }
     Ok(())
 }
