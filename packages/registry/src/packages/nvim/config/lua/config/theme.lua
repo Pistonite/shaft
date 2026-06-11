@@ -34,6 +34,25 @@ require("catppuccin").setup({
         operators = {},
         miscs = {},
     },
+    lsp_styles = {
+        virtual_text = {
+            errors = { "italic" },
+            hints = { "italic" },
+            warnings = { "italic" },
+            information = { "italic" },
+            ok = { "italic" },
+        },
+        underlines = {
+            errors = { "undercurl" },
+            hints = { "undercurl" },
+            warnings = { "undercurl" },
+            information = { "underline" },
+            ok = { "underline" },
+        },
+        inlay_hints = {
+            background = true,
+        },
+    },
     color_overrides = {},
     custom_highlights = function()
         return {
@@ -70,6 +89,7 @@ require("catppuccin").setup({
             ["@punctuation.special"] = { link = "Delimiter" },
             ["@tag.delimiter"] = { link = "Delimiter" },
             ["@constructor.lua"] = { link = "Delimiter" },
+            ["@lsp.type.formatSpecifier"] = { link = "Delimiter" },
 
             -- variables
             ["@variable"] = { fg = mocha.lavender },
@@ -80,6 +100,7 @@ require("catppuccin").setup({
 
             -- constants
             ["@lsp.typemod.variable.readonly"] = { link = "Constant" },
+            ["@lsp.type.enumMember"] = { link = "Constant" },
 
             -- override the terminal color to be frappe
             -- so it stands out from the editor
@@ -108,30 +129,10 @@ require("catppuccin").setup({
             enabled = true,
             indentscope_color = "",
         },
-        native_lsp = {
-            enabled = true,
-            virtual_text = {
-                errors = { "italic" },
-                hints = { "italic" },
-                warnings = { "italic" },
-                information = { "italic" },
-                ok = { "italic" },
-            },
-            underlines = {
-                errors = { "undercurl" },
-                hints = { "undercurl" },
-                warnings = { "undercurl" },
-                information = { "underline" },
-                ok = { "underline" },
-            },
-            inlay_hints = {
-                background = true,
-            },
-        },
         -- For more plugins integrations please scroll down (https://github.com/catppuccin/nvim#integrations)
     },
     -- set pre-compiled path to be inside data
     compile_path = vim.fn.stdpath("data") .. "/catppuccin",
 })
-vim.cmd.colorscheme('catppuccin')
+vim.cmd.colorscheme('catppuccin-nvim')
 

@@ -18,8 +18,8 @@ cmp.setup({
         { name = 'nvim_lua',               keyword_length = 2 }, -- complete neovim's Lua runtime API such vim.lsp.*
     },
     window = {
-        completion = cmp.config.window.bordered(),
-        documentation = cmp.config.window.bordered(),
+        completion = cmp.config.window.bordered({ border = "rounded" }),
+        documentation = cmp.config.window.bordered({ border = "rounded" }),
     },
     formatting = {
         fields = { 'abbr', 'kind' },

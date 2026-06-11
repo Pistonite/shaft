@@ -1,4 +1,4 @@
-local lualine_theme = require("lualine.themes.catppuccin")
+local lualine_theme = require("lualine.themes.catppuccin-nvim")
 lualine_theme.normal.a.gui = ""
 lualine_theme.insert.a.gui = ""
 lualine_theme.visual.a.gui = ""
