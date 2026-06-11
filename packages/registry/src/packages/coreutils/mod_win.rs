@@ -64,8 +64,8 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     )?;
     check_verified!(which::verify()?);
 
-    eza::verify()?;
-    sed::verify()?;
+    check_verified!(eza::verify()?);
+    check_verified!(sed::verify()?);
 
     // ms-coreutils: uutils/coreutils + findutils + grep
     check_verified!(verify_coreutils_version()?);

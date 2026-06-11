@@ -20,7 +20,7 @@ register_binaries!(
 binary_dependencies!(Git);
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
-    eza::verify()?;
+    check_verified!(eza::verify()?);
     check_in_shaft!("pacman-update");
     check_pacman!("base");
     check_pacman!("reflector");
