@@ -238,7 +238,22 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     // if changes in the future
     let pwsh_injection_script =
         include_str!("pwsh-install-template.ps1").replace("!!CMDDIR!!", &coreutils_cmd_dir);
-    ctx.add_item(Item::pwsh(pwsh_injection_script))?;
+
+    ctx.add_item(Item::pwsh(format!(
+        r###"
+if ($PSVersionTable.PSVersion.Major -ne 5) {{
+#--- SHAFT 
+{ps7}
+#--- SHAFT
+}} else {{
+#--- SHAFT
+{ps5}
+#--- SHAFT
+}}
+"###,
+        ps7 = pwsh_injection_script,
+        ps5 = include_str!("ps5-compat.ps1")
+    )))?;
     if config.windows.cmd_mkdir {
         let link_path = hmgr::paths::binary(bin_name!("mkdir")).into_utf8()?;
         ctx.add_item(Item::cmd(format!("doskey mkdir=\"{link_path}\" -p $*")))?;

@@ -43,33 +43,61 @@ pub fn download(ctx: &Context) -> cu::Result<()> {
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
     opfs::ensure_terminated("pwsh.exe")?;
+    let pwsh_dir = ctx.install_dir();
+    let all_hosts_profile = pwsh_dir.join("profile.ps1");
+    let curr_host_profile = pwsh_dir.join("Microsoft.PowerShell_profile.ps1");
+    let all_hosts_profile_str = cu::fs::read_string(&all_hosts_profile).ok();
+    let curr_host_profile_str = cu::fs::read_string(&curr_host_profile).ok();
+
     ctx.move_install_to_old_if_exists()?;
 
+    struct WriteProfileGuard {
+        all_hosts_profile: PathBuf,
+        curr_host_profile: PathBuf,
+        all_hosts_profile_str: Option<String>,
+        curr_host_profile_str: Option<String>,
+    }
+    impl Drop for WriteProfileGuard {
+        fn drop(&mut self) {
+            if let Some(s) = &self.all_hosts_profile_str {
+                if let Err(e) = cu::fs::write(&self.all_hosts_profile, s) {
+                    cu::warn!("failed to write back old PowerShell profile: {e:?}");
+                }
+            }
+            if let Some(s) = &self.curr_host_profile_str {
+                if let Err(e) = cu::fs::write(&self.curr_host_profile, s) {
+                    cu::warn!("failed to write back old PowerShell profile: {e:?}");
+                }
+            }
+        }
+    }
+    let guard = WriteProfileGuard {
+        all_hosts_profile,
+        curr_host_profile,
+        all_hosts_profile_str,
+        curr_host_profile_str,
+    };
+
     let pwsh_zip = hmgr::paths::download("pwsh.zip", download_url());
-    let pwsh_dir = ctx.install_dir();
     opfs::unarchive(pwsh_zip, &pwsh_dir, true)?;
+
+    drop(guard);
 
     Ok(())
 }
 
 pub fn configure(ctx: &Context) -> cu::Result<()> {
-    let pwsh_exe = ctx.install_dir().join("pwsh.exe");
+    let install_dir = ctx.install_dir();
+    let pwsh_exe = install_dir.join("pwsh.exe");
     ctx.add_item(Item::shim_bin(
         bin_name!("pwsh"),
         ShimCommand::target(pwsh_exe.as_utf8()?),
     ))?;
-    // get ps7 profile location
-    let (child, stdout) = pwsh_exe
-        .command()
-        .args(["-NoLogo", "-NoProfile", "-c", "$Profile.AllUsersAllHosts"])
-        .stdout(cu::pio::string())
-        .stderr(cu::lv::E)
-        .stdin_null()
-        .spawn()?;
-    child.wait_nz()?;
-    let ps7_profile_path = Path::new(stdout.join()??.trim()).normalize()?;
+
+    let ps7_profile_path = install_dir.join("profile.ps1");
     let mut edit_profile_path = ps7_profile_path.clone();
     let config = ctx.load_config(CONFIG)?;
+
     if let Some(ps5_profile) = config.use_ps5_profile {
         // get ps5 profile location
         let (child, stdout) = cu::which("powershell.exe")?

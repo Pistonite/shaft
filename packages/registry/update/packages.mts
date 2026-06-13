@@ -37,9 +37,6 @@ export const pkg__7z: PackageFn = (meta) =>
         },
         query: (_, tag, [arm, x64]) => ({
             VERSION: tag,
-            // old:
-            // [cfg_arm64("SHA")]: arm.sha,
-            // [cfg_x64("SHA")]: x64.sha,
             ...match_cpu_arch("SHA", { arm: arm.sha, x64: x64.sha })
         })
     });
@@ -47,8 +44,12 @@ export const pkg_pwsh: PackageFn = (meta) =>
     fetch_from_github_release({
         repo: meta.repo(),
         tag: (tags) => {
-            for (const tag of tags) { if (tag.includes("preview")) { return tag; } }
-            throw new Error("failed to find pwsh preview release");
+            for (const tag of tags) { 
+                if (!tag.includes("preview")) {
+                    return tag;
+                }
+            }
+            throw new Error("failed to find pwsh stable release");
         },
         artifacts: (tag) => {
             tag = strip_v(tag);

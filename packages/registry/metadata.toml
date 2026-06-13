@@ -10,12 +10,11 @@ SHA.'opfs::CpuArch::Arm64' = "1fecf4e3407950939c8ffcc3e42e3039821997dea155301c75
 SHA.'opfs::CpuArch::X64' = "d64a0468f5b5b0b0fc5b2188450bcd655b70809d97b1c4535f2884635094377d"
 
 [pwsh]
-# using preview version to enable tilde (~) expansion
 REPO = "https://github.com/PowerShell/PowerShell"
-VERSION = "7.7.0-preview.2"
+VERSION = "7.6.2" # note: 7.6+ supports tilde expansion
 SHA.__match__ = "opfs::cpu_arch()"
-SHA.'opfs::CpuArch::Arm64' = "8d54e5c754ab34e8c979686854ff110d1f9a81d54d629b6f48cbda2b1f45699d"
-SHA.'opfs::CpuArch::X64' = "9965153b4d3308dd5b3cb3d1a800b89b7b93a345b09f208e0f9b2123119b28e9"
+SHA.'opfs::CpuArch::Arm64' = "4dfc686a7aa872fe427d0508b89cef6069c01861c59d8844ae1ffb4d2d7ae017"
+SHA.'opfs::CpuArch::X64' = "32e0dd26752483ba3f0e40e9ae44150643cbff469c13210c93295d158bfd7b26"
 
 [cargo_binstall]
 VERSION = "1.19.1"
