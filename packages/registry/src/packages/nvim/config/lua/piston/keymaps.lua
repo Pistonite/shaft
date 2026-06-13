@@ -127,7 +127,7 @@ function M.setup_nvim_tree(bufnr)
         if vim.fn.has("win32") ~= 0 then
             return function()
                 cb()
-                api.tree.reload()
+                api.fs.refresh()
             end
         end
         return cb

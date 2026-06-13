@@ -67,7 +67,10 @@ require("catppuccin").setup({
             ["@lsp.type.escapeSequence"] = { link = "Escape" },
 
             -- keywords
-            ["@keyword.export"] = { link = "Include" },
+            Keyword = { fg = mocha.mauve },
+            ["@keyword.export"] = { link = "Keyword" },
+            ["@keyword.import"] = { link = "Keyword" },
+            ["@keyword.import.cpp"] = { link = "Keyword" },
 
             -- functions
             Function = { fg = mocha.yellow },
