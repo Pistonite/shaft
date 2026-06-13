@@ -8,8 +8,8 @@ The pwsh profile to be used will be AllUsersAllHosts, since the installation is 
 Additionally, when specified, `vipwsh` will open the PS5 profile specified,
 otherwise `vipwsh` will open the PS7 profile AllUsersAllHosts
 
-see available values by running `$Profile | select-object *`""",
+see available values by running `$Profile | select *`""",
     key = ["use-ps5-profile"],
-    value = "CurrentUserAllHosts",
+    value = "AllUsersAllHosts",
 }]
 

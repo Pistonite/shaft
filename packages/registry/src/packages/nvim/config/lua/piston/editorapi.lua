@@ -459,14 +459,28 @@ local telescope_attach_file_picker_mappings = function(bufnr, _)
                 M.editview_aicoder_open()
             end, 50)
         end)
-    else
+    elseif telescope_opened_wint == M.wint.NTREE then
+        -- call open ourselves to avoid nvim-tree being closed and re-opened
+        -- causing motion sickness
         actions.select_default:replace(function()
             actions.close(bufnr)
             local selection = action_state.get_selected_entry()
-            local ntree_actions = require("nvim-tree.actions")
-            -- manually call nvim tree action to avoid the tree being closed and re-opened
-            -- causing motion sickness
-            ntree_actions.node.open_file.fn("", selection[1])
+            local filename = selection[1]
+            local line = nil
+            local col = nil
+            -- picker result contains linenumber
+            if filename:find(':') then
+                filename = selection.filename
+                line = selection.lnum
+                col = selection.col
+            end
+            -- note this is private API
+            local open_file_action = require("nvim-tree.actions.node.open-file")
+            local mode = ""
+            open_file_action.fn(mode, filename) 
+            if line ~= nil and col ~= nil then
+                vim.api.nvim_win_set_cursor(0, { line, col })
+            end
         end)
     end
     return true

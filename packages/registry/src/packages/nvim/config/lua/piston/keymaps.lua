@@ -121,18 +121,29 @@ function M.setup_nvim_tree(bufnr)
         }
     end
     local api = require("nvim-tree.api")
+    -- see https://github.com/nvim-tree/nvim-tree.lua/issues/3292
+    -- windows have filesystem watcher disabled
+    local wrap_refresh_if_windows = function(cb)
+        if vim.fn.has("win32") ~= 0 then
+            return function()
+                cb()
+                api.fs.refresh()
+            end
+        end
+        return cb
+    end
     vim.keymap.set('n', '<C-k>', api.node.show_info_popup, opts('Info'))
     vim.keymap.set('n', 'O', api.node.navigate.parent_close, opts('Close parent'))
     vim.keymap.set('n', 'P', api.node.navigate.parent, opts('Go to parent'))
-    vim.keymap.set('n', 'm', api.fs.rename_sub, opts('Move'))
+    vim.keymap.set('n', 'm', wrap_refresh_if_windows(api.fs.rename_sub), opts('Move'))
     vim.keymap.set('n', 'o', api.node.open.edit, opts('Open'))
     vim.keymap.set('n', 'v', editorapi.editview_open_split , opts('Open: vertical'))
     vim.keymap.set('n', 's', api.node.open.horizontal, opts('Open: split'))
     vim.keymap.set('n', 'a', api.fs.create, opts('Create'))
     vim.keymap.set('n', 'c', api.fs.copy.node, opts('Copy'))
     vim.keymap.set('n', 'p', api.fs.paste, opts('Paste'))
-    vim.keymap.set('n', 'd', api.fs.remove, opts('Delete'))
-    vim.keymap.set('n', 'D', api.fs.trash, opts('Trash'))
+    vim.keymap.set('n', 'd', wrap_refresh_if_windows(api.fs.remove), opts('Delete'))
+    -- vim.keymap.set('n', 'D', api.fs.trash, opts('Trash'))
     vim.keymap.set('n', 'x', api.fs.cut, opts('Cut'))
     vim.keymap.set('n', 'r', api.fs.rename_sub, opts('Rename'))
     vim.keymap.set('n', '-', api.marks.toggle, opts('Select'))
@@ -142,7 +153,7 @@ function M.setup_nvim_tree(bufnr)
     vim.keymap.set('n', ']', api.node.navigate.diagnostics.next, opts('Next diagnostic'))
     vim.keymap.set('n', 'B', api.tree.toggle_no_buffer_filter, opts('Toggle opened'))
     vim.keymap.set('n', 'H', api.tree.toggle_hidden_filter, opts('Toggle dotfiles'))
-    vim.keymap.set('n', 'q', api.tree.close, opts('Close'))
+    -- vim.keymap.set('n', 'q', api.tree.close, opts('Close'))
     vim.keymap.set('n', 'R', api.tree.reload, opts('Refresh'))
     vim.keymap.set('n', 'gy', api.fs.copy.absolute_path, opts('Copy absolute path'))
     vim.keymap.set('n', 'y', api.fs.copy.filename, opts('Copy name'))
