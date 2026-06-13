@@ -58,8 +58,13 @@ require("catppuccin").setup({
         return {
             -- make line numbers easier to read
             LineNr = { fg = mocha.overlay2 },
+            PmenuSel = { fg = mocha.rosewater },
+            TelescopeSelection = { fg = mocha.rosewater },
 
+            -- strings/escapes
             ["@string.regexp"] = { fg = mocha.red },
+            Escape = { fg = mocha.pink },
+            ["@lsp.type.escapeSequence"] = { link = "Escape" },
 
             -- keywords
             ["@keyword.export"] = { link = "Include" },
