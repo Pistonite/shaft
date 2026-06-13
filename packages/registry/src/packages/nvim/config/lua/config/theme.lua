@@ -70,6 +70,7 @@ require("catppuccin").setup({
             Keyword = { fg = mocha.mauve },
             ["@keyword.export"] = { link = "Keyword" },
             ["@keyword.import"] = { link = "Keyword" },
+            ["@keyword.import.c"] = { link = "Keyword" },
             ["@keyword.import.cpp"] = { link = "Keyword" },
 
             -- functions
