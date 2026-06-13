@@ -36,7 +36,7 @@ local config = {
             warning = "W",
             error = "E",
         }
-    }
+    },
     filesystem_watchers = {}
 }
 if vim.fn.has("win32") ~= 0 then
