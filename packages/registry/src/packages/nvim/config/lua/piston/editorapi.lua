@@ -1042,7 +1042,7 @@ function M.fix_buffer_issues(restart_lsp)
     vim.cmd("silent! write!")
     vim.cmd("edit")
     if restart_lsp then
-        vim.cmd.LspRestart()
+        vim.cmd("lsp restart")
     end
     M.warn("buffer reset")
 end
