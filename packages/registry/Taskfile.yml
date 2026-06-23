@@ -48,7 +48,7 @@ tasks:
         CHECK_MESSAGE: shellutils metadata is not up-to-date or uncommited changes in metadata
 
   copy-nvim:
-    desc: Copy config directory from this machine (~/.config/nvim) to shaft. Only works on Unix
+    desc: Copy Nvim config directory from this machine (~/.config/nvim) to shaft. Only works on Unix
     vars:
       TARGET: src/packages/nvim/config
     cmds:
@@ -60,4 +60,19 @@ tasks:
       - rm -f {{.TARGET}}/.gitignore
       - rm -f {{.TARGET}}/lazy-lock.json
       - rm -f {{.TARGET}}/lua/piston/config_gen.lua
-      - CURRENT=$(grep -oP 'NVIM_CFG = "\K[0-9]+' metadata.toml) && sed -i "s/NVIM_CFG = \"$CURRENT\"/NVIM_CFG = \"$((CURRENT+1))\"/" metadata.toml
+      - task: bump
+        vars:
+          KEY: NVIM_CFG
+          KEYL: NVIM_CFG
+
+  copy-kitty:
+    desc: Copy Kitty config directory from this machine (~/.config/kitty) to shaft. Only works on Unix
+    cmds:
+      - cp ~/.config/kitty/kitty.conf src/packages/terminal/kitty.conf
+      - task: bump
+        vars:
+          KEY: kitty\.CFG_VERSION
+          KEYL: kitty.CFG_VERSION
+
+  bump:
+    - CURRENT=$(grep -oP '{{.KEY}} = "\K[0-9]+' metadata.toml) && sed -i "s/{{.KEY}} = \"$CURRENT\"/{{.KEYL}} = \"$((CURRENT+1))\"/" metadata.toml
