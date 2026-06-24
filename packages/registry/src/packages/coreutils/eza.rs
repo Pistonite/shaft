@@ -29,6 +29,10 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
 pub fn configure(ctx: &Context) -> cu::Result<()> {
     let bin = cu::path!((ctx.install_dir()) / "eza" / "bin" / bin_name!("eza")).into_utf8()?;
     ctx.add_item(Item::link_bin(bin_name!("ls"), bin.clone()))?;
+    ctx.add_item(Item::shim_bin(
+        bin_name!("la"),
+        ShimCommand::target(bin.clone()).args(["-a"]),
+    ))?;
     ctx.add_item(Item::link_bin(bin_name!("eza"), bin))?;
     Ok(())
 }

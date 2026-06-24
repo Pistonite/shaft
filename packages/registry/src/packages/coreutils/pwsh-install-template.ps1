@@ -1,26 +1,11 @@
+# SHAFT_PATCH: since we use eza for ls, remove the ls alias
+Remove-Item Alias:ls -Force
 # https://github.com/microsoft/coreutils/blob/main/src/pwsh-install-template.ps1
-# # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+# 256f88b2b9edd24df99a6580a60a1c85d18c587c
+# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 # Inlining the template into the profile shaves off ~10ms (25%).
-# SHAFT_PATCH: take out { ls, date, rmdir, link }
 $script:__COREUTILS__ = [System.Collections.Generic.HashSet[string]]::new(
-    [string[]]@(
-        'arch', 'b2sum', 'base32', 'base64', 'basename',
-        'basenc', 'cat', 'cksum', 'comm', 'cp',
-        'csplit', 'cut', 'df', 'dirname',
-        'du', 'echo', 'env', 'expr', 'factor',
-        'false', 'find', 'fmt', 'fold', 'grep',
-        'head', 'hostname', 'join', 'la',
-        'ln', 'md5sum', 'mkdir', 'mktemp',
-        'mv', 'nl', 'nproc', 'numfmt', 'od',
-        'pathchk', 'pr', 'printenv', 'printf', 'ptx',
-        'pwd', 'readlink', 'realpath', 'rm',
-        'seq', 'sha1sum', 'sha224sum', 'sha256sum', 'sha384sum',
-        'sha512sum', 'shuf', 'sleep', 'sort', 'split',
-        'stat', 'sum', 'tac', 'tail', 'tee',
-        'test', 'touch', 'tr', 'true', 'truncate',
-        'tsort', 'unexpand', 'uniq', 'unlink', 'uptime',
-        'wc', 'xargs', 'yes'
-    ),
+    [string[]]@('!!COREUTILS!!'),
     [System.StringComparer]::OrdinalIgnoreCase
 )
 
@@ -155,8 +140,9 @@ function PSConsoleHostReadLine {
         $replacement = "& '!!CMDDIR!!"
 
         switch ($baseName) {
-            'la' { $replacement += "ls.cmd' --color=auto -AFhl" }
-            # SHAFT_PATCH: 'ls' { $replacement += "ls.cmd' --color=auto" }
+            # SHAFT_PATCH: ls/la are rebinded to EZA
+            # 'la' { $replacement += "ls.cmd' --color=auto -AFhl" }
+            # 'ls' { $replacement += "ls.cmd' --color=auto" }
             default { $replacement += "$baseName.cmd'" }
         }
 

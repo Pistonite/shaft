@@ -1,5 +1,7 @@
 //! GNU Coreutils, Diffutils, and other basic commands for common workflows
 
+use itertools::Itertools as _;
+
 use crate::pre::*;
 
 mod common;
@@ -35,7 +37,7 @@ static MS_COREUTILS_LIST: &[&str] = &[
     "csplit", "cut", "df", "dirname",
     "du", "echo", "env", "expr", "factor",
     "false", "find", "fmt", "fold", "grep",
-    "head", "hostname", "join", "la",
+    "head", "hostname", "join",
     "ln", "md5sum", "mkdir", "mktemp",
     "mv", "nl", "nproc", "numfmt", "od",
     "pathchk", "pr", "printenv", "printf", "ptx",
@@ -47,13 +49,11 @@ static MS_COREUTILS_LIST: &[&str] = &[
     "tsort", "unexpand", "uniq", "unlink", "uptime",
     "wc", "xargs", "yes"
 ];
+fn make_coreutils_alias_list_for_pwsh() -> String {
+    MS_COREUTILS_LIST.iter().map(|x| format!("'{x}'")).join(",")
+}
 // these are compatible with DOS and will be put in sbin/ to superceed System32/ ones
 static MS_COREUTILS_SBIN_LIST: &[&str] = &["find", "sort", "hostname"];
-// static PS_REMOVE_SYSTEM32_EXES: &[&str] = &["expand", "hostname", "sort", ];
-
-// static PS_FUNCTIONS: &[&str] = &["mkdir"];
-
-version_cache!(static MS_COREUTILS_COMMIT = metadata::coreutils::ms_coreutils::COMMIT);
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_sbin_path()?;
@@ -127,7 +127,6 @@ fn check_sbin_path() -> cu::Result<()> {
 }
 
 fn verify_coreutils_version() -> cu::Result<Verified> {
-    check_version_cache!(MS_COREUTILS_COMMIT);
     check_in_shaft!("coreutils");
     let v = get_coreutils_version()?;
     check_outdated!(&v, metadata[coreutils::ms_coreutils]::VERSION);
@@ -141,27 +140,48 @@ fn get_coreutils_version() -> cu::Result<String> {
     Ok(output.trim().to_string())
 }
 
+pub fn download(ctx: &Context) -> cu::Result<()> {
+    hmgr::download_file(
+        "coreutils.zip",
+        download_url(),
+        metadata::coreutils::ms_coreutils::SHA(),
+        ctx.bar(),
+    )?;
+    Ok(())
+}
+
+fn download_url() -> String {
+    let repo = metadata::coreutils::ms_coreutils::REPO;
+    let version = metadata::coreutils::ms_coreutils::VERSION;
+    let artifact = artifact_name();
+    format!("{repo}/releases/download/v{version}/{artifact}.zip")
+}
+
+fn artifact_name() -> String {
+    let version = metadata::coreutils::ms_coreutils::VERSION;
+    let arch = if opfs::is_arm() { "arm64" } else { "x64" };
+    format!("coreutils-{version}-{arch}")
+}
+
 pub fn install(ctx: &Context) -> cu::Result<()> {
     which::install(ctx)?;
     eza::install(ctx)?;
     sed::install(ctx)?;
+    let coreutils_zip = hmgr::paths::download("coreutils.zip", download_url());
     let coreutils_dir = cu::path!((ctx.install_dir()) / "coreutils");
-    let coreutils_bin = cu::path!(&coreutils_dir / "bin" / bin_name!("coreutils"));
+    let artifact_name = artifact_name();
+    let coreutils_bin = cu::path!(&coreutils_dir / (&artifact_name) / bin_name!("coreutils"));
     if coreutils_bin.exists()
         && let Ok(Verified::UpToDate) = verify_coreutils_version()
     {
         return Ok(());
     }
 
-    epkg::cargo::install_git_commit(
-        "coreutils",
-        metadata::coreutils::ms_coreutils::REPO,
-        metadata::coreutils::ms_coreutils::COMMIT,
-        Some(coreutils_dir.as_utf8()?),
-        ctx.bar_ref(),
+    cu::check!(
+        opfs::unarchive(&coreutils_zip, &coreutils_dir, true),
+        "failed to extract coreutils"
     )?;
 
-    MS_COREUTILS_COMMIT.update()?;
     Ok(())
 }
 
@@ -203,7 +223,9 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     }
 
     let coreutils_dir = cu::path!((ctx.install_dir()) / "coreutils");
-    let coreutils_bin = cu::path!(&coreutils_dir / "bin" / bin_name!("coreutils")).into_utf8()?;
+    let artifact_name = artifact_name();
+    let coreutils_bin =
+        cu::path!(&coreutils_dir / (&artifact_name) / bin_name!("coreutils")).into_utf8()?;
     // make the .cmd links - see pwsh-install-template.ps1 why
     let coreutils_cmd_dir = {
         let mut p = coreutils_dir.join("cmd").into_utf8()?;
@@ -236,8 +258,9 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     // add the pwsh injection script
     // need to refer to https://github.com/microsoft/coreutils/blob/main/src/pwsh-install.ps1
     // if changes in the future
-    let pwsh_injection_script =
-        include_str!("pwsh-install-template.ps1").replace("!!CMDDIR!!", &coreutils_cmd_dir);
+    let pwsh_injection_script = include_str!("pwsh-install-template.ps1")
+        .replace("!!CMDDIR!!", &coreutils_cmd_dir)
+        .replace("'!!COREUTILS!!'", &make_coreutils_alias_list_for_pwsh());
 
     ctx.add_item(Item::pwsh(format!(
         r###"
