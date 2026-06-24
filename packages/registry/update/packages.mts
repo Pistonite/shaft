@@ -61,7 +61,7 @@ export const pkg_pwsh: PackageFn = (meta) =>
         })
     });
 export const pkg_cargo_binstall = default_cratesio_fetcher("cargo-binstall");
-export const pkg_coreutils: PackageFn = () => [
+export const pkg_coreutils: PackageFn = (meta) => [
     fetch_from_cratesio({ crate: "eza", query: (v) => ({ "eza.VERSION": v }) }),
     fetch_from_arch_linux({ package: "zip", query: (version) => ({ "zip.VERSION": version }) }),
     fetch_from_arch_linux({ package: "unzip", query: (version) => ({ "unzip.VERSION": version }) }),
@@ -71,6 +71,23 @@ export const pkg_coreutils: PackageFn = () => [
     fetch_from_arch_linux({ package: "bash-completion", query: (version) => ({ "bash_cmp.VERSION": version }) }),
     fetch_from_aur({ package: "yay-bin", query: (version) => ({ "yay.VERSION": version })}),
     fetch_from_cratesio({ crate: "sed", query: (v) => ({ "uutils_sed.VERSION": v }) }),
+    fetch_from_github_release({
+        repo: meta.repo("ms_coreutils"),
+        tag: (tags) => {
+            const expectedTag = "v" + meta.get("ms_coreutils.VERSION");
+            if (tags.includes(expectedTag)) {
+                return expectedTag;
+            }
+            throw new Error("failed to find expected tag " + expectedTag + " for ms_coreutils");
+        },
+        artifacts: (tag) => {
+            tag = strip_v(tag);
+            return [`coreutils-${tag}-arm64.zip`, `coreutils-${tag}-x64.zip`];
+        },
+        query: (_, _tag, [arm, x64]) => ({
+            ...match_cpu_arch("ms_coreutils.SHA", { arm: arm.sha, x64: x64.sha }),
+        })
+    })
 ];
 export const pkg_shellutils: PackageFn = async () => {
     return [

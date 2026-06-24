@@ -20,18 +20,20 @@ SHA.'opfs::CpuArch::X64' = "32e0dd26752483ba3f0e40e9ae44150643cbff469c13210c9329
 VERSION = "1.19.1"
 
 [coreutils]
-ALIAS_VERSION = "15"
+ALIAS_VERSION = "16"
 eza.VERSION = "0.23.4"
 zip.VERSION = "3.0"
 unzip.VERSION = "6.0"
 tar.VERSION = "1.35"
 which.VERSION = "2.25"
-bash.VERSION = "5.3.12"
+bash.VERSION = "5.3.15"
 bash_cmp.VERSION = "2.17.0"
-yay.VERSION = "12.6.0"
-ms_coreutils.VERSION = "2026.5.29"
+yay.VERSION = "13.0.1"
+ms_coreutils.VERSION = "2026.6.16"
 ms_coreutils.REPO = "https://github.com/microsoft/coreutils"
-ms_coreutils.COMMIT = "e0dea0bffc58dd697f3ae60315f8579e2bf9b86f" # -- MUST BE MANUALLY PICKED! -- new utils/breaking changes likely to the setup process
+ms_coreutils.SHA.__match__ = "opfs::cpu_arch()"
+ms_coreutils.SHA.'opfs::CpuArch::Arm64' = "515c9421341160c11be696bb551bab8f6c050eb3918bacbc276392c003b40ff8"
+ms_coreutils.SHA.'opfs::CpuArch::X64' = "e2aedf8daa82f1dfb2b86ae7056a6346c21832e0800b718b820369247ce40eba"
 uutils_sed.VERSION = "0.1.1"
 
 [shellutils]
