@@ -41,6 +41,7 @@ local _ = (function()
     vim.api.nvim_create_autocmd("InsertLeave", {
         callback = function()
             vim.diagnostic.show()
+            update_numberwidth() -- update with old map first to reduce flicker
             refresh_numberwidth_for_all_wins()
         end
     })
