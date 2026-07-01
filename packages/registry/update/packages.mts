@@ -10,6 +10,7 @@ import { strip_v } from "./util.mts";
 
 const cfg_windows = (x: string) => `'cfg(windows)'.${x}`;
 const cfg_linux = (x: string) => `'cfg(target_os="linux")'.${x}`;
+const cfg_macos = (x: string) => `'cfg(target_os="macos")'.${x}`;
 // const cfg_windows_arm64 = (x: string) => `'cfg(all(windows,target_arch="aarch64"))'.${x}`;
 // const cfg_windows_x64 = (x: string) => `'cfg(all(windows,target_arch="x86_64"))'.${x}`;
 // const cfg_arm64 = (x: string) => `'cfg(target_arch="aarch64")'.${x}`;
@@ -33,11 +34,18 @@ export const pkg__7z: PackageFn = (meta) =>
         repo: meta.repo(),
         artifacts: (tag) => {
             const version_no_dot = tag.replace(".","");
-            return [`7z${version_no_dot}-arm64.exe`, `7z${version_no_dot}-x64.exe`];
+            return [
+                `7z${version_no_dot}-arm64.exe`,
+                `7z${version_no_dot}-x64.exe`,
+                `7z${version_no_dot}-linux-x64.tar.xz`,
+                `7z${version_no_dot}-mac.tar.xz`,
+            ];
         },
-        query: (_, tag, [arm, x64]) => ({
+        query: (_, tag, [win_arm, win_x64, linux, mac]) => ({
             VERSION: tag,
-            ...match_cpu_arch("SHA", { arm: arm.sha, x64: x64.sha })
+            ...match_cpu_arch(cfg_windows("SHA"), { arm: win_arm.sha, x64: win_x64.sha }),
+            ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
+            ...match_cpu_arch(cfg_macos("SHA"), { arm: mac.sha, x64: "<unsupported>" }),
         })
     });
 export const pkg_pwsh: PackageFn = (meta) =>

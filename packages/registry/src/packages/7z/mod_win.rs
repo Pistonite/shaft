@@ -3,10 +3,12 @@ use crate::pre::*;
 
 mod version;
 
-register_binaries!("7z", "7zfm");
+register_binaries!("7z", "7zz", "7zzs", "7zfm");
 
 pub fn verify(ctx: &Context) -> cu::Result<Verified> {
     check_in_shaft!("7z");
+    check_in_shaft!("7zz");
+    check_in_shaft!("7zzs");
     check_in_shaft!("7zfm");
     if !uninstaller_path(ctx).exists() {
         // ensure the uninstaller exists in a good installation
@@ -49,12 +51,20 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
 
 pub fn configure(ctx: &Context) -> cu::Result<()> {
     let install_dir = ctx.install_dir();
-    let exe_path = hmgr::paths::binary("7z.exe");
-    let exefm_path = hmgr::paths::binary("7zfm.exe");
+    let seven_z_exe = install_dir.join("7z.exe").into_utf8()?;
     ctx.add_item(Item::link_bin(
-        exe_path.into_utf8()?,
-        install_dir.join("7z.exe").into_utf8()?,
+        hmgr::paths::binary("7z.exe").into_utf8()?,
+        seven_z_exe.clone(),
     ))?;
+    ctx.add_item(Item::link_bin(
+        hmgr::paths::binary("7zz.exe").into_utf8()?,
+        seven_z_exe.clone(),
+    ))?;
+    ctx.add_item(Item::link_bin(
+        hmgr::paths::binary("7zzs.exe").into_utf8()?,
+        seven_z_exe,
+    ))?;
+    let exefm_path = hmgr::paths::binary("7zfm.exe");
     ctx.add_item(Item::link_bin(
         exefm_path.into_utf8()?,
         install_dir.join("7zFM.exe").into_utf8()?,
@@ -88,6 +98,8 @@ pub fn uninstall(ctx: &Context) -> cu::Result<()> {
 
 fn ensure_terminated() -> cu::Result<()> {
     opfs::ensure_terminated("7z.exe")?;
+    opfs::ensure_terminated("7zz.exe")?;
+    opfs::ensure_terminated("7zzs.exe")?;
     opfs::ensure_terminated("7zFM.exe")?;
     Ok(())
 }

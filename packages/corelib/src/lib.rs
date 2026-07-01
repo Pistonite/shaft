@@ -52,6 +52,11 @@ pub fn check_requirements() -> cu::Result<()> {
     if cu::which("bash").is_err() {
         cu::bail!("requirement not satisfied: bash not found in PATH");
     }
+
+    #[cfg(target_os = "macos")]
+    if cu::which("brew").is_err() {
+        cu::bail!("requirement not satisfied: homebrew is required for macos. See brew.sh");
+    }
     Ok(())
 }
 

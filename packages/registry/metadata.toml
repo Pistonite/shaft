@@ -4,10 +4,17 @@ CONFIG_VERSION = "3"
 
 [_7z]
 REPO = "https://github.com/ip7z/7zip"
-VERSION = "26.01"
-SHA.__match__ = "opfs::cpu_arch()"
-SHA.'opfs::CpuArch::Arm64' = "1fecf4e3407950939c8ffcc3e42e3039821997dea155301c75369474e5f15175"
-SHA.'opfs::CpuArch::X64' = "d64a0468f5b5b0b0fc5b2188450bcd655b70809d97b1c4535f2884635094377d"
+VERSION = "26.02"
+'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
+'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "7c6fde79ed5e11b81c7bb6573b7962d3b6322aa5fce69c33ed19f672b55173ab"
+'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "6745fa76dc2ea031596d8678f6f6b99c3c1b435b4164a63485adbbc7b8d82ef0"
+'cfg(target_os="linux")'.SHA.__match__ = "opfs::cpu_arch()"
+'cfg(target_os="linux")'.SHA.'opfs::CpuArch::Arm64' = "<unsupported>"
+'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "41aaba7b1235304ab5aa0624530c67ae829496cd29e875925271efdccc28c03e"
+'cfg(target_os="macos")'.SHA.__match__ = "opfs::cpu_arch()"
+'cfg(target_os="macos")'.SHA.'opfs::CpuArch::Arm64' = "1cf6760579502f87e591ff5c73a005ec50b3e4d6f507e8b038382d563c3175b9"
+'cfg(target_os="macos")'.SHA.'opfs::CpuArch::X64' = "<unsupported>"
+
 
 [pwsh]
 REPO = "https://github.com/PowerShell/PowerShell"
@@ -39,7 +46,7 @@ uutils_sed.VERSION = "0.1.1"
 [shellutils]
 ALIAS_VERSION = "8"
 which.VERSION = "0.1.5"
-viopen.VERSION = "0.2.1"
+viopen.VERSION = "0.2.2"
 vipath.VERSION = "0.1.8"
 n.VERSION = "0.1.2"
 wsclip.VERSION = "0.1.8"

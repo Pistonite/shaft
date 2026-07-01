@@ -6,9 +6,17 @@ pub fn check() -> cu::Result<Verified> {
             continue;
         };
         let mut parts = rest.split(' ');
-        let Some(version) = parts.next() else {
+        let Some(mut version) = parts.next() else {
             break;
         };
+        // 7zz prints: 7-Zip (z) XX.XX
+        // 7z prints: 7-Zip XX.XX
+        if version == "(z)" {
+            let Some(version2) = parts.next() else {
+                break;
+            };
+            version = version2;
+        }
         check_outdated!(version, metadata[_7z]::VERSION);
         return Ok(Verified::UpToDate);
     }
