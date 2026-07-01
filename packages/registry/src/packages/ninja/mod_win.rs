@@ -12,6 +12,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 }
 pub fn download(ctx: &Context) -> cu::Result<()> {
     hmgr::download_file("ninja.zip", ninja_url(), metadata::ninja::SHA(), ctx.bar())?;
+    Ok(())
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {

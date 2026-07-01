@@ -49,7 +49,7 @@ binary_dependencies!(_7z, Scalar, Python, Cmake);
 
 mod clang;
 pub fn verify(ctx: &Context) -> cu::Result<Verified> {
-    check_verified(clang::verify(ctx)?);
+    check_verified!(clang::verify(ctx)?);
     Ok(Verified::UpToDate)
 }
 
