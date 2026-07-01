@@ -29,7 +29,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         .wait_nz()?;
     cu::which("osascript")?
         .command()
-        .args(["-e", &format!("tell application \"Terminal\" to set default settings to settings set \"Catppuccin\"")])
+        .args(["-e", "tell application \"Terminal\" to set default settings to settings set \"Catppuccin\""])
         .stdoe(cu::lv::P)
         .stdin_null()
         .wait_nz()?;
