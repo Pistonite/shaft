@@ -90,6 +90,8 @@ impl Env {
             out,
             "# init_rc.zsh; managed by SHAFT, do not edit manually!\n# ==="
         );
+        out.push_str(include_str!("init.zsh"));
+        out.push('\n');
         let mut current_package = "";
         for entry in items {
             let Item::Zsh(script) = &entry.item else {
