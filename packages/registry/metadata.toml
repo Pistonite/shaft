@@ -126,6 +126,7 @@ SHA = "8ca33a60c791392d872b80d26c42f2bfa914a480f9eb2d7516d9f84373c36897"
 
 [terminal]
 'cfg(windows)'.CONFIG_VERSION = "10"
+'cfg(target_os="macos")'.CONFIG_VERSION = "1"
 clink.REPO = "https://github.com/chrisant996/clink"
 clink.VERSION = "1.9.23"
 clink.SHA = "ef6102aea6f6350804c32428ce04ad82eb185b0387424f62fe0f6f1e8c19737d"
