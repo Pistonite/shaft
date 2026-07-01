@@ -66,7 +66,7 @@ pub fn install(
     let mut state = brew::instance()?;
     let command = cu::which("brew")?
         .command()
-        .args([subcommand, package_name]);
+        .args([subcommand, package_name, "-y"]);
     let command = if is_cask {
         command.args(["--cask"])
     } else {
