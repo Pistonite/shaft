@@ -167,6 +167,8 @@ pub mod imp {
     ) -> cu::Result<()> {
         if clean {
             cu::fs::make_dir_empty(out_dir)?;
+        } else {
+            cu::fs::make_dir(out_dir)?;
         }
         let flag = match archive_path
             .extension()
