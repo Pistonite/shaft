@@ -126,6 +126,22 @@ macro_rules! check_pacman {
 #[cfg(target_os = "linux")]
 pub(crate) use check_pacman;
 
+/// Check brew install metadata for a homebrew package
+#[cfg(target_os = "macos")]
+macro_rules! check_homebrew {
+    ($l:literal) => {
+        match epkg::brew::installed_version($l)? {
+            None => {
+                cu::error!("verify: homebrew package not installed: '{}'", $l);
+                return Ok(Verified::NotInstalled);
+            }
+            Some(x) => x,
+        }
+    };
+}
+#[cfg(target_os = "macos")]
+pub(crate) use check_homebrew;
+
 /// Check actual version is at least as new as expected version
 macro_rules! check_outdated {
     ($actual:expr, metadata [ $($package:ident)::* ]:: $($expected:tt)*) => {{

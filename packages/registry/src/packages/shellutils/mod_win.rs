@@ -14,13 +14,11 @@ register_binaries!(
 
 binary_dependencies!(Scalar, _7z, CargoBinstall);
 
+mod cargoones;
 mod common;
-mod lfmt;
-mod n;
-mod viopen;
-mod vipath;
+mod shutil;
+mod task;
 mod wget;
-mod wsclip;
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_shaft!("perl");
@@ -46,30 +44,9 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     let v = v.strip_prefix("jq-").unwrap_or(&v);
     check_outdated!(v.trim(), metadata[jq]::VERSION);
 
-    check_in_shaft!("task");
-    check_in_shaft!("x");
-    let v = command_output!("task", ["--version"]);
-    check_outdated!(v.trim(), metadata[task]::VERSION);
-
-    let v = check_cargo!("bat");
-    check_outdated!(&v.version, metadata[bat]::VERSION);
-    let v = check_cargo!("dust" in crate "du-dust");
-    check_outdated!(&v.version, metadata[dust]::VERSION);
-    let v = check_cargo!("fd" in crate "fd-find");
-    check_outdated!(&v.version, metadata[fd]::VERSION);
-    let v = check_cargo!("rg" in crate "ripgrep");
-    check_outdated!(&v.version, metadata[rg]::VERSION);
-    let v = check_cargo!("websocat");
-    check_outdated!(&v.version, metadata[websocat]::VERSION);
-    let v = check_cargo!("zoxide");
-    check_outdated!(&v.version, metadata[zoxide]::VERSION);
-
-    check_verified!(n::verify()?);
-    check_verified!(viopen::verify()?);
-    check_verified!(lfmt::verify()?);
-
-    check_verified!(vipath::verify()?);
-    check_verified!(wsclip::verify()?);
+    check_verified!(task::verify()?);
+    check_verified!(cargoones::verify()?);
+    check_verified!(shutil::verify()?);
 
     check_config_version_cache!(common::ALIAS_VERSION);
     Ok(Verified::UpToDate)
@@ -83,7 +60,7 @@ pub fn download(ctx: &Context) -> cu::Result<()> {
     )?;
     hmgr::download_file("fzf.zip", fzf_url(), metadata::fzf::SHA(), ctx.bar())?;
     hmgr::download_file("jq.exe", jq_url(), metadata::jq::SHA, ctx.bar())?;
-    hmgr::download_file("task.zip", task_url(), metadata::task::SHA(), ctx.bar())?;
+    task::download(ctx)?;
     Ok(())
 }
 
@@ -101,41 +78,15 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     let jq_target = install_dir.join(bin_name!("jq"));
     cu::fs::copy(jq_exe, jq_target)?;
 
-    let task_zip = hmgr::paths::download("task.zip", task_url());
-    let temp_dir = hmgr::paths::temp_dir("task-zip");
-    opfs::unarchive(task_zip, &temp_dir, false)?;
-    let task_exe = temp_dir.join(bin_name!("task"));
-    cu::fs::copy(task_exe, install_dir.join(bin_name!("task")))?;
-
-    epkg::cargo::binstall("bat", ctx.bar_ref())?;
-    epkg::cargo::binstall("du-dust", ctx.bar_ref())?;
-    epkg::cargo::install("fd-find", None, ctx.bar_ref())?;
-    epkg::cargo::binstall("ripgrep", ctx.bar_ref())?;
-    epkg::cargo::install("websocat", None, ctx.bar_ref())?;
-    epkg::cargo::install("zoxide", None, ctx.bar_ref())?;
-
-    n::install(ctx)?;
-    viopen::install(ctx)?;
-    lfmt::install(ctx)?;
-
-    vipath::install(ctx)?;
-    wsclip::install(ctx)?;
+    task::install(ctx)?;
+    cargoones::install(ctx)?;
+    shutil::install(ctx)?;
     Ok(())
 }
 
 pub fn uninstall(ctx: &Context) -> cu::Result<()> {
-    epkg::cargo::uninstall("bat")?;
-    epkg::cargo::uninstall("du-dust")?;
-    epkg::cargo::uninstall("fd-find")?;
-    epkg::cargo::uninstall("websocat")?;
-    epkg::cargo::uninstall("zoxide")?;
-
-    n::uninstall(ctx)?;
-    viopen::uninstall(ctx)?;
-    lfmt::uninstall(ctx)?;
-
-    vipath::uninstall(ctx)?;
-    wsclip::uninstall(ctx)?;
+    cargoones::uninstall(ctx)?;
+    shutil::uninstall(ctx)?;
     Ok(())
 }
 
@@ -162,17 +113,8 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         hmgr::paths::binary(bin_name!("jq")).into_utf8()?,
         ctx.install_dir().join(bin_name!("jq")).into_utf8()?,
     ))?;
-    let task_exe = ctx.install_dir().join(bin_name!("task")).into_utf8()?;
-    ctx.add_item(Item::link_bin(
-        hmgr::paths::binary(bin_name!("task")).into_utf8()?,
-        task_exe.clone(),
-    ))?;
-    ctx.add_item(Item::link_bin(
-        hmgr::paths::binary(bin_name!("x")).into_utf8()?,
-        task_exe,
-    ))?;
-    let script = r#"Invoke-Expression (& {((task --completion powershell).replace("-CommandName task","-CommandName task,x") | Out-String)})"#;
-    ctx.add_item(Item::pwsh(script))?;
+
+    task::configure(ctx)?;
 
     ctx.add_item(Item::user_env_var("EDITOR", "viopen"))?;
 
@@ -216,11 +158,4 @@ fn jq_url() -> String {
     let repo = metadata::jq::REPO;
     let ver = metadata::jq::VERSION;
     format!("{repo}/releases/download/jq-{ver}/jq-windows-amd64.exe")
-}
-
-fn task_url() -> String {
-    let arch = if opfs::is_arm() { "arm64" } else { "amd64" };
-    let repo = metadata::task::REPO;
-    let ver = metadata::task::VERSION;
-    format!("{repo}/releases/download/v{ver}/task_windows_{arch}.zip")
 }

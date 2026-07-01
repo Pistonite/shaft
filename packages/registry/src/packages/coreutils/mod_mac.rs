@@ -30,7 +30,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     Ok(())
 }
 
-pub fn uninstall(ctx: &Context) -> cu::Result<()> {
+pub fn uninstall(_: &Context) -> cu::Result<()> {
     cu::warn!("not uninstalling the essential packages for your sanity");
     Ok(())
 }

@@ -7,6 +7,7 @@ import { fetch_from_local_cargo_toml } from "./fetch/cargo_toml.mts";
 import { fetch_latest_commit } from "./fetch/latest_commit.mts";
 import { fetch_release_name } from "./fetch/release_description.mts";
 import { strip_v } from "./util.mts";
+import { fetch_from_homebrew } from "./fetch/homebrew.mts";
 
 const cfg_windows = (x: string) => `'cfg(windows)'.${x}`;
 const cfg_linux = (x: string) => `'cfg(target_os="linux")'.${x}`;
@@ -157,6 +158,7 @@ export const pkg_perl: PackageFn = () => fetch_from_arch_linux({ package: "perl"
 export const pkg_curl: PackageFn = () => fetch_from_arch_linux({ package: "curl", query: (v) => ({ [cfg_linux("VERSION")]: v }) });
 export const pkg_wget: PackageFn = (meta) => [
     fetch_from_arch_linux({ package: "wget", query: (version) => ({ [cfg_linux("VERSION")]: version }) }),
+    fetch_from_homebrew({ package: "wget", query: (version) => ({ [cfg_macos("VERSION")]: version }) }),
     fetch_from_github_release({
         repo: meta.get(cfg_windows("REPO")),
         artifact: (all) => {
@@ -203,11 +205,17 @@ export const pkg_jq: PackageFn = (meta) =>
 export const pkg_task: PackageFn = (meta) =>
     fetch_from_github_release({
         repo: meta.repo(),
-        artifacts: () => ["task_windows_arm64.zip", "task_windows_amd64.zip", "task_linux_amd64.tar.gz"],
-        query: (_, tag, [arm64, x64, linux]) => ({
+        artifacts: () => [
+            "task_windows_arm64.zip", 
+            "task_windows_amd64.zip", 
+            "task_linux_amd64.tar.gz",
+            "task_darwin_arm64.tar.gz"
+        ],
+        query: (_, tag, [arm64, x64, linux, mac]) => ({
             VERSION: strip_v(tag),
             ...match_cpu_arch(cfg_windows("SHA"), { arm: arm64.sha, x64: x64.sha }),
             ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
+            ...match_cpu_arch(cfg_macos("SHA"), { arm: mac.sha, x64: "<unsupported>" }),
         })
     });
 export const pkg_bat = default_cratesio_fetcher("bat");
