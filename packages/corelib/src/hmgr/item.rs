@@ -67,7 +67,7 @@ impl ItemMgr {
         match &entry.item {
             Item::UserEnvVar(_, _) => {}
             Item::UserPath(_) => {}
-            #[cfg(target_os = "linux")]
+            #[cfg(unix)]
             Item::SessionEnvVar(_, _, _) => {}
             Item::LinkBin(_, _, _) => self.link_dirty = true,
             Item::LinkSysBin(_, _) => self.link_dirty = true,
@@ -123,7 +123,7 @@ impl ItemMgr {
                 #[cfg(not(windows))]
                 Item::UserPath(_) => {}
 
-                #[cfg(target_os = "linux")]
+                #[cfg(unix)]
                 Item::SessionEnvVar(_, _, _) => {}
 
                 Item::LinkBin(bin, _, _) => {
