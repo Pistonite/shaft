@@ -21,15 +21,9 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     let install_dir = ctx.install_dir();
     let profile_path = cu::path!(install_dir / "Catppuccin.terminal");
     cu::fs::write(&profile_path, include_bytes!("macterminal.plist"))?;
-    cu::which("osascript")?
+    cu::which("open")?
         .command()
-        .args([
-            "-e",
-            &format!(
-                "tell application \"Terminal\" to load settings set POSIX file \"{}\"",
-                profile_path.as_utf8()?
-            ),
-        ])
+        .arg(profile_path.as_utf8()?)
         .stdoe(cu::lv::P)
         .stdin_null()
         .wait_nz()?;
