@@ -40,6 +40,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         .stdin_null()
         .wait_nz()?;
     CFG_VERSION.update()?;
+    Ok(())
 }
 
 pub fn pre_uninstall(_: &Context) -> cu::Result<()> {
