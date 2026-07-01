@@ -7,6 +7,7 @@ mod eza;
 
 register_binaries!(
     "ls",
+    "la",
     "diff",
     "find",
     "xargs",
