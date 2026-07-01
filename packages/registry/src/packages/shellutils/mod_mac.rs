@@ -44,9 +44,9 @@ pub fn download(ctx: &Context) -> cu::Result<()> {
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
-    epkg::brew::install("wget", ctx.bar_ref())?;
-    epkg::brew::install("fzf", ctx.bar_ref())?;
-    epkg::brew::install("jq", ctx.bar_ref())?;
+    epkg::brew::install("wget", false, ctx.bar_ref())?;
+    epkg::brew::install("fzf", false, ctx.bar_ref())?;
+    epkg::brew::install("jq", false, ctx.bar_ref())?;
     task::install(ctx)?;
     cargoones::install(ctx)?;
     shutil::install(ctx)?;

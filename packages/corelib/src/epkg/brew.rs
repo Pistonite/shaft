@@ -52,7 +52,11 @@ pub fn installed_version(package_name: &str) -> cu::Result<Option<String>> {
 }
 
 #[cu::context("failed to install '{package_name}' with brew")]
-pub fn install(package_name: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
+pub fn install(
+    package_name: &str,
+    is_cask: bool,
+    bar: Option<&Arc<cu::ProgressBar>>,
+) -> cu::Result<()> {
     let already_installed = installed_version(package_name)?.is_some();
     let subcommand = if already_installed {
         "upgrade"
@@ -60,9 +64,15 @@ pub fn install(package_name: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Re
         "install"
     };
     let mut state = brew::instance()?;
-    let (child, bar, _) = cu::which("brew")?
+    let command = cu::which("brew")?
         .command()
-        .args([subcommand, package_name])
+        .args([subcommand, package_name]);
+    let command = if is_cask {
+        command.args(["--cask"])
+    } else {
+        command
+    };
+    let (child, bar, _) = command
         .stdoe(
             cu::pio::spinner(format!("brew {subcommand} '{package_name}'"))
                 .configure_spinner(|builder| builder.keep(true).parent(bar.cloned())),

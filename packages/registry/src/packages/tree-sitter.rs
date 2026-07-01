@@ -38,8 +38,10 @@ fn tree_sitter_base_name() -> cu::Result<&'static str> {
         })
     } else if cfg!(target_os = "linux") {
         Ok("tree-sitter-linux-x64")
+    } else if cfg!(target_os = "macos") {
+        Ok("tree-sitter-macos-arm64")
     } else {
-        cu::bail!("macos unsupported yet")
+        cu::bail!("tree-sitter not supported on this platform")
     }
 }
 pub fn install(ctx: &Context) -> cu::Result<()> {

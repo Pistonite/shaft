@@ -120,6 +120,7 @@ VERSION = "0.9.9"
 [hack_font]
 REPO = "https://github.com/ryanoasis/nerd-fonts"
 VERSION_PACMAN = "3.4.0-2"
+VERSION_HOMEBREW = "3.4.0"
 VERSION = "3.4.0"
 SHA = "8ca33a60c791392d872b80d26c42f2bfa914a480f9eb2d7516d9f84373c36897"
 

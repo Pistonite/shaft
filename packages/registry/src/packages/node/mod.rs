@@ -170,9 +170,9 @@ fn volta_url() -> cu::Result<String> {
     } else if cfg!(target_os = "linux") {
         format!("volta-{version}-linux.tar.gz")
     } else if cfg!(target_os = "macos") {
-        cu::bail!("volta for macOS not implemented");
+        format!("volta-{version}-macos.tar.gz")
     } else {
-        cu::bail!("unknown platform");
+        cu::bail!("volta not supported on this platform");
     };
     let repo = metadata::volta::REPO;
     Ok(format!("{repo}/releases/download/v{version}/{artifact}"))

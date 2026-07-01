@@ -7,7 +7,7 @@ import { fetch_from_local_cargo_toml } from "./fetch/cargo_toml.mts";
 import { fetch_latest_commit } from "./fetch/latest_commit.mts";
 import { fetch_release_name } from "./fetch/release_description.mts";
 import { strip_v } from "./util.mts";
-import { fetch_from_homebrew } from "./fetch/homebrew.mts";
+import { fetch_from_homebrew, fetch_from_homebrew_cask } from "./fetch/homebrew.mts";
 
 const cfg_windows = (x: string) => `'cfg(windows)'.${x}`;
 const cfg_linux = (x: string) => `'cfg(target_os="linux")'.${x}`;
@@ -228,6 +228,10 @@ export const pkg_hack_font: PackageFn = (meta) => [
     fetch_from_arch_linux({
         package: "ttf-hack-nerd",
         query: (ver, rel) => ({ VERSION_PACMAN: `${ver}-${rel}` })
+    }),
+    fetch_from_homebrew_cask({
+        cask: "font-hack-nerd-font",
+        query: (ver) => ({ VERSION_HOMEBREW: ver })
     }),
     fetch_from_github_release({
         repo: meta.repo(),

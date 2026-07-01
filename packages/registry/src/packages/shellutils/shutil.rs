@@ -61,16 +61,28 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
         epkg::cargo::install_local(&packages_path.join("shutil-n"), "n", ctx.bar_ref())?;
     }
     if need_viopen {
-        epkg::cargo::install_local(&packages_path.join("shutil-viopen"), "viopen", ctx.bar_ref())?;
+        epkg::cargo::install_local(
+            &packages_path.join("shutil-viopen"),
+            "viopen",
+            ctx.bar_ref(),
+        )?;
     }
     if need_lfmt {
         epkg::cargo::install_local(&packages_path.join("shutil-lfmt"), "lfmt", ctx.bar_ref())?;
     }
     if need_vipath {
-        epkg::cargo::install_local(&packages_path.join("shutil-vipath"), "vipath", ctx.bar_ref())?;
+        epkg::cargo::install_local(
+            &packages_path.join("shutil-vipath"),
+            "vipath",
+            ctx.bar_ref(),
+        )?;
     }
     if need_wsclip {
-        epkg::cargo::install_local(&packages_path.join("shutil-wsclip"), "wsclip", ctx.bar_ref())?;
+        epkg::cargo::install_local(
+            &packages_path.join("shutil-wsclip"),
+            "wsclip",
+            ctx.bar_ref(),
+        )?;
     }
     Ok(())
 }
