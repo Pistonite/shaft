@@ -325,11 +325,17 @@ export const pkg_starship = default_cratesio_fetcher("starship");
 export const pkg_nvim: PackageFn = (meta) => [
     fetch_from_github_release({
         repo: meta.repo(),
-        artifacts: () => ["nvim-linux-x86_64.tar.gz", "nvim-win-arm64.zip", "nvim-win64.zip"],
-        query: (_, tag, [linux, arm, x64]) => ({
+        artifacts: () => [
+            "nvim-linux-x86_64.tar.gz",
+            "nvim-win-arm64.zip",
+            "nvim-win64.zip",
+            "nvim-macos-arm64.tar.gz"
+        ],
+        query: (_, tag, [linux, arm, x64, mac]) => ({
             "VERSION": strip_v(tag),
             ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
             ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
+            ...match_cpu_arch(cfg_macos("SHA"), { arm: mac.sha, x64: "<unsupported>" }),
         })
     }),
 ];
@@ -340,11 +346,13 @@ export const pkg_tree_sitter: PackageFn = (meta) => [
             "tree-sitter-linux-x64.gz",
             "tree-sitter-windows-arm64.gz",
             "tree-sitter-windows-x64.gz",
+            "tree-sitter-macos-arm64.gz",
         ],
-        query: (_, tag, [linux, arm, x64]) => ({
+        query: (_, tag, [linux, arm, x64, mac]) => ({
             "VERSION": strip_v(tag),
             ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
             ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
+            ...match_cpu_arch(cfg_macos("SHA"), { arm: mac.sha, x64: "<unsupported>" }),
         })
     }),
 ];
