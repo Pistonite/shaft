@@ -177,7 +177,7 @@ impl EditorConfig {
             false,
             executable,
             supports_directory,
-            args.into_iter().map(|x| x.to_string()).collect(),
+            args.iter().map(|x| x.to_string()).collect(),
         )
     }
     fn new(

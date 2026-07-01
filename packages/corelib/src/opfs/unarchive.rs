@@ -53,11 +53,11 @@ fn unarchive_impl(archive_path: &Path, out_dir: &Path, clean: bool) -> cu::Resul
 
 pub fn find_7z() -> Option<PathBuf> {
     // new unix-style standalone binary
-    if let Some(x) = cu::which("7zzs").ok() {
+    if let Ok(x) = cu::which("7zzs") {
         return Some(x);
     }
     // new unix-style binary
-    if let Some(x) = cu::which("7zz").ok() {
+    if let Ok(x) = cu::which("7zz") {
         return Some(x);
     }
     // old style binary
