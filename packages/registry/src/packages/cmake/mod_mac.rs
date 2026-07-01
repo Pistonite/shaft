@@ -11,7 +11,7 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     epkg::brew::install("cmake", false, ctx.bar_ref())?;
     Ok(())
 }
-pub fn uninstall(_: &Context) -> cu::Result<()> {
+pub fn uninstall(ctx: &Context) -> cu::Result<()> {
     epkg::brew::uninstall("cmake", ctx.bar_ref())?;
     Ok(())
 }
