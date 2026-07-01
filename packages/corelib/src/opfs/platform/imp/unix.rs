@@ -35,7 +35,7 @@ fn get_arch_with_uname() -> cu::Result<Option<CpuArch>> {
     stdout.make_ascii_lowercase();
     match stdout.trim() {
         "x86_64" => Ok(Some(CpuArch::X64)),
-        "aarch64" => Ok(Some(CpuArch::Arm64)),
+        "aarch64" | "arm64" => Ok(Some(CpuArch::Arm64)),
         other => {
             cu::warn!("unknown architecture from uname -m: {other}");
             Ok(None)
