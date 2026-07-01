@@ -74,8 +74,10 @@ fn nvim_file_name() -> cu::Result<&'static str> {
         })
     } else if cfg!(target_os = "linux") {
         Ok("nvim-linux-x86_64.tar.gz")
+    } else if cfg!(target_os = "macos") {
+        Ok("nvim-macos-arm64.tar.gz")
     } else {
-        cu::bail!("macos unsupported yet")
+        cu::bail!("nvim not supported on this platform")
     }
 }
 

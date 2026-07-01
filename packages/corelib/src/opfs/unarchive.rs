@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -45,10 +45,23 @@ fn unarchive_impl(archive_path: &Path, out_dir: &Path, clean: bool) -> cu::Resul
 
     // zip / unknown formats: require 7z
     let seven_z = cu::check!(
-        cu::which("7z"),
+        find_7z(),
         "7z is required to extract .{ext} archives but was not found"
     )?;
     imp::unarchive_7z(seven_z, archive_path, out_dir, clean)
+}
+
+pub fn find_7z() -> Option<PathBuf> {
+    // new unix-style standalone binary
+    if let Ok(x) = cu::which("7zzs") {
+        return Some(x);
+    }
+    // new unix-style binary
+    if let Ok(x) = cu::which("7zz") {
+        return Some(x);
+    }
+    // old style binary
+    cu::which("7z").ok()
 }
 
 /// Extract an archive to `out_dir`, then rename `from` to `to`.

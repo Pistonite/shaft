@@ -67,7 +67,7 @@ impl ItemMgr {
         match &entry.item {
             Item::UserEnvVar(_, _) => {}
             Item::UserPath(_) => {}
-            #[cfg(target_os = "linux")]
+            #[cfg(unix)]
             Item::SessionEnvVar(_, _, _) => {}
             Item::LinkBin(_, _, _) => self.link_dirty = true,
             Item::LinkSysBin(_, _) => self.link_dirty = true,
@@ -123,7 +123,7 @@ impl ItemMgr {
                 #[cfg(not(windows))]
                 Item::UserPath(_) => {}
 
-                #[cfg(target_os = "linux")]
+                #[cfg(unix)]
                 Item::SessionEnvVar(_, _, _) => {}
 
                 Item::LinkBin(bin, _, _) => {
@@ -403,7 +403,7 @@ pub enum Item {
     /// In linux, compositor environment are usually on top of
     /// shell environments as display manager like SDDM will source
     /// bash_profile.
-    #[cfg(target_os = "linux")]
+    #[cfg(unix)]
     SessionEnvVar(SessionType, String, String),
 
     /// Link a binary (in the HOME/bin directory) to a location
@@ -454,7 +454,7 @@ impl Item {
     }
 
     #[inline(always)]
-    #[cfg(target_os = "linux")]
+    #[cfg(unix)]
     pub fn session_env(
         compositor: SessionType,
         key: impl Into<String>,
@@ -505,7 +505,7 @@ impl Item {
     }
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(unix)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SessionType {
     /// Environment: sourced from ~/.config/hyprland/hyprland.conf

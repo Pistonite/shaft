@@ -12,6 +12,7 @@ jobs:
         include:
           - image: blacksmith-4vcpu-ubuntu-2404
           - image: blacksmith-4vcpu-windows-2025
+          - image: macos-26
           # - image: windows-11-arm
           #   target: arm64
     runs-on: ${{ matrix.image }}

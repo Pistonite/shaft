@@ -12,6 +12,7 @@ mod which;
 register_binaries!(
     "tar", // builtin
     "ls",  // eza
+    "la",  // eza
     // uutils/sed
     "sed",
     // ms-coreutils

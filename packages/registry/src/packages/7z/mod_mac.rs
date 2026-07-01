@@ -32,12 +32,11 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     ))?;
     ctx.add_item(Item::link_bin(
         hmgr::paths::binary("7zz").into_utf8()?,
-        seven_zz,
+        seven_zz.clone(),
     ))?;
-    let seven_zzs = install_dir.join("7zzs").into_utf8()?;
     ctx.add_item(Item::link_bin(
         hmgr::paths::binary("7zzs").into_utf8()?,
-        seven_zzs,
+        seven_zz,
     ))?;
     Ok(())
 }
@@ -51,7 +50,7 @@ fn download_url() -> String {
     let repo = metadata::_7z::REPO;
     let version = metadata::_7z::VERSION;
     let version_no_dot = version.replace(".", "");
-    format!("{repo}/releases/download/{version}/7z{version_no_dot}-linux-x64.tar.xz")
+    format!("{repo}/releases/download/{version}/7z{version_no_dot}-mac.tar.xz")
 }
 
 fn ensure_terminated() -> cu::Result<()> {

@@ -19,7 +19,7 @@ members = [
 
 [workspace.dependencies.cu]
 package = "pistonite-cu"
-version = "0.8.3"
+version = "0.8.4"
 # path = "../cu/packages/copper"
 
 [workspace.dependencies.pm]

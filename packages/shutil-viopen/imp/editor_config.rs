@@ -46,9 +46,10 @@ impl EditorConfig {
             return Ok(None);
         }
         let args = cu::check!(shell_words::split(editor), "failed to split editor command")?;
+        let has_textedit = args.iter().any(|x| x.eq_ignore_ascii_case("textedit"));
 
-        // +4 for additional args that will be added, like the file path
-        let mut new_args = Vec::with_capacity(args.len() + 4);
+        // +8 for additional args that will be added, like the file path
+        let mut new_args = Vec::with_capacity(args.len() + 8);
         let mut args_iter = args.into_iter();
         let executable = cu::check!(args_iter.next(), "no executable found")?;
         let executable = cu::which(&executable)?;
@@ -58,10 +59,10 @@ impl EditorConfig {
             }
         }
         let executable = executable.into_utf8()?;
-        let editor_type = EditorType::guess(&executable);
+        let editor_type = EditorType::guess(&executable, has_textedit);
 
         let inherit = match editor_type {
-            EditorType::Notepad => {
+            EditorType::TextEdit | EditorType::Notepad => {
                 new_args.extend(args_iter);
                 false
             }
@@ -105,10 +106,10 @@ impl EditorConfig {
             return Ok(Self::inherit(x, true, vec![]));
         }
         if let Some(x) = find_executable_full_path("code") {
-            return Ok(Self::dont_inherit(x, true, vec!["-w".to_string()]));
+            return Ok(Self::dont_inherit(x, true, &["-w"]));
         }
         if let Some(x) = find_executable_full_path("subl") {
-            return Ok(Self::dont_inherit(x, true, vec!["-w".to_string()]));
+            return Ok(Self::dont_inherit(x, true, &["-w"]));
         }
         if let Some(x) = find_executable_full_path("vi") {
             return Ok(Self::inherit(x, true, vec![]));
@@ -127,7 +128,7 @@ impl EditorConfig {
         if cfg!(windows) {
             for x in ["vscode", "vsc", "sublime"] {
                 if let Some(x) = find_executable_full_path(x) {
-                    return Ok(Self::dont_inherit(x, true, vec!["-w".to_string()]));
+                    return Ok(Self::dont_inherit(x, true, &["-w"]));
                 }
             }
         }
@@ -146,12 +147,18 @@ impl EditorConfig {
         if cfg!(not(windows)) {
             for x in ["vscode", "vsc", "sublime"] {
                 if let Some(x) = find_executable_full_path(x) {
-                    return Ok(Self::dont_inherit(x, true, vec!["-w".to_string()]));
+                    return Ok(Self::dont_inherit(x, true, &["-w"]));
                 }
             }
         } else {
             if let Some(x) = find_executable_full_path("notepad.exe") {
-                return Ok(Self::dont_inherit(x, false, vec![]));
+                return Ok(Self::dont_inherit(x, false, &[]));
+            }
+        }
+
+        if cfg!(target_os = "macos") {
+            if let Some(x) = find_executable_full_path("open") {
+                return Ok(Self::dont_inherit(x, false, &["-W", "-a", "TextEdit"]));
             }
         }
 
@@ -164,9 +171,14 @@ impl EditorConfig {
     fn dont_inherit(
         executable: impl Into<String>,
         supports_directory: bool,
-        args: Vec<String>,
+        args: &[&str],
     ) -> Self {
-        Self::new(false, executable, supports_directory, args)
+        Self::new(
+            false,
+            executable,
+            supports_directory,
+            args.iter().map(|x| x.to_string()).collect(),
+        )
     }
     fn new(
         inherit: bool,
@@ -206,9 +218,10 @@ pub enum EditorType {
     Terminal { supports_directory: bool },
     WFlagOrWaitFlag { supports_directory: bool },
     Notepad,
+    TextEdit, // for OSX
 }
 impl EditorType {
-    fn guess(executable: &str) -> Self {
+    fn guess(executable: &str, has_textedit: bool) -> Self {
         let mut file_name = match executable.rfind(['/', '\\']) {
             None => executable,
             Some(i) => &executable[i + 1..],
@@ -232,6 +245,11 @@ impl EditorType {
                 supports_directory: false,
             };
         }
+        if cfg!(target_os = "macos") && has_textedit {
+            if file_name.eq_ignore_ascii_case("open") {
+                return EditorType::TextEdit;
+            }
+        }
 
         EditorType::Terminal {
             supports_directory: true,
@@ -243,6 +261,7 @@ impl EditorType {
             EditorType::Terminal { supports_directory } => *supports_directory,
             EditorType::WFlagOrWaitFlag { supports_directory } => *supports_directory,
             EditorType::Notepad => false,
+            EditorType::TextEdit => false,
         }
     }
 }

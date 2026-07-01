@@ -7,9 +7,11 @@ import { fetch_from_local_cargo_toml } from "./fetch/cargo_toml.mts";
 import { fetch_latest_commit } from "./fetch/latest_commit.mts";
 import { fetch_release_name } from "./fetch/release_description.mts";
 import { strip_v } from "./util.mts";
+import { fetch_from_homebrew, fetch_from_homebrew_cask } from "./fetch/homebrew.mts";
 
 const cfg_windows = (x: string) => `'cfg(windows)'.${x}`;
 const cfg_linux = (x: string) => `'cfg(target_os="linux")'.${x}`;
+const cfg_macos = (x: string) => `'cfg(target_os="macos")'.${x}`;
 // const cfg_windows_arm64 = (x: string) => `'cfg(all(windows,target_arch="aarch64"))'.${x}`;
 // const cfg_windows_x64 = (x: string) => `'cfg(all(windows,target_arch="x86_64"))'.${x}`;
 // const cfg_arm64 = (x: string) => `'cfg(target_arch="aarch64")'.${x}`;
@@ -33,11 +35,18 @@ export const pkg__7z: PackageFn = (meta) =>
         repo: meta.repo(),
         artifacts: (tag) => {
             const version_no_dot = tag.replace(".","");
-            return [`7z${version_no_dot}-arm64.exe`, `7z${version_no_dot}-x64.exe`];
+            return [
+                `7z${version_no_dot}-arm64.exe`,
+                `7z${version_no_dot}-x64.exe`,
+                `7z${version_no_dot}-linux-x64.tar.xz`,
+                `7z${version_no_dot}-mac.tar.xz`,
+            ];
         },
-        query: (_, tag, [arm, x64]) => ({
+        query: (_, tag, [win_arm, win_x64, linux, mac]) => ({
             VERSION: tag,
-            ...match_cpu_arch("SHA", { arm: arm.sha, x64: x64.sha })
+            ...match_cpu_arch(cfg_windows("SHA"), { arm: win_arm.sha, x64: win_x64.sha }),
+            ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
+            ...match_cpu_arch(cfg_macos("SHA"), { arm: mac.sha, x64: "<unsupported>" }),
         })
     });
 export const pkg_pwsh: PackageFn = (meta) =>
@@ -149,6 +158,7 @@ export const pkg_perl: PackageFn = () => fetch_from_arch_linux({ package: "perl"
 export const pkg_curl: PackageFn = () => fetch_from_arch_linux({ package: "curl", query: (v) => ({ [cfg_linux("VERSION")]: v }) });
 export const pkg_wget: PackageFn = (meta) => [
     fetch_from_arch_linux({ package: "wget", query: (version) => ({ [cfg_linux("VERSION")]: version }) }),
+    fetch_from_homebrew({ package: "wget", query: (version) => ({ [cfg_macos("VERSION")]: version }) }),
     fetch_from_github_release({
         repo: meta.get(cfg_windows("REPO")),
         artifact: (all) => {
@@ -195,11 +205,17 @@ export const pkg_jq: PackageFn = (meta) =>
 export const pkg_task: PackageFn = (meta) =>
     fetch_from_github_release({
         repo: meta.repo(),
-        artifacts: () => ["task_windows_arm64.zip", "task_windows_amd64.zip", "task_linux_amd64.tar.gz"],
-        query: (_, tag, [arm64, x64, linux]) => ({
+        artifacts: () => [
+            "task_windows_arm64.zip", 
+            "task_windows_amd64.zip", 
+            "task_linux_amd64.tar.gz",
+            "task_darwin_arm64.tar.gz"
+        ],
+        query: (_, tag, [arm64, x64, linux, mac]) => ({
             VERSION: strip_v(tag),
             ...match_cpu_arch(cfg_windows("SHA"), { arm: arm64.sha, x64: x64.sha }),
             ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
+            ...match_cpu_arch(cfg_macos("SHA"), { arm: mac.sha, x64: "<unsupported>" }),
         })
     });
 export const pkg_bat = default_cratesio_fetcher("bat");
@@ -212,6 +228,10 @@ export const pkg_hack_font: PackageFn = (meta) => [
     fetch_from_arch_linux({
         package: "ttf-hack-nerd",
         query: (ver, rel) => ({ VERSION_PACMAN: `${ver}-${rel}` })
+    }),
+    fetch_from_homebrew_cask({
+        cask: "font-hack-nerd-font",
+        query: (ver) => ({ VERSION_HOMEBREW: ver })
     }),
     fetch_from_github_release({
         repo: meta.repo(),
@@ -317,11 +337,17 @@ export const pkg_starship = default_cratesio_fetcher("starship");
 export const pkg_nvim: PackageFn = (meta) => [
     fetch_from_github_release({
         repo: meta.repo(),
-        artifacts: () => ["nvim-linux-x86_64.tar.gz", "nvim-win-arm64.zip", "nvim-win64.zip"],
-        query: (_, tag, [linux, arm, x64]) => ({
+        artifacts: () => [
+            "nvim-linux-x86_64.tar.gz",
+            "nvim-win-arm64.zip",
+            "nvim-win64.zip",
+            "nvim-macos-arm64.tar.gz"
+        ],
+        query: (_, tag, [linux, arm, x64, mac]) => ({
             "VERSION": strip_v(tag),
             ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
             ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
+            ...match_cpu_arch(cfg_macos("SHA"), { arm: mac.sha, x64: "<unsupported>" }),
         })
     }),
 ];
@@ -332,11 +358,13 @@ export const pkg_tree_sitter: PackageFn = (meta) => [
             "tree-sitter-linux-x64.gz",
             "tree-sitter-windows-arm64.gz",
             "tree-sitter-windows-x64.gz",
+            "tree-sitter-macos-arm64.gz",
         ],
-        query: (_, tag, [linux, arm, x64]) => ({
+        query: (_, tag, [linux, arm, x64, mac]) => ({
             "VERSION": strip_v(tag),
             ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
             ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
+            ...match_cpu_arch(cfg_macos("SHA"), { arm: mac.sha, x64: "<unsupported>" }),
         })
     }),
 ];
