@@ -9,7 +9,7 @@ register_binaries!(
     "c++", "gcc", "g++",
     "c++filt", "objdump", "strings", "strip",
     "clang", "clang++", "clang-format", "clang-tidy", "clangd",
-    "make", "ninja"
+    "make"
 );
 
 #[rustfmt::skip]
@@ -49,15 +49,7 @@ binary_dependencies!(_7z, Scalar, Python, Cmake);
 
 mod clang;
 pub fn verify(ctx: &Context) -> cu::Result<Verified> {
-    let v = clang::verify(ctx)?;
-    if v != Verified::UpToDate {
-        return Ok(v);
-    }
-
-    check_in_shaft!("ninja" || "system-cctools");
-    let v = command_output!("ninja", ["--version"]);
-    check_outdated!(&v, metadata[ninja]::VERSION);
-
+    check_verified!(clang::verify(ctx)?);
     Ok(Verified::UpToDate)
 }
 
@@ -69,7 +61,6 @@ pub fn download(ctx: &Context) -> cu::Result<()> {
         metadata::llvm_mingw::SHA(),
         ctx.bar(),
     )?;
-    hmgr::download_file("ninja.zip", ninja_url(), metadata::ninja::SHA(), ctx.bar())?;
     Ok(())
 }
 
@@ -99,22 +90,8 @@ fn llvm_mingw_release_name() -> String {
     format!("llvm-mingw-{tag}-ucrt-{arch}")
 }
 
-fn ninja_url() -> String {
-    let repo = metadata::ninja::REPO;
-    let version = metadata::ninja::VERSION;
-    let arch = if opfs::is_arm() { "winarm64" } else { "win" };
-    format!("{repo}/releases/download/v{version}/ninja-{arch}.zip")
-}
-
 pub fn install(ctx: &Context) -> cu::Result<()> {
     let install_dir = ctx.install_dir();
-
-    // ninja is small and unlikely to fail so just unpack anyway
-    {
-        let ninja_dir = install_dir.join("ninja");
-        let ninja_zip = hmgr::paths::download("ninja.zip", ninja_url());
-        opfs::unarchive(&ninja_zip, ninja_dir, true)?;
-    }
 
     let llvm_dir = install_dir.join("llvm");
     if llvm_dir.exists() {
@@ -174,7 +151,6 @@ pub fn uninstall(_: &Context) -> cu::Result<()> {
 }
 
 pub fn configure(ctx: &Context) -> cu::Result<()> {
-    configure_ninja(ctx)?;
     let bar = cu::progress("linking toolchain executables")
         .parent(ctx.bar())
         .spawn();
@@ -417,15 +393,6 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
 
     bar.done();
 
-    Ok(())
-}
-
-fn configure_ninja(ctx: &Context) -> cu::Result<()> {
-    let install_dir = ctx.install_dir();
-    let ninja_dir = install_dir.join("ninja");
-    let from = hmgr::paths::binary("ninja.exe").into_utf8()?;
-    let to = ninja_dir.join("ninja.exe").into_utf8()?;
-    ctx.add_item(Item::link_bin(from, to))?;
     Ok(())
 }
 

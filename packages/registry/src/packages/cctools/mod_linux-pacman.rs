@@ -8,12 +8,9 @@ register_binaries!(
     "c++", "gcc", "g++",
     "c++filt", "objdump", "strings", "strip",
     "clang", "clang++", "clang-format", "clang-tidy", "clangd",
-    "make", "ninja"
+    "make"
 );
-
-pub fn binary_dependencies() -> EnumSet<BinId> {
-    enum_set! { BinId::Python }
-}
+binary_dependencies!(Python);
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     let v = check_pacman!("gcc");
@@ -32,16 +29,12 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_outdated!(&v, metadata[clang]::LLVM_VERSION);
     let v = check_pacman!("lldb");
     check_outdated!(&v, metadata[clang]::LLVM_VERSION);
-    let v = check_pacman!("ninja");
-    check_outdated!(&v, metadata[ninja]::VERSION);
     Ok(Verified::UpToDate)
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
     epkg::pacman::install_many(
-        &[
-            "gcc", "binutils", "gdb", "clang", "llvm", "lldb", "cmake", "ninja",
-        ],
+        &["gcc", "binutils", "gdb", "clang", "llvm", "lldb"],
         "[cctools] installing c-compiler tools",
         ctx.bar_ref(),
     )?;
@@ -52,6 +45,6 @@ pub fn uninstall(ctx: &Context) -> cu::Result<()> {
     epkg::pacman::uninstall("lldb", ctx.bar_ref())?;
     epkg::pacman::uninstall("clang", ctx.bar_ref())?;
     epkg::pacman::uninstall("llvm", ctx.bar_ref())?;
-    cu::warn!("not uninstalling GCC and ninja for your sanity");
+    cu::warn!("not uninstalling GCC for your sanity");
     Ok(())
 }

@@ -180,16 +180,18 @@ TAG = "20260519"
 [cmake]
 # this is official
 REPO = "https://github.com/Kitware/CMake"
-'cfg(windows)'.VERSION = "4.3.2"
-'cfg(target_os="linux")'.VERSION = "4.3.3"
+'cfg(windows)'.VERSION = "4.3.4"
+'cfg(target_os="linux")'.VERSION = "4.3.4"
+'cfg(target_os="macos")'.VERSION = "4.3.4"
 'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
-'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "42a2a88fc57e70d04a92f6eaaac2094241995f53584bc2afdae7e6ef982b3781"
-'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "83d20c23f5c5f64b3b328785e35b23c532e33057a97ed6294acaca3781b78a01"
+'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "91a59ca6ffbcec18e1fb05431fa22f538ab615b6e525d1bfd0b8dd67a4d45685"
+'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "86e5fcafb38bdf58346a78b187c7b6b4f252ae5242cffe24c463a92bbd2e77d1"
 
 [ninja]
 REPO = "https://github.com/ninja-build/ninja"
 'cfg(windows)'.VERSION = "1.13.2"
 'cfg(target_os="linux")'.VERSION = "1.13.2"
+'cfg(target_os="macos")'.VERSION = "1.13.2"
 'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
 'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "e52f0bdef9dfb1003229dbd6508a508c4073fd017247002adc66e5e806cb0391"
 'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "07fc8261b42b20e71d1720b39068c2e14ffcee6396b76fb7a795fb460b78dc65"

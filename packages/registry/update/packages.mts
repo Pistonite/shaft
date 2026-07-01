@@ -311,6 +311,14 @@ export const pkg_llvm_mingw: PackageFn = (meta) =>
 export const pkg_cmake: PackageFn = (meta) => [
     fetch_from_github_release({
         repo: meta.repo(),
+        tag: (tags) => {
+            for (const t of tags) {
+                if (!t.includes("rc")) {
+                    return t;
+                }
+            }
+            throw new Error("cannot find a non-rc version of cmake");
+        },
         artifacts: (tag) => {
             tag = strip_v(tag);
             return [`cmake-${tag}-windows-arm64.zip`, `cmake-${tag}-windows-x86_64.zip` ]
@@ -320,7 +328,8 @@ export const pkg_cmake: PackageFn = (meta) => [
             ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
         })
     }),
-    fetch_from_arch_linux({ package: "cmake", query: (v) => ({ [cfg_linux("VERSION")]: v }) })
+    fetch_from_arch_linux({ package: "cmake", query: (v) => ({ [cfg_linux("VERSION")]: v }) }),
+    fetch_from_homebrew({ package: "cmake", query: (v) => ({ [cfg_macos("VERSION")]: v }) })
 ];
 export const pkg_ninja: PackageFn = (meta) => [
     fetch_from_github_release({
@@ -331,7 +340,8 @@ export const pkg_ninja: PackageFn = (meta) => [
             ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
         })
     }),
-    fetch_from_arch_linux({ package: "ninja", query: (v) => ({ [cfg_linux("VERSION")]: v }) })
+    fetch_from_arch_linux({ package: "ninja", query: (v) => ({ [cfg_linux("VERSION")]: v }) }),
+    fetch_from_homebrew({ package: "ninja", query: (v) => ({ [cfg_macos("VERSION")]: v }) })
 ]
 export const pkg_starship = default_cratesio_fetcher("starship");
 export const pkg_nvim: PackageFn = (meta) => [
