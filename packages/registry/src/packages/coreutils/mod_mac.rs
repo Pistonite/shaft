@@ -5,10 +5,11 @@ use crate::pre::*;
 mod common;
 mod eza;
 
-register_binaries!("ls", "la");
+register_binaries!("ls", "la", "diff");
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_verified!(eza::verify()?);
+    check_in_path!("diff");
 
     check_config_version_cache!(common::ALIAS_VERSION);
     Ok(Verified::UpToDate)
