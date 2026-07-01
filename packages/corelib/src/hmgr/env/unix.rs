@@ -92,7 +92,7 @@ impl Env {
         );
         let mut current_package = "";
         for entry in items {
-            let Item::Bash(script) = &entry.item else {
+            let Item::Zsh(script) = &entry.item else {
                 continue;
             };
             if entry.package != current_package {
