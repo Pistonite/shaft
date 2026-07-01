@@ -31,6 +31,6 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
 }
 
 pub fn uninstall(ctx: &Context) -> cu::Result<()> {
-    sed::uninstall(ctx)?;
+    eza::uninstall(ctx)?;
     Ok(())
 }
