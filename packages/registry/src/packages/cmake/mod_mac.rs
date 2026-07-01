@@ -8,7 +8,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     Ok(Verified::UpToDate)
 }
 pub fn install(ctx: &Context) -> cu::Result<()> {
-    epkg::brew::install("cmake", ctx.bar_ref())?;
+    epkg::brew::install("cmake", false, ctx.bar_ref())?;
     Ok(())
 }
 pub fn uninstall(_: &Context) -> cu::Result<()> {

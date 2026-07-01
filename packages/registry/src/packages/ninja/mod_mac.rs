@@ -11,7 +11,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
-    epkg::brew::install("ninja", ctx.bar_ref())?;
+    epkg::brew::install("ninja", false, ctx.bar_ref())?;
     Ok(())
 }
 
