@@ -46,7 +46,7 @@ uutils_sed.VERSION = "0.1.1"
 [shellutils]
 ALIAS_VERSION = "8"
 which.VERSION = "0.1.5"
-viopen.VERSION = "0.2.1"
+viopen.VERSION = "0.2.2"
 vipath.VERSION = "0.1.8"
 n.VERSION = "0.1.2"
 wsclip.VERSION = "0.1.8"
