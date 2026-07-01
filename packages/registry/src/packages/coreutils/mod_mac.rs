@@ -31,6 +31,6 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
 }
 
 pub fn uninstall(ctx: &Context) -> cu::Result<()> {
-    eza::uninstall(ctx)?;
+    cu::warn!("not uninstalling the essential packages for your sanity");
     Ok(())
 }
