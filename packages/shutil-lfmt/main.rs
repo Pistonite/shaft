@@ -120,7 +120,7 @@ async fn main(args: Cli) -> cu::Result<()> {
                 );
                 continue;
             }
-            Ok(x) => x
+            Ok(x) => x,
         };
 
         for entry in walker.walk()? {
@@ -132,7 +132,8 @@ async fn main(args: Cli) -> cu::Result<()> {
                     &mut check_error,
                 ),
                 Ok(e) => {
-                    let handle = pool.spawn(async move { process_file(e.path(), end, check).await });
+                    let handle =
+                        pool.spawn(async move { process_file(e.path(), end, check).await });
                     handles.push(handle)
                 }
             }
@@ -169,7 +170,7 @@ async fn main(args: Cli) -> cu::Result<()> {
 }
 
 fn create_walker(path: &Path, args: &Cli) -> cu::Result<cu::fs::WalkBuilder> {
-    let mut walker = cu::fs::walker(path.to_path_buf());
+    let mut walker = cu::fs::walker(path);
     if !args.no_ignore {
         walker.git(true).ignore_hidden(true);
     }
