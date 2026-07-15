@@ -111,69 +111,85 @@ end
 
 ---Setup key maps for nvim tree buffer
 function M.setup_nvim_tree(bufnr)
-    local function opts(desc)
-        return {
+    local api = require("nvim-tree.api")
+    local RootNode = require("nvim-tree.node.root")
+    local core = require("nvim-tree.core")
+    local is_win32 = vim.fn.has("win32") ~= 0
+    local tree_noremap = function (key, func, desc, opts)
+        opts = opts or {}
+        local keymap_opts =  {
             desc = 'nvim-tree: ' .. desc,
             buffer = bufnr,
             noremap = true,
             silent = true,
             nowait = true
         }
-    end
-    local api = require("nvim-tree.api")
-    -- see https://github.com/nvim-tree/nvim-tree.lua/issues/3292
-    -- windows have filesystem watcher disabled
-    local wrap_refresh_if_windows = function(cb)
-        if vim.fn.has("win32") ~= 0 then
-            return function()
-                cb()
+        -- see https://github.com/nvim-tree/nvim-tree.lua/issues/3292
+        -- windows have filesystem watcher disabled
+        if is_win32 and opts.refresh then
+            local inner = func
+            func = function()
+                inner()
                 api.tree.reload()
             end
         end
-        return cb
+
+        -- nop if the node is root, prevent accidentally changing root
+        if not opts.allow_root then
+            local inner = func
+            func = function()
+                local expl = core.get_explorer()
+                local node = expl and expl:get_node_at_cursor() or nil
+                if node and (node.name == ".." or node:as(RootNode)) then
+                    editorapi.warn("operation not allowed for workspace root")
+                    return
+                end
+                inner()
+            end
+        end
+        vim.keymap.set('n', key, func, keymap_opts)
     end
-    vim.keymap.set('n', '<C-k>', api.node.show_info_popup, opts('Info'))
-    vim.keymap.set('n', 'O', api.node.navigate.parent_close, opts('Close parent'))
-    vim.keymap.set('n', 'P', api.node.navigate.parent, opts('Go to parent'))
-    vim.keymap.set('n', 'm', wrap_refresh_if_windows(api.fs.rename_sub), opts('Move'))
-    vim.keymap.set('n', 'o', api.node.open.edit, opts('Open'))
-    vim.keymap.set('n', 'v', editorapi.editview_open_split , opts('Open: vertical'))
-    vim.keymap.set('n', 's', api.node.open.horizontal, opts('Open: split'))
-    vim.keymap.set('n', 'a', api.fs.create, opts('Create'))
-    vim.keymap.set('n', 'c', api.fs.copy.node, opts('Copy'))
-    vim.keymap.set('n', 'p', api.fs.paste, opts('Paste'))
-    vim.keymap.set('n', 'd', wrap_refresh_if_windows(api.fs.remove), opts('Delete'))
-    -- vim.keymap.set('n', 'D', api.fs.trash, opts('Trash'))
-    vim.keymap.set('n', 'x', api.fs.cut, opts('Cut'))
-    vim.keymap.set('n', 'r', api.fs.rename_sub, opts('Rename'))
-    vim.keymap.set('n', '-', api.marks.toggle, opts('Select'))
-    vim.keymap.set('n', 'bd', api.marks.bulk.delete, opts('Delete: selected'))
-    vim.keymap.set('n', 'bm', api.marks.bulk.move, opts('Move: selected'))
-    vim.keymap.set('n', '[', api.node.navigate.diagnostics.prev, opts('Prev diagnostic'))
-    vim.keymap.set('n', ']', api.node.navigate.diagnostics.next, opts('Next diagnostic'))
-    vim.keymap.set('n', 'B', api.tree.toggle_no_buffer_filter, opts('Toggle opened'))
-    vim.keymap.set('n', 'H', api.tree.toggle_hidden_filter, opts('Toggle dotfiles'))
-    -- vim.keymap.set('n', 'q', api.tree.close, opts('Close'))
-    vim.keymap.set('n', 'R', api.tree.reload, opts('Refresh'))
-    vim.keymap.set('n', 'gy', api.fs.copy.absolute_path, opts('Copy absolute path'))
-    vim.keymap.set('n', 'y', api.fs.copy.filename, opts('Copy name'))
-    vim.keymap.set('n', 'Y', api.fs.copy.relative_path, opts('Copy relative path'))
-    vim.keymap.set('n', 'g?', api.tree.toggle_help, opts('Help'))
+    tree_noremap('K', api.node.show_info_popup, 'Info')
+    -- vim.keymap.set('n', 'O', api.node.navigate.parent_close, opts('Close parent'))
+    tree_noremap('P', api.node.navigate.parent, 'Go to parent')
+    tree_noremap('m', api.fs.rename_sub, 'Move', { refresh = true })
+    tree_noremap('o', api.node.open.edit, 'Open')
+    tree_noremap('v', editorapi.editview_open_split, 'Open: vertical')
+    tree_noremap('s', api.node.open.horizontal, 'Open: split')
+    tree_noremap('a', api.fs.create, 'Create')
+    tree_noremap('c', api.fs.copy.node, 'Copy')
+    tree_noremap('p', api.fs.paste, 'Paste', { allow_root = true })
+    tree_noremap('d', api.fs.remove, 'Delete', { refresh = true })
+    tree_noremap('x', api.fs.cut, 'Cut')
+    tree_noremap('r', api.fs.rename_sub, 'Rename', { refresh = true })
+    tree_noremap('-', api.marks.toggle, 'Select')
+    tree_noremap('bd', api.marks.bulk.delete, 'Delete: selected')
+    tree_noremap('bm', api.marks.bulk.move, 'Move: selected')
+    tree_noremap('[', api.node.navigate.diagnostics.prev, 'Prev diagnostic')
+    tree_noremap(']', api.node.navigate.diagnostics.next, 'Next diagnostic')
+    tree_noremap('B', api.tree.toggle_no_buffer_filter, 'Toggle opened', { allow_root = true })
+    tree_noremap('H', api.tree.toggle_hidden_filter, 'Toggle dotfiles', { allow_root = true })
+    tree_noremap('E', api.node.open.toggle_group_empty, 'Toggle group empty')
+    tree_noremap('R', api.tree.reload, 'Refresh', { allow_root = true })
+    -- tree_noremap('gy', api.fs.copy.absolute_path, 'Copy absolute path')
+    -- tree_noremap('y', api.fs.copy.filename, 'Copy name')
+    -- tree_noremap('Y', api.fs.copy.relative_path, 'Copy relative path')
+    tree_noremap('g?', api.tree.toggle_help, 'Help', { allow_root = true })
 end
 
 function M.setup_lsp(bufnr)
-        local key_opts = { buffer = bufnr }
-        -- keys that only work when LSP is attached (so they are buffer-local)
-        vim.keymap.set('n', '<leader>r', vim.lsp.buf.rename, key_opts)
-        vim.keymap.set('n', '<leader>f', vim.lsp.buf.format, key_opts)
-        vim.keymap.set('n', 'K', function() vim.lsp.buf.hover({ border = "rounded" }) end, key_opts)
-        vim.keymap.set('n', 'gt', vim.lsp.buf.type_definition, key_opts)
-        -- code action menu
-        vim.keymap.set({ 'n', 'v' }, '<leader>a', vim.lsp.buf.code_action, key_opts)
-        -- signature help in input mode
-        vim.keymap.set('i', '<C-h>', vim.lsp.buf.signature_help, key_opts)
-        -- enable inlay hints (currently disabled by default)
-        vim.lsp.inlay_hint.enable(true, { bufnr })
+    local key_opts = { buffer = bufnr }
+    -- keys that only work when LSP is attached (so they are buffer-local)
+    vim.keymap.set('n', '<leader>r', vim.lsp.buf.rename, key_opts)
+    vim.keymap.set('n', '<leader>f', vim.lsp.buf.format, key_opts)
+    vim.keymap.set('n', 'K', function() vim.lsp.buf.hover({ border = "rounded" }) end, key_opts)
+    vim.keymap.set('n', 'gt', vim.lsp.buf.type_definition, key_opts)
+    -- code action menu
+    vim.keymap.set({ 'n', 'v' }, '<leader>a', vim.lsp.buf.code_action, key_opts)
+    -- signature help in input mode
+    vim.keymap.set('i', '<C-h>', vim.lsp.buf.signature_help, key_opts)
+    -- enable inlay hints (currently disabled by default)
+    vim.lsp.inlay_hint.enable(true, { bufnr })
 end
 
 function M.get_telescope_mappings()

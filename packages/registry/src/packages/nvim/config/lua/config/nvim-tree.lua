@@ -25,7 +25,8 @@ local config = {
                     ignored = "i",
                 },
             }
-        }
+        },
+        group_empty = true
     },
     diagnostics = {
         enable = true,
