@@ -19,12 +19,12 @@ members = [
 
 [workspace.dependencies.cu]
 package = "pistonite-cu"
-version = "0.9.0"
+version = "0.8.4"
 # path = "../cu/packages/copper"
 
 [workspace.dependencies.pm]
 package = "pistonite-pm"
-version = "0.2.7"
+version = "0.2.6"
 default-features = false
 # path = "../cu/packages/promethium"
 
@@ -35,6 +35,7 @@ itertools = "0.14.0"
 flate2 = "1.1.9"
 libc = "0.2.186"
 shell-words = "1.1.1"
+ignore = "0.4.25"
 sha2 = "0.11.0"
 windows = "0.62.2"
 phf = "0.13.1"
