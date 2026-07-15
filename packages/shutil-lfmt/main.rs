@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 
 use cu::pre::*;
-use ignore::WalkBuilder as IgnoreWalkBuilder;
 
 /// Line end formatter
 #[derive(clap::Parser)]
@@ -86,33 +85,6 @@ async fn main(args: Cli) -> cu::Result<()> {
         cu::co::spawn(async move { get_autocrlf().await.unwrap_or(false) })
     };
 
-    let mut paths_iter = args.paths.into_iter();
-    let mut builder = match paths_iter.next() {
-        Some(x) => {
-            let mut builder = IgnoreWalkBuilder::new(Path::new(&x).normalize()?);
-            for path in paths_iter {
-                builder.add(Path::new(&path).normalize()?);
-            }
-            builder
-        }
-        None => {
-            let cwd = Path::new(".").normalize()?;
-            IgnoreWalkBuilder::new(cwd)
-        }
-    };
-
-    if args.no_ignore {
-        builder
-            .ignore(false)
-            .git_global(false)
-            .git_ignore(false)
-            .git_exclude(false);
-    } else {
-        builder.require_git(true);
-    }
-    builder.add_custom_ignore_filename(".lfmtignore");
-    let walk = builder.build();
-
     #[cfg(windows)]
     let end = {
         let mut end = end;
@@ -137,17 +109,33 @@ async fn main(args: Cli) -> cu::Result<()> {
     let mut handles = vec![];
     let mut main_error = false;
     let mut check_error = false;
-    for entry in walk {
-        match entry {
-            Err(e) => process_message(
-                Err(format!("failed to read dir entry: {e}")),
-                quieter_check,
-                &mut main_error,
-                &mut check_error,
-            ),
-            Ok(e) => {
-                let handle = pool.spawn(async move { process_file(e.path(), end, check).await });
-                handles.push(handle)
+    for path in &args.paths {
+        let walker = match create_walker(path.as_ref(), &args) {
+            Err(e) => {
+                process_message(
+                    Err(format!("failed to walk directory: {e}")),
+                    quieter_check,
+                    &mut main_error,
+                    &mut check_error,
+                );
+                continue;
+            }
+            Ok(x) => x,
+        };
+
+        for entry in walker.walk()? {
+            match entry {
+                Err(e) => process_message(
+                    Err(format!("failed to read dir entry: {e}")),
+                    quieter_check,
+                    &mut main_error,
+                    &mut check_error,
+                ),
+                Ok(e) => {
+                    let handle =
+                        pool.spawn(async move { process_file(e.path(), end, check).await });
+                    handles.push(handle)
+                }
             }
         }
     }
@@ -179,6 +167,15 @@ async fn main(args: Cli) -> cu::Result<()> {
     }
 
     Ok(())
+}
+
+fn create_walker(path: &Path, args: &Cli) -> cu::Result<cu::fs::WalkBuilder> {
+    let mut walker = cu::fs::walker(path);
+    if !args.no_ignore {
+        walker.git(true).ignore_hidden(true);
+    }
+    walker.add_ignore_filename(".lfmtignore");
+    Ok(walker)
 }
 
 type Message = Result<Option<Event>, String>;
