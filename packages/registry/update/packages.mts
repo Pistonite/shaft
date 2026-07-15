@@ -124,10 +124,6 @@ export const pkg_shellutils: PackageFn = async () => {
             path: "../shutil-lfmt/Cargo.toml",
             query: (v) => ({ "lfmt.VERSION": v })
         }),
-        fetch_from_local_cargo_toml({
-            path: "../shutil-lfmt/Cargo.toml",
-            query: (v) => ({ "lfmt.VERSION": v })
-        }),
     ];
 }
 export const pkg_git: PackageFn = async () => [
