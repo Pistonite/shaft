@@ -1076,7 +1076,10 @@ local _ = (function()
         end
     elseif vim.fn.executable("wl-copy") ~= 0 then
         cmd = 'bash -c "cat ' .. yank_file_quoted .. " | tr '\\0' '\\n' | wl-copy -n\""
-            desc = "yanked to wayland"
+        desc = "yanked to wayland"
+    elseif vim.fn.executable("pbcopy") ~= 0 then
+        cmd = 'bash -c "cat ' .. yank_file_quoted .. " | tr '\\0' '\\n' | pbcopy -n\""
+        desc = "yanked to mac"
     end
 
     vim.api.nvim_create_autocmd("TextYankPost", {
