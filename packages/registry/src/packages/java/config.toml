@@ -1,0 +1,8 @@
+[[section]]
+key = []
+comment = """
+The default jdk to install and set to current when syncing
+"""
+children = [
+    { key = ["default-jdk"], value = "microsoft@25" },
+]

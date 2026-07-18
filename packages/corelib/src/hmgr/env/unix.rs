@@ -135,7 +135,8 @@ impl Env {
         }
         let (path, path_changed) = rebuild_user_path(items)?;
         if path_changed && !skip_reinvocation {
-            hmgr::add_env_assert_once("PATH".to_string(), path.clone())?;
+            cu::debug!("itemmgr: reinvocation because of path: setting path");
+            // Don't need to assert on PATH because it contains $PATH and will never match
         }
         let _ = writeln!(out, r#"export PATH="{path}""#);
         reinvocation_needed |= path_changed;

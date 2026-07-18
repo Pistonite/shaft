@@ -51,6 +51,7 @@ children = [
     { key = ["rust"], value = true, },
     { key = ["nodejs"], value = true, },
     { key = ["python"], value = true, },
+    { key = ["java"], value = true, },
 ]
 
 [[section]]
@@ -61,6 +62,7 @@ children = [
     { key = ["rust"], value = true, },
     { key = ["nodejs"], value = true, },
     { key = ["python"], value = true, },
+    { key = ["java"], value = true, },
 ]
 
 
@@ -75,7 +77,4 @@ children = [
 #symbol = " "
 #style = "bright-cyan"
 
-#[java]
-#symbol = " "
-
-# also zig
+# also zig (maybe;/)

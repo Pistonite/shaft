@@ -6,6 +6,11 @@ export type GitHubReleaseArgs = {
     repo: string;
     /** select a tag, omit to use latest */
     tag?: (tags: string[]) => string;
+    /**
+     * minimum age (in days) of the latest release to select when no tag picker
+     * is provided. Defaults to 14 days.
+     */
+    minReleaseAgeDays?: number;
     /** query for meta key values */
     query: (repo: string, tag: string, artifacts: GitHubArtifactData[]) => Promise<MetaKeyValues> | MetaKeyValues;
 } & Partial<(GitHubReleaseArgsArtifact | GitHubReleaseArgsArtifacts)>;
@@ -30,8 +35,9 @@ type GitHubArtifactData = {
 
 /** Fetch package updates from GitHub releases */
 export const fetch_from_github_release = async ({ 
-    repo, 
-    tag: tag_picker, 
+    repo,
+    tag: tag_picker,
+    minReleaseAgeDays = 14,
     artifacts: artifact_calc,
     artifact: artifact_picker,
     query,
@@ -59,8 +65,8 @@ export const fetch_from_github_release = async ({
         }
         selected_tag = tag_picker(tags);
     } else {
-        // fetch the latest release that is at least 14 days old
-        const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+        // fetch the latest release that is at least minReleaseAgeDays old
+        const cutoff = new Date(Date.now() - minReleaseAgeDays * 24 * 60 * 60 * 1000);
         let page = 1;
         outer: while (true) {
             const releases_response = await fetch_with_retry(
@@ -72,7 +78,7 @@ export const fetch_from_github_release = async ({
             }
             const releases_data = await releases_response.json() as GitHubReleasesListItem[];
             if (releases_data.length === 0) {
-                throw new Error(`no release older than 14 days found for ${repo_path}`);
+                throw new Error(`no release older than ${minReleaseAgeDays} days found for ${repo_path}`);
             }
             for (const release of releases_data) {
                 if (new Date(release.published_at) < cutoff) {

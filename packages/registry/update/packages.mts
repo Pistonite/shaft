@@ -402,4 +402,11 @@ export const pkg_vcpkg: PackageFn = (meta) => [
         repo: meta.repo("source"),
         query: (_, tag) => ({ "source.TAG": tag })
     }),
+];
+export const pkg_java: PackageFn = (meta) => [
+    fetch_from_github_release({
+        repo: meta.repo(),
+        minReleaseAgeDays: 0,
+        query: (_, tag) => ({ "VERSION": strip_v(tag) }),
+    })
 ]
