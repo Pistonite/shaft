@@ -192,10 +192,7 @@ disabled = {}
         &mut config_file_modules,
         config.toolchain_value(|x| x.python),
     );
-    write_java(
-        &mut config_file_modules,
-        config.toolchain_value(|x| x.java),
-    );
+    write_java(&mut config_file_modules, config.toolchain_value(|x| x.java));
 
     write_cmake(
         &mut config_file_modules_cmd,
@@ -332,5 +329,5 @@ struct ConfigToolchains {
     rust: Option<bool>,
     nodejs: Option<bool>,
     python: Option<bool>,
-    java: Option<bool>
+    java: Option<bool>,
 }

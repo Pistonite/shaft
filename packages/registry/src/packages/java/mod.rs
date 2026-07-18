@@ -24,9 +24,7 @@ fn current_version() -> cu::Result<String> {
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
-    epkg::cargo::binstall_git("jabba-shim", 
-        metadata::java::REPO,
-        ctx.bar_ref())?;
+    epkg::cargo::binstall_git("jabba-shim", metadata::java::REPO, ctx.bar_ref())?;
     Ok(())
 }
 
@@ -50,7 +48,8 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     if cfg!(windows) {
         cu::warn!("jabba in Windows requires Developer Mode to create symlinks");
     }
-    let (child, bar, _) = cu::which("jabba")?.command()
+    let (child, bar, _) = cu::which("jabba")?
+        .command()
         .env("JABBA_HOME", &jabba_home)
         .args(["install", &config.default_jdk])
         .stdoe(cu::pio::spinner("install java").configure_spinner(|b| b.parent(ctx.bar())))
@@ -58,7 +57,9 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         .spawn()?;
     child.wait_nz()?;
     bar.done();
-    cu::which("jabba")?.command().args(["use", &config.default_jdk])
+    cu::which("jabba")?
+        .command()
+        .args(["use", &config.default_jdk])
         .env("JABBA_HOME", &jabba_home)
         .stdoe(cu::lv::P)
         .stdin_null()

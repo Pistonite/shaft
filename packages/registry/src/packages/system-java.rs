@@ -1,10 +1,7 @@
 //! Use Java Toolchain in PATH
 use crate::pre::*;
 
-register_binaries!(
-    "java",
-    "javac"
-);
+register_binaries!("java", "javac");
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_path!("java");
