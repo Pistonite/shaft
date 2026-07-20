@@ -41,7 +41,11 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     ctx.add_item(Item::user_env_var("JABBA_HOME", jabba_home.as_utf8()?))?;
     let java_home = cu::path!(&jabba_home / "jdk" / "current");
     ctx.add_item(Item::user_env_var("JAVA_HOME", java_home.as_utf8()?))?;
-    let java_home_bin = cu::path!(java_home / "bin");
+    let java_home_bin = if cfg!(target_os = "macos") {
+        cu::path!(java_home / "bin" / "Contents" / "Home")
+    } else {
+        cu::path!(java_home / "bin")
+    };
     ctx.add_item(Item::user_path(java_home_bin.into_utf8()?))?;
 
     let config = ctx.load_config(CONFIG)?;
