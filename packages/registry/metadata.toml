@@ -246,4 +246,8 @@ source.TAG = "2026.04.27"
 
 [java]
 REPO = "https://github.com/Pistonite/jabba-shim"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
+
+[gradle]
+REPO = "https://github.com/Pistonite/gradle-wrapper"
+VERSION = "0.1.1"

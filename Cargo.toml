@@ -19,7 +19,7 @@ members = [
 
 [workspace.dependencies.cu]
 package = "pistonite-cu"
-version = "0.9.1"
+version = "0.9.2"
 # path = "../cu/packages/copper"
 
 [workspace.dependencies.pm]
@@ -30,14 +30,14 @@ default-features = false
 
 [workspace.dependencies]
 enum-map = "2.7.3"
-enumset = "1.1.13"
-itertools = "0.14.0"
+enumset = "1.1.14"
+itertools = "0.15.0"
 flate2 = "1.1.9"
-libc = "0.2.186"
+libc = "0.2.187"
 shell-words = "1.1.1"
 sha2 = "0.11.0"
 windows = "0.62.2"
-phf = "0.13.1"
+phf = "0.14.0"
 serde = "1"
 tokio = "1"
 sysinfo = "0.38.4" # need to build on rust-version 1.93
@@ -46,9 +46,9 @@ boa_engine = "0.21.1"
 fs2 = "0.4.3"
 fxhash = "0.2.1"
 winreg = "0.56.0"
-which = "8.0.2"
-clap = "4.6.1"
-tungstenite = "0.29.0"
+which = "8.0.5"
+clap = "4.6.3"
+tungstenite = "0.30.0"
 clipboard-win = "5.4.1"
 
 [patch.crates-io]
