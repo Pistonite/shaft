@@ -409,4 +409,11 @@ export const pkg_java: PackageFn = (meta) => [
         minReleaseAgeDays: 0,
         query: (_, tag) => ({ "VERSION": strip_v(tag) }),
     })
-]
+];
+export const pkg_gradle: PackageFn = (meta) => [
+    fetch_from_github_release({
+        repo: meta.repo(),
+        minReleaseAgeDays: 0,
+        query: (_, tag) => ({ "VERSION": strip_v(tag) }),
+    })
+];

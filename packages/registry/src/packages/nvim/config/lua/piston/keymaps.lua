@@ -71,6 +71,7 @@ function M.setup()
     noremap('n', '<leader>w', editorapi.editview_swap_files)
     noremap('n', '<leader>dl', function() editorapi.editview_duplicate(true) end)
     noremap('n', '<leader>dh', function() editorapi.editview_duplicate(false) end)
+    noremap('n', '<leader>do', editorapi.editview_close_other)
 
     -- floaterm
     noremap({'n', 't'}, [[<C-\>]], editorapi.editview_floaterm_toggle)
@@ -90,7 +91,7 @@ function M.setup()
     noremap('n', '<leader>fd', editorapi.editview_openfinder_diagnostic)
     -- ai coder
     noremap({'n', 'v'}, '<leader>bb', editorapi.editview_aicoder_open)
-    noremap({'n', 't'}, '<leader>bg', editorapi.aicoder_close)
+    noremap({'n', 't'}, '<leader>bh', editorapi.aicoder_close)
     noremap({'n', 't'}, '<leader>bv', editorapi.aicoder_open_or_accept_diff)
     noremap({'n', 't'}, '<leader>bd', editorapi.aicoder_deny_diff)
     noremap('n', '<leader>bl', function() editorapi.aicoder_send(false) end)
@@ -104,7 +105,7 @@ function M.setup()
 
     -- fix lsp (the key bind is from :e which tends to fix most issues but not always)
     noremap('n', '<leader>e', function() editorapi.fix_buffer_issues(false) end)
-    noremap('n', '<leader>E', function() editorapi.fix_buffer_issues(true) end)
+    noremap('n', '<leader>E', function() editorapi.fix_buffer_issues(false) end)
 
     noremap({'n', 'v'}, 'I', editorapi.multipurpose_toggle_shift_i)
 end
@@ -178,18 +179,25 @@ function M.setup_nvim_tree(bufnr)
 end
 
 function M.setup_lsp(bufnr)
-    local key_opts = { buffer = bufnr }
+    local opts = { buffer = bufnr }
     -- keys that only work when LSP is attached (so they are buffer-local)
-    vim.keymap.set('n', '<leader>r', vim.lsp.buf.rename, key_opts)
-    vim.keymap.set('n', '<leader>f', vim.lsp.buf.format, key_opts)
-    vim.keymap.set('n', 'K', function() vim.lsp.buf.hover({ border = "rounded" }) end, key_opts)
-    vim.keymap.set('n', 'gt', vim.lsp.buf.type_definition, key_opts)
+    vim.keymap.set('n', '<leader>r', vim.lsp.buf.rename, opts)
+    vim.keymap.set('n', '<leader>f', vim.lsp.buf.format, opts)
+    vim.keymap.set('n', 'K', function()
+        local max_width = math.floor(vim.o.columns / 3)
+        vim.lsp.buf.hover({ border = "rounded", max_width = max_width })
+    end, opts)
+    vim.keymap.set('n', 'gt', vim.lsp.buf.type_definition, opts)
     -- code action menu
-    vim.keymap.set({ 'n', 'v' }, '<leader>a', vim.lsp.buf.code_action, key_opts)
+    vim.keymap.set({ 'n', 'v' }, '<leader>a', vim.lsp.buf.code_action, opts)
     -- signature help in input mode
-    vim.keymap.set('i', '<C-h>', vim.lsp.buf.signature_help, key_opts)
-    -- enable inlay hints (currently disabled by default)
-    vim.lsp.inlay_hint.enable(true, { bufnr })
+    vim.keymap.set('i', '<C-h>', vim.lsp.buf.signature_help, opts)
+    vim.keymap.set('n', '<leader>O', function()
+        local organize_imports_fn = require("config.organize-imports")
+        organize_imports_fn()
+    end, opts)
+    -- allow big E to restart LSP
+    vim.keymap.set('n', '<leader>E', function() editorapi.fix_buffer_issues(true) end, opts)
 end
 
 function M.get_telescope_mappings()

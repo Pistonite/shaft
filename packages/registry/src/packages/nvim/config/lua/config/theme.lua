@@ -108,7 +108,9 @@ require("catppuccin").setup({
             ["@variable.parameter"] = { link = "@variable" },
 
             -- constants
+            ["@constant"] = { link = "Constant" },
             ["@lsp.typemod.variable.readonly"] = { link = "Constant" },
+            ["@lsp.typemod.property.readonly"] = { link = "Constant" },
             ["@lsp.type.enumMember"] = { link = "Constant" },
 
             -- override the terminal color to be frappe

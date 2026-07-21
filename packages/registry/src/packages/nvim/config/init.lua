@@ -131,8 +131,6 @@ require("lazy").setup {
         }, {
             -- 0.11 'felpafel/inlay-hint.nvim',                commit = "ee8aa9806d1e160a2bc08b78ae60568fb6d9dbce",
             'felpafel/inlay-hint.nvim',                commit = "369aa3d5f10b41580242cd6e825bd00cfa565464",
-            event = "LspAttach",
-            config = function() require("config.inlay-hint") end
         }, {
             'hrsh7th/nvim-cmp',                        commit = "a1d504892f2bc56c2e79b65c6faded2fd21f3eca",
             event = "InsertEnter",
@@ -144,10 +142,12 @@ require("lazy").setup {
         { 'hrsh7th/cmp-nvim-lsp-signature-help',     commit = "fd3e882e56956675c620898bf1ffcf4fcbe7ec84" },
         { 'hrsh7th/cmp-nvim-lua',                    commit = "e3a22cb071eb9d6508a156306b102c45cd2d573d" },
         -- language: java (jdtls)
-        -- use { 'mfussenegger/nvim-jdtls',                 commit = "ece818f909c6414cbad4e1fb240d87e003e10fda",
-        --     ft = { 'java' },
-        --     config = function () require('lsp-wrapper.jdtls') end
-        -- }
+        { 'mfussenegger/nvim-jdtls',                 commit = "6e9d953f0b82bccdb834cfde0e893f3119c22592" },
+        {
+            dir = configpath .. '/piston-jdtls.nvim', name = "piston-jdtls",
+            cmd = { "JdtlsCheck", "JdtlsInstall", "JdtlsClean" },
+            config = function() require("piston_jdtls").setup_commands() end
+        },
 
         -- ## AI
         {

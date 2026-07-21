@@ -15,6 +15,7 @@ end
 -- line numbers
 vim.opt.number = true    -- Enable line numbers
 vim.opt.rnu = true       -- Relative line numbers by default
+vim.opt.signcolumn = "yes"
 -- hidden characters (controlled by keymapping)
 vim.opt.listchars = "tab:▸ ,space:·,trail:·,nbsp:␣,extends:»,precedes:«,eol:↲"
 -- indent
