@@ -1,13 +1,21 @@
-require('inlay-hint').setup({
-    virt_text_pos = 'eol',
+local M = {}
+local POLL_TIMEOUT = 30000
+local POLL_INTERVAL_FAST = 200
+local POLL_INTERVAL = 1000
+
+M._enabled_bufs = {}
+function M.setup()
     -- this is taken from https://github.com/felpafel/inlay-hint.nvim
     -- and modified to my liking
-    display_callback = function(line_hints, options, bufnr)
+    local display_callback = function(line_hints, options, bufnr)
         local param_hints = {}
         local type_hints = {}
         table.sort(line_hints, function(a, b)
             return a.position.character < b.position.character
         end)
+        if #line_hints > 0 then
+            M._enabled_bufs[bufnr] = true
+        end
         for _, hint in pairs(line_hints) do
             local label = hint.label
             local kind = hint.kind
@@ -36,5 +44,34 @@ require('inlay-hint').setup({
             text = text ..  table.concat(param_hints, ',')
         end
         return text
-    end,
-})
+    end
+
+    require('inlay-hint').setup({
+        virt_text_pos = 'eol',
+        display_callback = display_callback
+    })
+end
+
+function M.enable(bufnr)
+    vim.lsp.inlay_hint.enable(true, { bufnr })
+    local delay = 0
+    local function poll()
+        if delay > POLL_TIMEOUT then return end
+        if M._enabled_bufs[bufnr] then return end
+        if not vim.api.nvim_buf_is_valid(bufnr) then return end
+
+        vim.lsp.inlay_hint.enable(true, { bufnr })
+
+        local interval
+        if delay >= POLL_INTERVAL then
+            interval = POLL_INTERVAL
+        else
+            interval = POLL_INTERVAL_FAST
+        end
+        delay = delay + interval
+        vim.defer_fn(poll, interval)
+    end
+    vim.defer_fn(poll, POLL_INTERVAL_FAST)
+end
+
+return M

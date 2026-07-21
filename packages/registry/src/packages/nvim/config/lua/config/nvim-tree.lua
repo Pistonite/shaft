@@ -1,7 +1,6 @@
 local function on_attach_nvim_tree(bufnr)
     -- setup lualine only after nvim tree attach
     -- to avoid loading it too early onto the tree
-    -- only attack keys i need
     require("config.lualine")
     require("piston.keymaps").setup_nvim_tree(bufnr)
 end

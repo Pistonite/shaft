@@ -124,15 +124,17 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     // copy root files over
     for entry in cu::fs::read_dir(&bundled_config_dir)? {
         let entry = entry?;
-        if !entry.file_type()?.is_file() {
-            continue;
-        }
+        let file_type = entry.file_type()?;
         let name = entry.file_name();
-        cu::fs::copy(bundled_config_dir.join(&name), config_dir.join(&name))?;
+
+        if file_type.is_file() {
+            cu::fs::copy(bundled_config_dir.join(&name), config_dir.join(&name))?;
+        } else if file_type.is_dir() {
+            let target_dir = config_dir.join(&name);
+            cu::fs::rec_remove(&target_dir)?;
+            cu::fs::rec_copy_inefficiently(bundled_config_dir.join(&name), target_dir)?;
+        }
     }
-    // copy lua files
-    cu::fs::rec_remove(config_dir.join("lua"))?;
-    cu::fs::rec_copy_inefficiently(bundled_config_dir.join("lua"), config_dir.join("lua"))?;
     // write config
     let config_lua = config.to_lua();
     let config_gen_path = {

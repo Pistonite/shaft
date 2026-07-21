@@ -1,8 +1,10 @@
-local M = {}
+local inlay_hints = require("config.inlay-hint")
+inlay_hints.setup()
 
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(event)
         require("piston.keymaps").setup_lsp(event.buf)
+        inlay_hints.enable(event.buf)
     end
 })
 -- Remove if no longer needed
@@ -31,9 +33,3 @@ end
 -- ensure dependencies are loaded
 require("lspconfig")
 require("mason-lspconfig")
-
-function M.enable(lspserver)
-    vim.lsp.enable(lspserver)
-end
-
-return M

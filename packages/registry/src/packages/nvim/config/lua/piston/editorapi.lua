@@ -269,6 +269,12 @@ function M.calc_wint_fast(winid)
         return M.wint.TSCTX
     end
 
+    -- floating diagnostics: for non-floating windows 'relative' is empty
+    local config = vim.api.nvim_win_get_config(winid);
+    if config.relative ~= "" then
+        return M.wint.NOTIF
+    end
+
     return M.wint.INVALID
 end
 
@@ -374,6 +380,25 @@ function M.editview_duplicate(right)
     M.warn("editview_duplicate: too many file windows")
 end
 
+---In editview, close the "other" window
+function M.editview_close_other()
+    local tabt = M.query_tabt()
+    if tabt ~= M.tabt.EDIT then return end
+    if vim.bo.buftype == "terminal" then return end -- faster query
+    local filewins, termwins = M.editview_query_file_windows()
+    if #filewins == 1 then return end
+
+    for _, winid in ipairs(termwins) do
+        vim.api.nvim_win_hide(winid)
+    end
+    local curr_winid = vim.api.nvim_get_current_win()
+    if curr_winid == filewins[1] then
+        vim.api.nvim_win_hide(filewins[2])
+    else
+        vim.api.nvim_win_hide(filewins[1])
+    end
+end
+
 ---If in floaterm, close floaterm
 ---Otherwise switch to EDIT and show floaterm
 function M.editview_floaterm_toggle()
@@ -477,7 +502,7 @@ local telescope_attach_file_picker_mappings = function(bufnr, _)
             -- note this is private API
             local open_file_action = require("nvim-tree.actions.node.open-file")
             local mode = ""
-            open_file_action.fn(mode, filename) 
+            open_file_action.fn(mode, filename)
             if line ~= nil and col ~= nil then
                 vim.api.nvim_win_set_cursor(0, { line, col })
             end
@@ -804,8 +829,10 @@ function M.aicoder_send(visual)
     if wint ~= M.wint.NFILE then
         return
     end
+    -- close other window
+    M.editview_close_other()
     if visual then
-        vim.api.nvim_input("gv<cmd>ClaudeCodeSend<cr>")
+        vim.api.nvim_input("<cmd>ClaudeCodeSend<cr>")
     else
         vim.cmd("ClaudeCodeAdd %")
     end
@@ -1031,20 +1058,16 @@ function M.fix_buffer_issues(restart_lsp)
         M.warn("please save the file first")
         return
     end
-    local line_count = vim.api.nvim_buf_line_count(bufnr)
-    -- trigger some change to force lsp rethink
-    vim.api.nvim_buf_set_lines(bufnr, line_count, line_count, false, { "" })
-    vim.cmd("silent! write!")
+    -- reload the file
+    vim.cmd("edit")
     -- get rid of stale diagnostics
     vim.diagnostic.reset(nil, bufnr)
-    -- undo the change
-    vim.api.nvim_buf_set_lines(bufnr, line_count, line_count + 1, false, {})
-    vim.cmd("silent! write!")
-    vim.cmd("edit")
     if restart_lsp then
-        vim.cmd("lsp restart")
+        require("config.lsp-filetypes").restart_lsp()
+        M.warn("buffer reset with lsp restart")
+    else
+        M.warn("buffer reset")
     end
-    M.warn("buffer reset")
 end
 
 ---Yank to Host

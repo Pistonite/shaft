@@ -15,7 +15,8 @@
                 "shada/main.shada.tmp.*",
                 "tree-sitter-*",
                 "piston/aicoder/*",
-                "piston/aicoder*"
+                "piston/aicoder*",
+                "piston/jdtls/workspaces/*"
             ],
             "undodata": "piston/undodir",
             "config": []
