@@ -103,6 +103,7 @@ require("catppuccin").setup({
             -- variables
             ["@variable"] = { fg = mocha.lavender },
             ["@lsp.type.variable"] = { fg = mocha.lavender },
+            ["@lsp.typemod.variable.defaultLibrary"] = { fg = mocha.red },
             ["@property"] = { link = "@variable" },
             ["@parameter"] = { link = "@variable" },
             ["@variable.parameter"] = { link = "@variable" },
