@@ -113,6 +113,11 @@ require("catppuccin").setup({
             ["@lsp.typemod.property.readonly"] = { link = "Constant" },
             ["@lsp.type.enumMember"] = { link = "Constant" },
 
+            -- (tag) attributes
+            Attribute = { fg = mocha.teal },
+            ["@tag.attribute"] = { link = "@variable" },
+            ["@tag.attribute.tsx"] = { link = "Attribute" },
+
             -- override the terminal color to be frappe
             -- so it stands out from the editor
             Floaterm = { bg = frappe.base },
