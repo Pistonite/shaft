@@ -202,17 +202,17 @@ CFG_VERSION = "11"
 
 [nvim]
 REPO = "https://github.com/neovim/neovim"
-VERSION = "0.12.3"
+VERSION = "0.12.4"
 'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
-'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "4e4e8fb9215af9707eaf9e8614106eaf94784bcb5fb319a96934d41918cb388c"
-'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "63daa0a0374f2255d2fb4c0867fcacc64a09c8d7ec1c349f781aff1b8350a8ad"
+'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "49906085a3c473ee87a28319942c62216fb365a1a1a4f83dbc4ac41365f5e609"
+'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "9fc3572829ffd13debb6e32555da2c8cc02555568260a9fc4cf1f65bbcca319c"
 'cfg(target_os="linux")'.SHA.__match__ = "opfs::cpu_arch()"
 'cfg(target_os="linux")'.SHA.'opfs::CpuArch::Arm64' = "<unsupported>"
-'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "c441b547142860bf01bcce39e36cbed185c41112813e15443b16e5237750724d"
+'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "012bf3fcac5ade43914df3f174668bf64d05e049a4f032a388c027b1ebd78628"
 'cfg(target_os="macos")'.SHA.__match__ = "opfs::cpu_arch()"
-'cfg(target_os="macos")'.SHA.'opfs::CpuArch::Arm64' = "532da1d00e465a660fa01c3d4991333d09c52107dce7df937368545daca0a14e"
+'cfg(target_os="macos")'.SHA.'opfs::CpuArch::Arm64' = "51ab83afa66d663627c2ab1be43209b0f4e81360d4598b53efaa4d8195f24c89"
 'cfg(target_os="macos")'.SHA.'opfs::CpuArch::X64' = "<unsupported>"
-NVIM_CFG = "29"
+NVIM_CFG = "30"
 
 [tree_sitter]
 VERSION = "0.26.9"

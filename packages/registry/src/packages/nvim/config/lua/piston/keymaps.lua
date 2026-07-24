@@ -198,6 +198,7 @@ function M.setup_lsp(bufnr)
     end, opts)
     -- allow big E to restart LSP
     vim.keymap.set('n', '<leader>E', function() editorapi.fix_buffer_issues(true) end, opts)
+    -- print("setup keymap")
 end
 
 function M.get_telescope_mappings()

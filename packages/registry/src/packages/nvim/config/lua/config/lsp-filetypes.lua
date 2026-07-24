@@ -1,5 +1,37 @@
 local M = {}
 
+require("lspconfig")
+require("mason-lspconfig")
+vim.api.nvim_create_autocmd("LspAttach", {
+    callback = function(event)
+        require("piston.keymaps").setup_lsp(event.buf)
+        vim.lsp.inlay_hint.enable(true, { bufnr = event.buf })
+    end
+})
+
+-- Remove if no longer needed
+-- https://github.com/neovim/neovim/issues/30985 workaround for LSP error from rust-analyzer
+for _, method in ipairs({
+    'textDocument/diagnostic',
+    'textDocument/semanticTokens/full/delta',
+    'textDocument/inlayHint',
+    'workspace/diagnostic'
+}) do
+    local default_diagnostic_handler = vim.lsp.handlers[method]
+    vim.lsp.handlers[method] = function(err, result, context, config)
+        if err ~= nil then
+            if err.code == -32802 then
+                return
+            end
+            if err.code == -32603 then
+                return
+            end
+        end
+
+        return default_diagnostic_handler(err, result, context, config)
+    end
+end
+
 local SERVERS = {
     lua_ls = { config = true },
     pyright = {},
@@ -21,9 +53,6 @@ local FILE_TYPES = {
     rust = "rust_analyzer",
     -- java = "jdtls" -- special handling
 }
-local warn = function(msg)
-    vim.api.nvim_echo({{"lsp-filetypes: "..msg}}, false, {})
-end
 
 local SPECIAL_HANDLER = {
     java = {
@@ -53,24 +82,19 @@ vim.api.nvim_create_autocmd("FileType", {
         if not servers then
             return
         end
-        FILE_TYPES[ft] = nil -- remove the config for the file type that we already enabled
         if type(servers) == "string" then
             servers = { servers }
         end
-        local enabled = {}
         for _, s in ipairs(servers) do
             local config = SERVERS[s]
             if config then
-                SERVERS[s] = nil    -- remove the config for the server that we enabled
                 if config.config then
                     require("config.lsp."..s)
                 end
                 require("config.lsp-setup-once")
                 vim.lsp.enable(s)
-                table.insert(enabled, s)
             end
         end
-        warn("enabled "..vim.inspect(enabled).." for file type '"..ft.."'")
     end
 })
 
