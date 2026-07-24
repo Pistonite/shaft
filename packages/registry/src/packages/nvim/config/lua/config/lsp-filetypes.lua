@@ -2,6 +2,7 @@ local M = {}
 
 require("lspconfig")
 require("mason-lspconfig")
+
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(event)
         require("piston.keymaps").setup_lsp(event.buf)
@@ -38,7 +39,7 @@ local SERVERS = {
     eslint = {},
     ts_ls = {},
     tsgo = { config = true },
-    rust_analyzer = {},
+    rust_analyzer = { config = true },
     clangd = {},
     -- jdtls = {}, -- special handling
 }
@@ -73,7 +74,6 @@ vim.api.nvim_create_autocmd("FileType", {
         if special then
             local start_fn = special.start
             if start_fn then
-                require("config.lsp-setup-once")
                 start_fn()
                 return
             end
@@ -91,7 +91,6 @@ vim.api.nvim_create_autocmd("FileType", {
                 if config.config then
                     require("config.lsp."..s)
                 end
-                require("config.lsp-setup-once")
                 vim.lsp.enable(s)
             end
         end

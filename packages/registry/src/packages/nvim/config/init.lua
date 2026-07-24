@@ -109,7 +109,7 @@ require("lazy").setup {
 
         -- ## LANGUAGE SERVICE
         { -- filetype detection .. this is what triggers the lazy loading of nvim-lspconfig
-            dir = configpath.."/lua/config/lsp", name = "lsp-filetypes", event = "BufNew",
+            dir = configpath.."/lua/config/lsp", name = "lsp-filetypes", lazy = false,
             config = function() require("config.lsp-filetypes") end
         }, {
             'mason-org/mason-lspconfig.nvim',          commit = "7adc933dabcc7c86ae6b07aff7ee68eac398491f",
@@ -120,7 +120,8 @@ require("lazy").setup {
             end,
         }, {
             'mason-org/mason.nvim',                    commit = "2a6940af80375532e5e9e7c1f2fc6319a1b7a69d",
-            cmd = "Mason", build = ":MasonUpdate",
+            lazy = false,
+            build = ":MasonUpdate",
             config = function()
                 require("mason").setup({
                     ui = { border = 'rounded', }
