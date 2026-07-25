@@ -839,6 +839,9 @@ function M.aicoder_send(visual)
     -- need to defer to realize the send above first
     vim.defer_fn(function()
         M.editview_aicoder_open()
+        vim.defer_fn(function()
+            vim.cmd("startinsert")
+        end, 200)
     end, 200)
 end
 
@@ -1058,14 +1061,15 @@ function M.fix_buffer_issues(restart_lsp)
         M.warn("please save the file first")
         return
     end
-    -- reload the file
-    vim.cmd("edit")
     -- get rid of stale diagnostics
     vim.diagnostic.reset(nil, bufnr)
+
     if restart_lsp then
+        M.warn("lsp restart")
         require("config.lsp-filetypes").restart_lsp()
-        M.warn("buffer reset with lsp restart")
     else
+        -- reload the file
+        vim.cmd("edit")
         M.warn("buffer reset")
     end
 end

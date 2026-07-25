@@ -75,7 +75,7 @@ def nuke():
     clean()
 
     info = read_info()
-    data_path = get_std_data_path()
+    data_paths = get_std_data_paths()
     config_path = get_std_config_path()
 
     specs = [
@@ -97,7 +97,7 @@ def nuke():
     specs.append(f"data:{info['claude']['data-path']}")
 
     for spec in specs:
-        nuke_spec(spec, data_path, config_path, NUKE_DRY_RUN)
+        nuke_spec(spec, data_paths, config_path, NUKE_DRY_RUN)
 
     vim_path = os.path.expanduser("~/.vim")
     if os.path.exists(vim_path):
@@ -110,7 +110,7 @@ def nuke():
 def clean():
     """Clean temporary files"""
     info = read_info()
-    data_path = get_std_data_path()
+    data_paths = get_std_data_paths()
     config_path = get_std_config_path()
     specs = []
     for rel_path in info["shaft"]["clean"]["data"]:
@@ -118,30 +118,34 @@ def clean():
     for rel_path in info["shaft"]["clean"]["config"]:
         specs.append(f"config:{rel_path}")
     for spec in specs:
-        nuke_spec(spec, data_path, config_path, NUKE_DRY_RUN)
-    undo_dir = os.path.join(data_path, info["shaft"]["clean"]["undodata"])
-    if os.path.isdir(undo_dir):
-        now = time.time()
-        max_age_seconds = 30 * 24 * 60 * 60  # 30 days
-        for entry in os.listdir(undo_dir):
-            file_path = os.path.join(undo_dir, entry)
-            if os.path.isfile(file_path):
-                age = now - os.path.getmtime(file_path)
-                if age > max_age_seconds:
-                    if NUKE_DRY_RUN:
-                        print(f"would delete: {file_path}")
-                    else:
-                        os.remove(file_path)
-                        print(f"deleted: {file_path}")
+        nuke_spec(spec, data_paths, config_path, NUKE_DRY_RUN)
+
+def clean_undodata(data_paths: list[str], info):
+    for data_path in data_paths:
+        undo_dir = os.path.join(data_path, info["shaft"]["clean"]["undodata"])
+        if os.path.isdir(undo_dir):
+            now = time.time()
+            max_age_seconds = 30 * 24 * 60 * 60  # 30 days
+            for entry in os.listdir(undo_dir):
+                file_path = os.path.join(undo_dir, entry)
+                if os.path.isfile(file_path):
+                    age = now - os.path.getmtime(file_path)
+                    if age > max_age_seconds:
+                        if NUKE_DRY_RUN:
+                            print(f"would delete: {file_path}")
+                        else:
+                            os.remove(file_path)
+                            print(f"deleted: {file_path}")
 
 
-def nuke_spec(spec, data_path, config_path, dry_run):
+
+def nuke_spec(spec, data_paths, config_path, dry_run):
     """Remove paths matching a spec. Supports * suffix for starts-with pattern."""
     if spec.startswith("data:"):
-        base_path = data_path
+        base_paths = data_paths
         pattern = spec[5:]
     elif spec.startswith("config:"):
-        base_path = config_path
+        base_paths = [config_path]
         pattern = spec[7:]
     else:
         print(f"clean: invalid spec '{spec}', must start with 'data:' or 'config:'")
@@ -159,26 +163,28 @@ def nuke_spec(spec, data_path, config_path, dry_run):
         prefix = pattern[:-1]
         parent_dir = os.path.dirname(prefix) or "."
         name_prefix = os.path.basename(prefix)
-        search_dir = os.path.join(base_path, parent_dir)
+        for base_path in base_paths:
+            search_dir = os.path.join(base_path, parent_dir)
 
-        if not os.path.isdir(search_dir):
-            return
+            if not os.path.isdir(search_dir):
+                return
 
-        for entry in os.listdir(search_dir):
-            if entry.startswith(name_prefix):
-                full_path = os.path.join(search_dir, entry)
-                do_nuke(full_path)
+            for entry in os.listdir(search_dir):
+                if entry.startswith(name_prefix):
+                    full_path = os.path.join(search_dir, entry)
+                    do_nuke(full_path)
     else:
         # Exact path
-        full_path = os.path.join(base_path, pattern)
-        if os.path.exists(full_path):
-            do_nuke(full_path)
+        for base_path in base_paths:
+            full_path = os.path.join(base_path, pattern)
+            if os.path.exists(full_path):
+                do_nuke(full_path)
 
 
 def apply():
     """Apply updated configurations."""
     info = read_info()
-    data_path = get_std_data_path()
+    data_path = get_std_data_paths()[0]
     config_path = get_std_config_path()
 
     for rel_path in info["shaft"]["data-paths"]:
@@ -225,7 +231,7 @@ def merge_claudecode():
     info = read_info()
     claude = info["claude"]
 
-    data_path = get_std_data_path()
+    data_path = get_std_data_paths()[0]
     config_path = get_std_config_path()
 
     repo_path = os.path.join(data_path, claude["data-path"])
@@ -258,7 +264,7 @@ def repack():
     info = read_info()
     claude = info["claude"]
 
-    data_path = get_std_data_path()
+    data_path = get_std_data_paths()[0]
     config_path = get_std_config_path()
 
     repo_path = os.path.join(data_path, claude["data-path"])
@@ -290,12 +296,11 @@ def repack():
 
 
 def usage():
-    """Print usage information."""
     print((__doc__ or "").strip())
 
 # === HELPERS =================================================================
 
-def get_std_config_path():
+def get_std_config_path() -> str:
     if sys.platform == "win32":
         local_app_data = os.environ.get("LOCALAPPDATA", "")
         return os.path.join(local_app_data, "nvim")
@@ -303,13 +308,15 @@ def get_std_config_path():
         return os.path.expanduser("~/.config/nvim")
 
 
-def get_std_data_path():
+def get_std_data_paths() -> list[str]:
     if sys.platform == "win32":
         local_app_data = os.environ.get("LOCALAPPDATA", "")
-        return os.path.join(local_app_data, "nvim-data")
+        return [os.path.join(local_app_data, "nvim-data")]
     else:
-        return os.path.expanduser("~/.local/share/nvim")
-
+        return [
+            os.path.expanduser("~/.local/share/nvim"),
+            os.path.expanduser("~/.local/state/nvim")
+        ]
 
 def read_info():
     config_path = get_std_config_path()
@@ -374,7 +381,7 @@ def write_patch(path, content):
         f.write(content)
 
 
-def apply_patch(patch_path, repo_path):
+def apply_patch(patch_path: str, repo_path: str):
     """Apply a patch file to a repo. Handles CRLF issues on Windows."""
     result = subprocess.run(
         ["git", "-C", repo_path, "apply", patch_path],
@@ -406,7 +413,7 @@ def apply_patch(patch_path, repo_path):
     )
 
 
-def restore_work_tree(path):
+def restore_work_tree(path: str):
     """Restore all uncommitted changes in a git worktree."""
     subprocess.run(
         ["git", "-C", path, "checkout", "."],
@@ -414,7 +421,7 @@ def restore_work_tree(path):
     )
 
 
-def checkout_repo(path, repo, ref, shallow, sparse):
+def checkout_repo(path: str, repo :str, ref: str, shallow: bool, sparse: list[str] | None):
     path = os.path.abspath(path)
     repo = f"https://github.com/{repo}"
     if os.path.exists(path):

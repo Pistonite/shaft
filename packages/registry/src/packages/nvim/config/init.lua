@@ -41,6 +41,7 @@ require("lazy").setup {
     -- L: Lock to this version because of an issue, put the issue link like L#123
     spec = {
         {
+            -- note the version must be kept in sync with info.json
             "lazy/lazy.nvim", tag = "v11.17.5", lazy = false, priority = 9999
         },
         -- ## UI AND EDITOR FUNCTION
@@ -108,31 +109,27 @@ require("lazy").setup {
         },
 
         -- ## LANGUAGE SERVICE
-        { -- filetype detection .. this is what triggers the lazy loading of nvim-lspconfig
-            dir = configpath.."/lua/config/lsp", name = "lsp-filetypes", lazy = false,
+        { -- filetype detection .. this is what triggers the lazy loading of nvim-lspconfig and other lsp plugins
+            dir = configpath.."/lua/config/lsp", name = "lsp-filetypes",
+            lazy = false, -- the file type registration is itself very small and registers auto commands, so we need to
+                          -- make sure it's always there (so it's not a suspect when there is something wrong with LSP
             config = function() require("config.lsp-filetypes") end
         }, {
             'mason-org/mason-lspconfig.nvim',          commit = "7adc933dabcc7c86ae6b07aff7ee68eac398491f",
             config = function()
-                require("mason-lspconfig").setup({
-                    automatic_enable = false
-                })
+                require("mason-lspconfig").setup({ automatic_enable = false })
             end,
         }, {
             'mason-org/mason.nvim',                    commit = "2a6940af80375532e5e9e7c1f2fc6319a1b7a69d",
-            lazy = false,
+            cmd = "Mason",
             build = ":MasonUpdate",
             config = function()
-                require("mason").setup({
-                    ui = { border = 'rounded', }
-                })
+                require("mason").setup({ ui = { border = 'rounded' } })
             end
         }, {
             'neovim/nvim-lspconfig',                   commit = "d592c1e6ad9a0a01b3d5ed3f0345d68407167181",
         }, {
             'felpafel/inlay-hint.nvim',                commit = "369aa3d5f10b41580242cd6e825bd00cfa565464",
-            event = "LspAttach",
-            config = function() require("config.inlay-hint") end
         }, {
             'hrsh7th/nvim-cmp',                        commit = "2ffe79f1f021def8dd1fcd81deb16f1bb0d989f3",
             event = "InsertEnter",

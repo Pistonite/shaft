@@ -6,43 +6,38 @@ require("mason-lspconfig")
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(event)
         require("piston.keymaps").setup_lsp(event.buf)
-        vim.lsp.inlay_hint.enable(true, { bufnr = event.buf })
+        require("config.inlay-hint").enable(event.buf)
     end
 })
 
--- Remove if no longer needed
--- https://github.com/neovim/neovim/issues/30985 workaround for LSP error from rust-analyzer
-for _, method in ipairs({
-    'textDocument/diagnostic',
-    'textDocument/semanticTokens/full/delta',
-    'textDocument/inlayHint',
-    'workspace/diagnostic'
-}) do
-    local default_diagnostic_handler = vim.lsp.handlers[method]
-    vim.lsp.handlers[method] = function(err, result, context, config)
-        if err ~= nil then
-            if err.code == -32802 then
-                return
-            end
-            if err.code == -32603 then
-                return
-            end
-        end
+-- -- Remove if no longer needed
+-- -- https://github.com/neovim/neovim/issues/30985 workaround for LSP error from rust-analyzer
+-- for _, method in ipairs({
+--     'textDocument/diagnostic',
+--     'textDocument/semanticTokens/full/delta',
+--     'textDocument/inlayHint',
+--     'workspace/diagnostic'
+-- }) do
+--     local default_diagnostic_handler = vim.lsp.handlers[method]
+--     vim.lsp.handlers[method] = function(err, result, context, config)
+--         if err ~= nil then
+--             if err.code == -32802 then
+--                 return
+--             end
+--             if err.code == -32603 then
+--                 return
+--             end
+--         end
+--
+--         return default_diagnostic_handler(err, result, context, config)
+--     end
+-- end
 
-        return default_diagnostic_handler(err, result, context, config)
-    end
-end
-
-local SERVERS = {
-    lua_ls = { config = true },
-    pyright = {},
-    eslint = {},
-    ts_ls = {},
-    tsgo = { config = true },
-    rust_analyzer = { config = true },
-    clangd = {},
-    -- jdtls = {}, -- special handling
-}
+-- file type -> server[] registration
+-- server should be a key in the SERVERS map
+-- and a name of supported servers in nvim-lspconfig,
+-- *unless* it's an externally handled server (like jdtls) 
+-- in which case it should be an object
 local FILE_TYPES = {
     lua = "lua_ls",
     python = "pyright",
@@ -52,10 +47,6 @@ local FILE_TYPES = {
     typescriptreact = { "eslint", "tsgo" },
     javascript = "tsgo",
     rust = "rust_analyzer",
-    -- java = "jdtls" -- special handling
-}
-
-local SPECIAL_HANDLER = {
     java = {
         start = function()
             require("piston_jdtls").start_current_buf()
@@ -66,48 +57,69 @@ local SPECIAL_HANDLER = {
     }
 }
 
+-- server registration
+-- config = true will require( config.lsp.<server_name> )
+local SERVERS = {
+    lua_ls = { config = true },
+    pyright = {},
+    eslint = {},
+    ts_ls = {},
+    tsgo = { config = true },
+    rust_analyzer = { config = true },
+    clangd = {},
+}
+
 -- Autocommand to auto-load LSP configs based on filetype
 vim.api.nvim_create_autocmd("FileType", {
     callback = function()
         local ft = vim.bo.filetype
-        local special = SPECIAL_HANDLER[ft]
-        if special then
-            local start_fn = special.start
-            if start_fn then
-                start_fn()
-                return
-            end
-        end
         local servers = FILE_TYPES[ft]
-        if not servers then
-            return
-        end
+        if not servers then return end
+
         if type(servers) == "string" then
             servers = { servers }
+        elseif servers.start then
+            servers.start()
+            M.echo("started language server for "..ft)
+            return
         end
+        local output = ""
         for _, s in ipairs(servers) do
-            local config = SERVERS[s]
-            if config then
-                if config.config then
-                    require("config.lsp."..s)
+            if type(s) == "string" then
+                local config = SERVERS[s]
+                if config then
+                    if config.config then
+                        require("config.lsp."..s)
+                        output = output..", [configured "..s.."]"
+                    else
+                        output = output..", "..s
+                    end
+                    vim.lsp.enable(s)
+                else
+                    output = output..", [server not found: "..s.."]"
                 end
-                vim.lsp.enable(s)
             end
+        end
+        if output ~= "" then
+            M.echo("started lsp servers: "..output:sub(3))
         end
     end
 })
 
 function M.restart_lsp()
     local ft = vim.bo.filetype
-    local special = SPECIAL_HANDLER[ft]
-    if special then
-        local restart_fn = special.restart
-        if restart_fn then
-            restart_fn()
+    local servers = FILE_TYPES[ft]
+    if not servers then return end
+    if type(servers) ~= "string" and servers.start then
+        if servers.restart then
+            servers.restart()
             return
         end
     end
-    vim.cmd("lsp restart")
+    vim.cmd("lsp stop")
+    vim.cmd("edit")
 end
+
+function M.echo(msg) vim.api.nvim_echo({{"lsp-filetypes: "..msg}}, false, {}) end
 
 return M
