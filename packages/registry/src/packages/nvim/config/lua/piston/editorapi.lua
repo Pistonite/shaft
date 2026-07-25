@@ -1061,17 +1061,29 @@ function M.fix_buffer_issues(restart_lsp)
         M.warn("please save the file first")
         return
     end
-    -- get rid of stale diagnostics
-    vim.diagnostic.reset(nil, bufnr)
 
     if restart_lsp then
-        M.warn("lsp restart")
-        require("config.lsp-filetypes").restart_lsp()
+        -- disable inlay hints polling which causes issues with stale diagnostics
+        -- being displayed again
+        require("config.inlay-hint").disable(bufnr)
+        require("config.lsp-filetypes").restart_lsp(bufnr)
+        -- realize the lsp stop then edit to attach again
+        vim.defer_fn(function()
+            local bufnr2 = vim.api.nvim_get_current_buf()
+            if bufnr2 ~= bufnr then return end
+            if vim.bo[bufnr].modified then return end
+            vim.cmd("edit")
+        end, 200)
     else
+        -- get rid of stale diagnostics
+        vim.diagnostic.reset(nil, bufnr)
         -- reload the file
         vim.cmd("edit")
+        -- in lsp restart there will be an attach message anyway
         M.warn("buffer reset")
     end
+
+
 end
 
 ---Yank to Host

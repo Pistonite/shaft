@@ -64,15 +64,40 @@ local function stop_poll(bufnr)
     end
 end
 
+local function hint_ready(bufnr, elapsed)
+    if elapsed >= POLL_TIMEOUT then
+        -- will let it refresh during normal editing
+        return true
+    end
+    if #vim.lsp.inlay_hint.get({ bufnr = bufnr }) > 0 then
+        return true
+    end
+    if #vim.diagnostic.get(bufnr) > 0 then
+        -- if there are diagnostics then it's probably ready
+        -- there is just no inlay hints for the current buffer
+        -- we will poll it once more and stop
+        --
+        -- (the real reason is polling while there is diagnostics make
+        -- the screen flicker)
+        vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+        return true
+    end
+    return false
+end
+
 function M.enable(bufnr)
     if bufnr == nil or bufnr == 0 then
         bufnr = vim.api.nvim_get_current_buf()
     end
-    vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
-
     -- servers sometimes attach/index too late to answer the first request,
     -- so keep re-asking every second until hints show up (or we give up)
     stop_poll(bufnr)
+
+    vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+    if #vim.diagnostic.get(bufnr) > 0 then
+        return
+    end
+
     local elapsed = 0
     local timer = uv.new_timer()
     if not timer then return end
@@ -84,17 +109,8 @@ function M.enable(bufnr)
             stop_poll(bufnr)
             return
         end
-        if #vim.lsp.inlay_hint.get({ bufnr = bufnr }) > 0 then
+        if hint_ready(bufnr, elapsed) then
             stop_poll(bufnr)
-            local secs = math.floor(elapsed / 1000)
-            if secs > 0 then
-                M.echo("took " .. secs.." seconds")
-            end
-            return
-        end
-        if elapsed >= POLL_TIMEOUT then
-            stop_poll(bufnr)
-            -- will let it refresh as normal
             return
         end
         vim.lsp.inlay_hint.enable(false, { bufnr = bufnr })
@@ -104,6 +120,12 @@ function M.enable(bufnr)
     end))
 end
 
-function M.echo(msg) vim.api.nvim_echo({{"inlay-hint: "..msg}}, false, {}) end
+function M.disable(bufnr)
+    if bufnr == nil or bufnr == 0 then
+        bufnr = vim.api.nvim_get_current_buf()
+    end
+    stop_poll(bufnr)
+    vim.lsp.inlay_hint.enable(false, { bufnr = bufnr })
+end
 
 return M

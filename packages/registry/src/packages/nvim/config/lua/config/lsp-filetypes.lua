@@ -69,6 +69,8 @@ local SERVERS = {
     clangd = {},
 }
 
+local STARTED_FILE_TYPES = {}
+
 -- Autocommand to auto-load LSP configs based on filetype
 vim.api.nvim_create_autocmd("FileType", {
     callback = function()
@@ -76,11 +78,16 @@ vim.api.nvim_create_autocmd("FileType", {
         local servers = FILE_TYPES[ft]
         if not servers then return end
 
+        local first_start = not STARTED_FILE_TYPES[ft]
+        STARTED_FILE_TYPES[ft] = true
+
         if type(servers) == "string" then
             servers = { servers }
         elseif servers.start then
             servers.start()
-            M.echo("started language server for "..ft)
+            if first_start then
+                M.echo("started language server for "..ft)
+            end
             return
         end
         local output = ""
@@ -100,16 +107,19 @@ vim.api.nvim_create_autocmd("FileType", {
                 end
             end
         end
-        if output ~= "" then
+        if output ~= "" and first_start then
             M.echo("started lsp servers: "..output:sub(3))
         end
     end
 })
 
-function M.restart_lsp()
+function M.restart_lsp(bufnr)
     local ft = vim.bo.filetype
     local servers = FILE_TYPES[ft]
     if not servers then return end
+
+    vim.diagnostic.reset(nil, bufnr)
+    STARTED_FILE_TYPES[ft] = nil
     if type(servers) ~= "string" and servers.start then
         if servers.restart then
             servers.restart()
@@ -117,7 +127,8 @@ function M.restart_lsp()
         end
     end
     vim.cmd("lsp stop")
-    vim.cmd("edit")
+    -- we don't call :edit here since the LSP needs to be stopped first,
+    -- otherwise the stale diagnostics will come back and be duplicated
 end
 
 function M.echo(msg) vim.api.nvim_echo({{"lsp-filetypes: "..msg}}, false, {}) end
