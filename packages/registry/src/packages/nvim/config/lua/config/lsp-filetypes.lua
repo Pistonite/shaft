@@ -70,6 +70,7 @@ local SERVERS = {
 }
 
 local STARTED_FILE_TYPES = {}
+local ENABLED_SERVERS = {}
 
 -- Autocommand to auto-load LSP configs based on filetype
 vim.api.nvim_create_autocmd("FileType", {
@@ -101,7 +102,10 @@ vim.api.nvim_create_autocmd("FileType", {
                     else
                         output = output..", "..s
                     end
-                    vim.lsp.enable(s)
+                    if ENABLED_SERVERS[s] ~= true then
+                        vim.lsp.enable(s)
+                        ENABLED_SERVERS[s] = true
+                    end
                 else
                     output = output..", [server not found: "..s.."]"
                 end
@@ -117,6 +121,8 @@ function M.restart_lsp(bufnr)
     local ft = vim.bo.filetype
     local servers = FILE_TYPES[ft]
     if not servers then return end
+
+    ENABLED_SERVERS={}
 
     vim.diagnostic.reset(nil, bufnr)
     STARTED_FILE_TYPES[ft] = nil
