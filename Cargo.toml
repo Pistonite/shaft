@@ -33,7 +33,7 @@ enum-map = "2.7.3"
 enumset = "1.1.14"
 itertools = "0.15.0"
 flate2 = "1.1.9"
-libc = "0.2.187"
+libc = "0.2.189"
 shell-words = "1.1.1"
 sha2 = "0.11.0"
 windows = "0.62.2"
@@ -47,10 +47,6 @@ fs2 = "0.4.3"
 fxhash = "0.2.1"
 winreg = "0.56.0"
 which = "8.0.5"
-clap = "4.6.3"
+clap = "4.6.6"
 tungstenite = "0.30.0"
 clipboard-win = "5.4.1"
-
-[patch.crates-io]
-# https://github.com/Alexhuszagh/float16/pull/15 breaks in ms-prod
-float16 = { git = "https://github.com/musicinmybrain/float16", rev = "144e0702060dccb581294cae07da25d9f26a0e0f" }

@@ -45,11 +45,11 @@ uutils_sed.VERSION = "0.1.1"
 
 [shellutils]
 ALIAS_VERSION = "8"
-which.VERSION = "0.1.5"
+which.VERSION = "0.1.6"
 viopen.VERSION = "0.2.2"
-vipath.VERSION = "0.1.8"
+vipath.VERSION = "0.1.9"
 n.VERSION = "0.1.2"
-wsclip.VERSION = "0.1.8"
+wsclip.VERSION = "0.1.9"
 lfmt.VERSION = "0.2.1"
 
 [git]
