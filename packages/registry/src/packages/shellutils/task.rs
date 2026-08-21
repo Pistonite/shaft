@@ -70,13 +70,23 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         hmgr::paths::binary(bin_name!("x")).into_utf8()?,
         task_exe.clone(),
     ))?;
+    // shell alias
+    let alias_sh = "alias xx='x x --'";
+    ctx.add_item(Item::bash(alias_sh))?;
+    ctx.add_item(Item::zsh(alias_sh))?;
+    ctx.add_item(Item::pwsh("function xx {\n  & x x -- @args\n}"))?;
+
+    // completion
     let mut script = command_output!(&task_exe, ["--completion", "bash"]);
     script.push_str("\ncomplete -F _task x");
     ctx.add_item(Item::bash(script))?;
+
     let mut script = "compdef _task x\n".to_string();
     script.push_str(&command_output!(&task_exe, ["--completion", "zsh"]));
     ctx.add_item(Item::zsh(script))?;
+
     let script = r#"Invoke-Expression (& {((task --completion powershell).replace("-CommandName task","-CommandName task,x") | Out-String)})"#;
     ctx.add_item(Item::pwsh(script))?;
+
     Ok(())
 }
