@@ -2,7 +2,7 @@
 name = "shutil-vipath"
 description = "Simple tool for editing PATH environment on Windows in a text file"
 license = "MIT"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2024"
 publish = false
 

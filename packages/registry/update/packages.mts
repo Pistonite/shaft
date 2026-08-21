@@ -259,6 +259,14 @@ export const pkg_terminal: PackageFn = (meta) =>
 export const pkg_volta: PackageFn = (meta) =>
     fetch_from_github_release({
         repo: meta.get("pnpm.REPO"),
+        tag: (tags) => {
+            for (const t of tags) {
+                if (!t.includes("rc") && !t.includes("beta") && !t.includes("alpha")) {
+                    return t;
+                }
+            }
+            throw new Error("failed to find pnpm version");
+        },
         query: (_, tag) => ({ "pnpm.VERSION": strip_v(tag) })
     });
 export const pkg_uv = default_cratesio_fetcher("uv");
