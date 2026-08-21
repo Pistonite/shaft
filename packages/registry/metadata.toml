@@ -44,7 +44,7 @@ ms_coreutils.SHA.'opfs::CpuArch::X64' = "e2aedf8daa82f1dfb2b86ae7056a6346c21832e
 uutils_sed.VERSION = "0.1.1"
 
 [shellutils]
-ALIAS_VERSION = "8"
+ALIAS_VERSION = "9"
 which.VERSION = "0.1.6"
 viopen.VERSION = "0.2.2"
 vipath.VERSION = "0.1.9"
@@ -150,6 +150,19 @@ pnpm.REPO = "https://github.com/pnpm/pnpm"
 pnpm.VERSION = "11.22.0"
 node.VERSION = "24"
 yarn.VERSION = "4"
+
+[bun]
+REPO = "https://github.com/oven-sh/bun"
+VERSION = "1.4.0"
+'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
+'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "f473bfe2df73ee770548c93dd5d380aea7120c218ec2aa1afdd0bbba7bf18c47"
+'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "e6f093d39da486b20262ca8cdd5ed6a9e8bc9c2f275b78e6d3a0c5b28cc95901"
+'cfg(target_os="linux")'.SHA.__match__ = "opfs::cpu_arch()"
+'cfg(target_os="linux")'.SHA.'opfs::CpuArch::Arm64' = "<unsupported>"
+'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "2d03fb5fb83ac8b567aca0a281b2ce1a1a19d488f56c2968d88c3f25e92fe452"
+'cfg(target_os="macos")'.SHA.__match__ = "opfs::cpu_arch()"
+'cfg(target_os="macos")'.SHA.'opfs::CpuArch::Arm64' = "1d0211b8f1dc991182344687ad15e72ee86f154845a5f7fa477994cd341dd9b0"
+'cfg(target_os="macos")'.SHA.'opfs::CpuArch::X64' = "<unsupported>"
 
 [uv]
 ALIAS_VERSION = "1"

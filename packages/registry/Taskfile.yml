@@ -15,7 +15,7 @@ tasks:
     - pnpm i @types/node --no-lockfile
 
   update:
-    - node --experimental-strip-types update/main.mts {{.CLI_ARGS}}
+    - node update/main.mts {{.CLI_ARGS}}
 
   clean:
     - rm -f package.json package-lock.json pnpm-lock.yaml bun.lock
@@ -41,7 +41,7 @@ tasks:
     - cargo test
 
   check-shutil-meta:
-    - node --experimental-strip-types update/main.mts shellutils
+    - node update/main.mts shellutils
     - task: git:check-modification
       vars:
         CHECK_PATH: metadata.toml

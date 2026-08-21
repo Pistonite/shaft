@@ -64,6 +64,13 @@ export const parse_github_repo = (repo: string): string => {
     return match[1].replace(/\.git$/, "");
 };
 
+export const strip = (text: string, prefix: string): string => {
+    if (!text.startsWith(prefix)) {
+        throw new Error(`expected ${text} to start with ${prefix}`);
+    }
+    return text.substring(prefix.length);
+};
+
 /** Strip leading 'v' from a version tag */
 export const strip_v = (version: string): string => {
     return version[0]==="v" ? version.substring(1) : version;

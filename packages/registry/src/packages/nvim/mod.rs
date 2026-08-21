@@ -82,11 +82,7 @@ fn nvim_file_name() -> cu::Result<&'static str> {
 }
 
 pub fn configure(ctx: &Context) -> cu::Result<()> {
-    let install_bin = {
-        let mut p = ctx.install_dir();
-        p.extend(["bin", bin_name!("nvim")]);
-        p
-    };
+    let install_bin = cu::path!((ctx.install_dir()) / "bin" / bin_name!("nvim"));
     let install_bin_str = install_bin.as_utf8()?;
     ctx.add_item(Item::shim_bin(
         bin_name!("nvim"),
