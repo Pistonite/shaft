@@ -21,7 +21,9 @@ fn bun_url() -> cu::Result<String> {
     let repo = metadata::bun::REPO;
     let version = metadata::bun::VERSION;
     let file_name = bun_file_name()?;
-    Ok(format!("{repo}/releases/download/bun-v{version}/{file_name}"))
+    Ok(format!(
+        "{repo}/releases/download/bun-v{version}/{file_name}"
+    ))
 }
 
 fn bun_file_name() -> cu::Result<&'static str> {
