@@ -67,11 +67,11 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     let install_bin = cu::path!((ctx.install_dir()) / bin_name!("bun"));
     let install_bin_str = install_bin.as_utf8()?;
     ctx.add_item(Item::link_bin(
-        hmgr::paths::binary("bun").into_utf8()?,
+        hmgr::paths::binary(bin_name!("bun")).into_utf8()?,
         install_bin_str,
     ))?;
     ctx.add_item(Item::link_bin(
-        hmgr::paths::binary("bunx").into_utf8()?,
+        hmgr::paths::binary(bin_name!("bunx")).into_utf8()?,
         install_bin_str,
     ))?;
     Ok(())
