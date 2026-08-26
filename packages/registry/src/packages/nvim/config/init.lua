@@ -42,22 +42,29 @@ require("lazy").setup {
     spec = {
         {
             -- note the version must be kept in sync with info.json
+            -- https://github.com/lazy/lazy.nvim
             "lazy/lazy.nvim", tag = "v11.17.5", lazy = false, priority = 9999
         },
         -- ## UI AND EDITOR FUNCTION
         {   -- optimization for big files
+            -- https://github.com/pteroctopus/faster.nvim
             'pteroctopus/faster.nvim',                 commit = "6b7cb8b1a9628d4b87009c4849d510d1a3a14319", lazy = false
         }, {
-            'nvim-tree/nvim-tree.lua',                 commit = "4213bd6eabac38b16dd6615002b6243b23cf3bf6", lazy = false, priority = 2000, -- needs to be before cat for colors in tree to load properly
+            -- https://github.com/nvim-tree/nvim-tree.lua
+            'nvim-tree/nvim-tree.lua',                 commit = "b2aadda94b107480c48e548d6db51c6840b7b33c", lazy = false, priority = 2000, -- needs to be before cat for colors in tree to load properly
             config = function() require("config.nvim-tree") end
         }, {
-            "catppuccin/nvim", name = "catppuccin",    commit = "c7c692a0ad3080710893abbae100171819a3e4be", lazy = false, priority = 1000,
+            -- https://github.com/catppuccin/nvim
+            "catppuccin/nvim", name = "catppuccin",    commit = "edefef779ab08ce1a4a404713e3012b0d202bd35", lazy = false, priority = 1000,
             config = function() require("config.theme") end
         }, {
+            -- https://github.com/nvim-tree/nvim-web-devicons
             'nvim-tree/nvim-web-devicons',             commit = "2ae6958df7ced50baac5035cec0c15799eedfbf7",
         }, {
+            -- https://github.com/nvim-lualine/lualine.nvim
             'nvim-lualine/lualine.nvim',               commit = "221ce6b2d999187044529f49da6554a92f740a96",
         }, {
+            -- https://github.com/terrortylor/nvim-comment
             'terrortylor/nvim-comment',                commit = "e9ac16ab056695cad6461173693069ec070d2b23",
             cmd = "CommentToggle",
             config = function()
@@ -65,18 +72,22 @@ require("lazy").setup {
             end
             -- U: UNMAINTAINED
         }, {
+            -- https://github.com/lukas-reineke/indent-blankline.nvim
             "lukas-reineke/indent-blankline.nvim",     commit = "d28a3f70721c79e3c5f6693057ae929f3d9c0a03",
             cmd = { "IBLToggle", "IBLEnable", "IBLDisable" },
             config = function() require("ibl").setup() end
         },
         {
+            -- https://github.com/mbbill/undotree
             'mbbill/undotree',                         commit = "6fa6b57cda8459e1e4b2ca34df702f55242f4e4d",
             cmd = "UndotreeToggle"
         }, {
+            -- https://github.com/voldikss/vim-floaterm
             'voldikss/vim-floaterm', name="floaterm",  commit = "bb4ba7952e906408e1f83b215f55ffe57efcade6",
             cmd = "FloatermToggle"
         }, {
-            'esmuellert/codediff.nvim',                tag = "v2.52.0",
+            -- https://github.com/esmuellert/codediff.nvim
+            'esmuellert/codediff.nvim',                tag = "v2.67.0",
             cmd = "CodeDiff",
             config = function()
                 require("codediff").setup({
@@ -84,14 +95,16 @@ require("lazy").setup {
                 })
             end
         }, { -- codediff dependency
-            'MunifTanjim/nui.nvim',                    commit = "de740991c12411b663994b2860f1a4fd0937c130",
+            -- https://github.com/MunifTanjim/nui.nvim
+            'MunifTanjim/nui.nvim',                    commit = "10fc361835c856ba4233ef5ea135b919bf3dce97",
         }, {
-            'nvim-treesitter/nvim-treesitter',         commit = 'bd41519ff7901da11ba6e1c8f419f17f2d94305a', lazy = false,
+            -- https://github.com/nvim-treesitter/nvim-treesitter
+            'nvim-treesitter/nvim-treesitter',         commit = "8b98b4470eb326f1c7b50dae79f8c963568e5720", lazy = false,
             build = ":TSUpdate",
             config = function() require("config.nvim-treesitter")         end
-            -- U: UNMAINTAINED due to dick heads pissing off dev
         }, {
-            'nvim-treesitter/nvim-treesitter-context', commit = 'b311b30818951d01f7b4bf650521b868b3fece16', lazy = false,
+            -- https://github.com/nvim-treesitter/nvim-treesitter-context
+            'nvim-treesitter/nvim-treesitter-context', commit = "f3061339b8eaf9fda873600bc425b8d2d8502533", lazy = false,
             config = function()
                 require('treesitter-context').setup({
                     enable = true,
@@ -99,12 +112,15 @@ require("lazy").setup {
                 })
             end
         }, {
-            'nvim-telescope/telescope.nvim',           commit = "427b576c16792edad01a92b89721d923c19ad60f",
+            -- https://github.com/nvim-telescope/telescope.nvim
+            'nvim-telescope/telescope.nvim',           commit = "40aedd8a68c78a656a10a8d62d80c54af59420fb",
             cmd = "Telescope", event = "LspAttach",
             config = function() require("config.telescope")               end
         }, {
+            -- https://github.com/nvim-telescope/telescope-ui-select.nvim
             'nvim-telescope/telescope-ui-select.nvim', commit = "6e51d7da30bd139a6950adf2a47fda6df9fa06d2",
         }, { -- telescope dependency
+            -- https://github.com/nvim-lua/plenary.nvim
             'nvim-lua/plenary.nvim',                   commit = "74b06c6c75e4eeb3108ec01852001636d85a932b",
         },
 
@@ -115,11 +131,13 @@ require("lazy").setup {
                           -- make sure it's always there (so it's not a suspect when there is something wrong with LSP
             config = function() require("config.lsp-filetypes") end
         }, {
-            'mason-org/mason-lspconfig.nvim',          commit = "7adc933dabcc7c86ae6b07aff7ee68eac398491f",
+            -- https://github.com/mason-org/mason-lspconfig.nvim
+            'mason-org/mason-lspconfig.nvim',          commit = "24d4ab0838b250753b307a8747ade06dc99aed9d",
             config = function()
                 require("mason-lspconfig").setup({ automatic_enable = false })
             end,
         }, {
+            -- https://github.com/mason-org/mason.nvim
             'mason-org/mason.nvim',                    commit = "2a6940af80375532e5e9e7c1f2fc6319a1b7a69d",
             cmd = "Mason",
             build = ":MasonUpdate",
@@ -127,25 +145,38 @@ require("lazy").setup {
                 require("mason").setup({ ui = { border = 'rounded' } })
             end
         }, {
-            'neovim/nvim-lspconfig',                   commit = "d592c1e6ad9a0a01b3d5ed3f0345d68407167181",
+            -- https://github.com/neovim/nvim-lspconfig
+            'neovim/nvim-lspconfig',                   commit = "af9adce488c75ca0a81017945c2b7fa7b461bc23",
         }, {
+            -- https://github.com/felpafel/inlay-hint.nvim
             'felpafel/inlay-hint.nvim',                commit = "369aa3d5f10b41580242cd6e825bd00cfa565464",
         }, {
+            -- https://github.com/hrsh7th/nvim-cmp
             'hrsh7th/nvim-cmp',                        commit = "2ffe79f1f021def8dd1fcd81deb16f1bb0d989f3",
             event = "InsertEnter",
             config = function() require("config.lsp-cmp") end
         },
+        -- https://github.com/hrsh7th/cmp-nvim-lsp
         { 'hrsh7th/cmp-nvim-lsp',                    commit = "cbc7b02bb99fae35cb42f514762b89b5126651ef" },
+        -- https://github.com/hrsh7th/cmp-path
         { 'hrsh7th/cmp-path',                        commit = "c642487086dbd9a93160e1679a1327be111cbc25" },
+        -- https://github.com/hrsh7th/cmp-buffer
         { 'hrsh7th/cmp-buffer',                      commit = "b74fab3656eea9de20a9b8116afa3cfc4ec09657" },
+        -- https://github.com/hrsh7th/cmp-nvim-lsp-signature-help
         { 'hrsh7th/cmp-nvim-lsp-signature-help',     commit = "fd3e882e56956675c620898bf1ffcf4fcbe7ec84" },
+        -- https://github.com/hrsh7th/cmp-nvim-lua
         { 'hrsh7th/cmp-nvim-lua',                    commit = "e3a22cb071eb9d6508a156306b102c45cd2d573d" },
-        -- language: java (jdtls)
-        { 'mfussenegger/nvim-jdtls',                 commit = "6e9d953f0b82bccdb834cfde0e893f3119c22592" },
+
+        -- ## Language servers that require special setups
+        -- lsp: java (jdtls)
         {
             dir = configpath .. '/piston-jdtls.nvim', name = "piston-jdtls",
             cmd = { "JdtlsCheck", "JdtlsInstall", "JdtlsClean" },
             config = function() require("piston_jdtls").setup_commands() end
+        },
+        { -- needed by piston-jdtls
+            -- https://github.com/mfussenegger/nvim-jdtls
+            'mfussenegger/nvim-jdtls',                 commit = "6e9d953f0b82bccdb834cfde0e893f3119c22592"
         },
 
         -- ## AI

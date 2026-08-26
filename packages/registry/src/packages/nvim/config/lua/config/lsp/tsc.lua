@@ -1,4 +1,4 @@
-vim.lsp.config['tsgo'] ={
+vim.lsp.config['tsc'] ={
     settings = {
         typescript = {
             inlayHints = {

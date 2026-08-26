@@ -3,6 +3,8 @@ local M = {}
 require("lspconfig")
 require("mason-lspconfig")
 
+local mason_registry = require("mason-registry")
+
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(event)
         require("piston.keymaps").setup_lsp(event.buf)
@@ -43,9 +45,9 @@ local FILE_TYPES = {
     python = "pyright",
     c = "clangd",
     cpp = "clangd",
-    typescript = { "eslint", "tsgo" },
-    typescriptreact = { "eslint", "tsgo" },
-    javascript = "tsgo",
+    typescript = { "eslint", "tsc" },
+    typescriptreact = { "eslint", "tsc" },
+    javascript = "tsc",
     rust = "rust_analyzer",
     java = {
         start = function()
@@ -59,13 +61,21 @@ local FILE_TYPES = {
 
 -- server registration
 -- config = true will require( config.lsp.<server_name> )
+-- mason_package is the name of the mason package if different from the server name
 local SERVERS = {
-    lua_ls = { config = true },
+    lua_ls = {
+        config = true,
+        mason_package = "lua-language-server"
+    },
     pyright = {},
-    eslint = {},
-    ts_ls = {},
-    tsgo = { config = true },
-    rust_analyzer = { config = true },
+    eslint = {
+        mason_package = "eslint-lsp"
+    },
+    tsc = { config = true },
+    rust_analyzer = {
+        config = true,
+        mason_package = "rust-analyzer"
+    },
     clangd = {},
 }
 
@@ -96,15 +106,20 @@ vim.api.nvim_create_autocmd("FileType", {
             if type(s) == "string" then
                 local config = SERVERS[s]
                 if config then
-                    if config.config then
-                        require("config.lsp."..s)
-                        output = output..", [configured "..s.."]"
+                    local mason_package = config.mason_package or s;
+                    if mason_registry.is_installed(mason_package) then
+                        if config.config then
+                            require("config.lsp."..s)
+                            output = output..", [configured "..s.."]"
+                        else
+                            output = output..", "..s
+                        end
+                        if ENABLED_SERVERS[s] ~= true then
+                            vim.lsp.enable(s)
+                            ENABLED_SERVERS[s] = true
+                        end
                     else
-                        output = output..", "..s
-                    end
-                    if ENABLED_SERVERS[s] ~= true then
-                        vim.lsp.enable(s)
-                        ENABLED_SERVERS[s] = true
+                        output = output..", [package not installed: "..mason_package.."]"
                     end
                 else
                     output = output..", [server not found: "..s.."]"
