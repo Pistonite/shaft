@@ -629,8 +629,10 @@ function M.editview_aicoder_open()
         return
     end
     local filewins_len = #filewins
-    if filewins_len == 0 then -- will mess up the view if open ai coder first
-        M.warn("cannot open aicoder when no file in view")
+    if filewins_len == 0 then
+        -- just open it on the side, the window width isn't quite
+        -- right but that's ok for now
+        vim.cmd.ClaudeCode()
         return
     end
     local curr_winid = vim.api.nvim_get_current_win()
@@ -1084,6 +1086,68 @@ function M.fix_buffer_issues(restart_lsp)
     end
 
 
+end
+
+---Toggle comment
+function M.toggle_comment(is_visual_mode)
+    local ft = vim.bo.filetype
+    if not (ft == "typescriptreact" or ft == "javascriptreact") then
+        -- toggle normally
+        if is_visual_mode then vim.cmd.normal("gcgv") else vim.cmd.normal("gcc") end
+        return
+    end
+    local uncomment_with_jsx = function(line)
+        local line_trimmed = vim.trim(line)
+        if line_trimmed == "{/**/}" or line_trimmed == "{/* */}" then
+            local i = line:find(line_trimmed, 1, true)
+            return line:sub(1,i-1) .. line:sub(i+#line_trimmed)
+        end
+        if line_trimmed:sub(1,4) == "{/* " and line_trimmed:sub(-4) == " */}" then
+            local start_index = line:find("{/* ", 1, true)
+            local end_index = start_index
+            while true do
+                local next = line:find(" */}", end_index + 4, true)
+                if not next then break end
+                end_index = next
+            end
+            return line:sub(1,start_index-1) .. line:sub(start_index+4,end_index-1)
+        end
+        return nil
+    end
+    if is_visual_mode then
+        local start_line = vim.fn.line("v")
+        local end_line = vim.fn.line(".")
+        if start_line > end_line then start_line, end_line = end_line, start_line end
+        local changed = false
+        local lines = vim.api.nvim_buf_get_lines(0, start_line-1, end_line, false)
+        for i, line in ipairs(lines) do
+            if not (vim.trim(line) == "") then
+                local new_line = uncomment_with_jsx(line)
+                if new_line then
+                    changed = true
+                    lines[i] = new_line
+                else
+                    -- if the range is not fully {/* */} lines, toggle normally
+                    vim.cmd.normal("gcgv")
+                    return
+                end
+            end
+        end
+        if not changed then
+            -- likely all empty lines but we will passthrough to be safe
+            vim.cmd.normal("gcgv")
+            return
+        end
+        -- processing jsx uncommenting
+        vim.api.nvim_buf_set_lines(0, start_line-1,end_line, false, lines)
+    else
+        local new_line = uncomment_with_jsx(vim.api.nvim_get_current_line())
+        if new_line then
+            vim.api.nvim_set_current_line(new_line)
+        else
+            vim.cmd.normal("gcc")
+        end
+    end
 end
 
 ---Yank to Host

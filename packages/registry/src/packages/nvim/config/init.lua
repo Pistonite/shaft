@@ -60,17 +60,24 @@ require("lazy").setup {
         }, {
             -- https://github.com/nvim-tree/nvim-web-devicons
             'nvim-tree/nvim-web-devicons',             commit = "2ae6958df7ced50baac5035cec0c15799eedfbf7",
+            config = function() require("config.icons") end
         }, {
             -- https://github.com/nvim-lualine/lualine.nvim
             'nvim-lualine/lualine.nvim',               commit = "221ce6b2d999187044529f49da6554a92f740a96",
-        }, {
-            -- https://github.com/terrortylor/nvim-comment
-            'terrortylor/nvim-comment',                commit = "e9ac16ab056695cad6461173693069ec070d2b23",
-            cmd = "CommentToggle",
-            config = function()
-                require("nvim_comment").setup({ create_mappings = false })
+        }, { -- patch for commentstring in tsx
+            -- https://github.com/JoosepAlviste/nvim-ts-context-commentstring
+            'JoosepAlviste/nvim-ts-context-commentstring', commit = "6141a40173c6efa98242dc951ed4b6f892c97027",
+            ft = { "typescriptreact", "javascriptreact" },
+            config = function() -- this is called once so the override is ok
+                -- https://github.com/JoosepAlviste/nvim-ts-context-commentstring/issues/109
+                local get_option = vim.filetype.get_option
+                ---@diagnostic disable-next-line: duplicate-set-field
+                vim.filetype.get_option = function(filetype, option)
+                  return option == "commentstring"
+                    and require("ts_context_commentstring.internal").calculate_commentstring()
+                    or get_option(filetype, option)
+                end
             end
-            -- U: UNMAINTAINED
         }, {
             -- https://github.com/lukas-reineke/indent-blankline.nvim
             "lukas-reineke/indent-blankline.nvim",     commit = "d28a3f70721c79e3c5f6693057ae929f3d9c0a03",

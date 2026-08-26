@@ -55,8 +55,8 @@ function M.setup()
     noremap('n', '[D', function() editorapi.jump_diagnostic(-1, true) end)
     noremap('n', ']D', function() editorapi.jump_diagnostic(-1, true) end)
     -- toggle comment
-    noremap('n', '<leader>c', vim.cmd.CommentToggle)
-    noremap('v', '<leader>c', "V<cmd>'<,'>CommentToggle<cr>gv")
+    noremap('n', '<leader>c', function() editorapi.toggle_comment(false) end)
+    noremap('v', '<leader>c', function() editorapi.toggle_comment(true) end)
 
     -- view helpers
     noremap('n', '<leader>vi', function()
