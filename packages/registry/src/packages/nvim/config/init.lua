@@ -59,7 +59,7 @@ require("lazy").setup {
             config = function() require("config.theme") end
         }, {
             -- https://github.com/nvim-tree/nvim-web-devicons
-            'nvim-tree/nvim-web-devicons',             commit = "2ae6958df7ced50baac5035cec0c15799eedfbf7",
+            'nvim-tree/nvim-web-devicons',             commit = "5f032a85be210cd1c6ac98861eb3b187ff3bd5eb",
             config = function() require("config.icons") end
         }, {
             -- https://github.com/nvim-lualine/lualine.nvim
@@ -94,7 +94,7 @@ require("lazy").setup {
             cmd = "FloatermToggle"
         }, {
             -- https://github.com/esmuellert/codediff.nvim
-            'esmuellert/codediff.nvim',                tag = "v2.67.0",
+            'esmuellert/codediff.nvim',                tag = "v2.54.0", -- L: 2.55 introduced 500ms poll which fork bombs the machine if diff takes longer
             cmd = "CodeDiff",
             config = function()
                 require("codediff").setup({
