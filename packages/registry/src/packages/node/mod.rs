@@ -12,6 +12,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     let Ok(version) = version else {
         return Ok(Verified::NotInstalled);
     };
+    check_in_shaft!("pnpx");
     check_outdated!(version.trim(), metadata[pnpm]::VERSION);
     check_in_path!("node");
     check_in_path!("yarn");
@@ -76,10 +77,14 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     };
 
     let pnpm_bin = install_dir.join(bin_name!("pnpm"));
-    ctx.add_item(Item::link_bin(
-        bin_name!("pnpm"),
-        pnpm_bin.clone().into_utf8()?,
+    let pnpm_bin_str = pnpm_bin.clone().into_utf8()?;
+    ctx.add_item(Item::link_bin(bin_name!("pnpm"), pnpm_bin_str.clone()))?;
+    ctx.add_item(Item::shim_bin(
+        bin_name!("pnpx"),
+        ShimCommand::target(pnpm_bin_str).args(["dlx"]),
     ))?;
+    // note we don't expose pn/pnx alias because I don't use them
+
     let config = ctx.load_config(CONFIG)?;
     let default_version = &config.default_version;
     {
