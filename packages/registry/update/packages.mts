@@ -256,18 +256,29 @@ export const pkg_terminal: PackageFn = (meta) =>
             "clink.URL": zip.url,
         })
     });
-export const pkg_volta: PackageFn = (meta) =>
+export const pkg_pnpm: PackageFn = (meta) =>
     fetch_from_github_release({
-        repo: meta.get("pnpm.REPO"),
+        repo: meta.repo(),
         tag: (tags) => {
             for (const t of tags) {
-                if (!t.includes("rc") && !t.includes("beta") && !t.includes("alpha")) {
+                if (t.startsWith("v12") && !t.includes("rc") && !t.includes("beta") && !t.includes("alpha")) {
                     return t;
                 }
             }
-            throw new Error("failed to find pnpm version");
+            throw new Error("failed to find pnpm version (for 12 stable)");
         },
-        query: (_, tag) => ({ "pnpm.VERSION": strip_v(tag) })
+        artifact: () => [
+            "pnpm-linux-x64.tar.gz",
+            "pnpm-win32-x64.zip",
+            "pnpm-win32-arm64.zip",
+            "pnpm-darwin-arm64.tar.gz",
+        ],
+        query: (_, tag, [linux, x64, arm, mac]) => ({
+            "VERSION": strip_v(tag),
+            ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
+            ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
+            ...match_cpu_arch(cfg_macos("SHA"), { arm: mac.sha, x64: "<unsupported>" }),
+        })
     });
 export const pkg_bun: PackageFn = (meta) => 
     fetch_from_github_release({

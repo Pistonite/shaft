@@ -1,37 +1,42 @@
-//! Volta with `node`, `npm`, `pnpm`, and `yarn`
+//! NodeJS and package managers serviced through `pnpm` the performant package manager
 
 use crate::pre::*;
 
-register_binaries!("node", "volta", "pnpm", "yarn");
+register_binaries!("node", "pnpm", "yarn");
 binary_dependencies!(_7z);
-version_cache!(static ALIAS_VERSION = metadata::volta::ALIAS_VERSION);
+version_cache!(static ALIAS_VERSION = metadata::pnpm::ALIAS_VERSION);
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
-    check_in_shaft!("volta");
-    check_in_shaft!("node");
     check_in_shaft!("pnpm");
-    check_in_shaft!("yarn");
+    let version = (|| cu::Ok(command_output!("pnpm", ["--version"])))();
+    let Ok(version) = version else {
+        return Ok(Verified::NotInstalled);
+    };
+    check_outdated!(version.trim(), metadata[pnpm]::VERSION);
+    check_in_path!("node");
+    check_in_path!("yarn");
     check_config_version_cache!(ALIAS_VERSION);
     Ok(Verified::UpToDate)
 }
 
 pub fn download(ctx: &Context) -> cu::Result<()> {
     hmgr::download_file(
-        volta_file_name(),
-        volta_url()?,
-        metadata::volta::SHA(),
+        pnpm_file_name()?,
+        pnpm_url()?,
+        metadata::pnpm::SHA(),
         ctx.bar(),
     )?;
     Ok(())
 }
 pub fn install(ctx: &Context) -> cu::Result<()> {
-    opfs::ensure_terminated(bin_name!("volta"))?;
     opfs::ensure_terminated(bin_name!("node"))?;
     opfs::ensure_terminated(bin_name!("pnpm"))?;
     opfs::ensure_terminated(bin_name!("yarn"))?;
     let install_dir = ctx.install_dir();
-    let volta_archive = hmgr::paths::download(volta_file_name(), volta_url()?);
-    opfs::unarchive(&volta_archive, &install_dir, false)?;
+    let pnpm_archive = hmgr::paths::download(pnpm_file_name()?, pnpm_url()?);
+    // the home only hosts pnpm binary, pnpm home is ~/.pnpm, so we will clean
+    // the install directory on install
+    opfs::unarchive(&pnpm_archive, &install_dir, true)?;
     Ok(())
 }
 pub fn uninstall(_: &Context) -> cu::Result<()> {
@@ -42,74 +47,61 @@ pub fn uninstall(_: &Context) -> cu::Result<()> {
     } else {
         if let Some(home) = std::env::home_dir() {
             cu::fs::rec_remove(home.join(".npm"))?;
+            cu::fs::rec_remove(home.join(".pnpm"))?;
         }
     }
     Ok(())
 }
 pub fn configure(ctx: &Context) -> cu::Result<()> {
-    let volta_home = ctx.install_dir();
-    let volta_home_str = volta_home.as_utf8()?;
-    let volta_bin = volta_home.join(bin_name!("volta"));
-    ctx.add_item(Item::user_env_var("VOLTA_HOME", volta_home_str))?;
-    ctx.add_item(Item::user_path(volta_home.join("bin").into_utf8()?))?;
-    ctx.add_item(Item::link_bin(
-        bin_name!("volta"),
-        volta_bin.clone().into_utf8()?,
-    ))?;
-    ctx.add_item(Item::link_bin(
-        bin_name!("volta-migrate"),
-        volta_home.join(bin_name!("volta-migrate")).into_utf8()?,
-    ))?;
-    ctx.add_item(Item::link_bin(
-        bin_name!("node"),
-        volta_home.join(bin_name!("volta-shim")).into_utf8()?,
-    ))?;
-    ctx.add_item(Item::link_bin(
-        bin_name!("npm"),
-        volta_home.join(bin_name!("volta-shim")).into_utf8()?,
-    ))?;
+    let home = cu::check!(std::env::home_dir(), "failed to get home directory")?;
+    let pnpm_home = cu::path!(home / ".pnpm");
+    ctx.add_item(Item::user_env_var("PNPM_HOME", pnpm_home.as_utf8()?))?;
+    let pnpm_home_bin = cu::path!(&pnpm_home / "bin");
+    ctx.add_item(Item::user_path(pnpm_home_bin.as_utf8()?))?;
+
+    let install_dir = ctx.install_dir();
+    // pnpm may reject calls if the bin dir is not in path
+    let modified_path = {
+        let current_path = cu::env_var("PATH").unwrap_or_default();
+        let mut new_path = pnpm_home_bin.into_utf8()?;
+        if !current_path.is_empty() {
+            if cfg!(windows) {
+                new_path.push(';');
+            } else {
+                new_path.push(':');
+            }
+            new_path.push_str(&current_path);
+        }
+        new_path
+    };
+
+    let pnpm_bin = install_dir.join(bin_name!("pnpm"));
     ctx.add_item(Item::link_bin(
         bin_name!("pnpm"),
-        volta_home.join(bin_name!("volta-shim")).into_utf8()?,
+        pnpm_bin.clone().into_utf8()?,
     ))?;
-    ctx.add_item(Item::link_bin(
-        bin_name!("yarn"),
-        volta_home.join(bin_name!("volta-shim")).into_utf8()?,
-    ))?;
-
     let config = ctx.load_config(CONFIG)?;
     let default_version = &config.default_version;
     {
         let mut package = "node".to_string();
         let version = &default_version.node;
-        if !version.is_empty() {
+        let resolved_version = if version.is_empty() {
+            metadata::pnpm::node::DEFAULT_VERSION
+        } else {
             cu::warn!("node version is pinned to {version}");
-            package.push('@');
-            package.push_str(version);
-        }
-        let (child, bar, _) = volta_bin
+            version
+        };
+        package.push('@');
+        package.push_str(resolved_version);
+        let (child, bar, _) = pnpm_bin
             .command()
-            .args(["install", &package])
-            .env("VOLTA_HOME", &volta_home)
-            .stdoe(cu::pio::spinner("install node").configure_spinner(|b| b.parent(ctx.bar())))
-            .stdin_null()
-            .spawn()?;
-        child.wait_nz()?;
-        bar.done();
-    }
-    {
-        let mut package = "pnpm".to_string();
-        let version = &default_version.pnpm;
-        if !version.is_empty() {
-            cu::warn!("pnpm version is pinned to {version}");
-            package.push('@');
-            package.push_str(version);
-        }
-        let (child, bar, _) = volta_bin
-            .command()
-            .args(["install", &package])
-            .env("VOLTA_HOME", &volta_home)
-            .stdoe(cu::pio::spinner("install pnpm").configure_spinner(|b| b.parent(ctx.bar())))
+            .args(["install", "--global", &package])
+            .env("PNPM_HOME", &pnpm_home)
+            .env("PATH", &modified_path)
+            .stdoe(
+                cu::pio::spinner(format!("pnpm install {package}"))
+                    .configure_spinner(|b| b.parent(ctx.bar())),
+            )
             .stdin_null()
             .spawn()?;
         child.wait_nz()?;
@@ -118,16 +110,23 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     {
         let mut package = "yarn".to_string();
         let version = &default_version.yarn;
-        if !version.is_empty() {
+        let resolved_version = if version.is_empty() {
+            metadata::pnpm::yarn::DEFAULT_VERSION
+        } else {
             cu::warn!("yarn version is pinned to {version}");
-            package.push('@');
-            package.push_str(version);
-        }
-        let (child, bar, _) = volta_bin
+            version
+        };
+        package.push('@');
+        package.push_str(resolved_version);
+        let (child, bar, _) = pnpm_bin
             .command()
-            .args(["install", &package])
-            .env("VOLTA_HOME", &volta_home)
-            .stdoe(cu::pio::spinner("install yarn").configure_spinner(|b| b.parent(ctx.bar())))
+            .args(["install", "--global", &package])
+            .env("PNPM_HOME", &pnpm_home)
+            .env("PATH", &modified_path)
+            .stdoe(
+                cu::pio::spinner(format!("pnpm install {package}"))
+                    .configure_spinner(|b| b.parent(ctx.bar())),
+            )
             .stdin_null()
             .spawn()?;
         child.wait_nz()?;
@@ -154,35 +153,35 @@ pub fn clean(ctx: &Context) -> cu::Result<()> {
     Ok(())
 }
 
-fn volta_file_name() -> &'static str {
-    if cfg!(windows) {
-        "volta.zip"
-    } else {
-        "volta.tgz"
-    }
+fn pnpm_url() -> cu::Result<String> {
+    let version = metadata::pnpm::VERSION;
+    let artifact = pnpm_file_name()?;
+    let repo = metadata::pnpm::REPO;
+    Ok(format!("{repo}/releases/download/v{version}/{artifact}"))
 }
 
-fn volta_url() -> cu::Result<String> {
-    let version = metadata::volta::VERSION;
-    let artifact = if cfg!(windows) {
-        let arch = if opfs::is_arm() { "-arm64" } else { "" };
-        format!("volta-{version}-windows{arch}.zip")
+fn pnpm_file_name() -> cu::Result<&'static str> {
+    if cfg!(windows) {
+        if opfs::is_arm() {
+            Ok("pnpm-win32-arm64.zip")
+        } else {
+            Ok("pnpm-win32-x64.zip")
+        }
     } else if cfg!(target_os = "linux") {
-        format!("volta-{version}-linux.tar.gz")
+        Ok("pnpm-linux-x64.tar.gz")
     } else if cfg!(target_os = "macos") {
-        format!("volta-{version}-macos.tar.gz")
+        Ok("pnpm-darwin-x64.tar.gz")
     } else {
-        cu::bail!("volta not supported on this platform");
-    };
-    let repo = metadata::volta::REPO;
-    Ok(format!("{repo}/releases/download/v{version}/{artifact}"))
+        cu::bail!("platform not supported");
+    }
 }
 
 config_file! {
     static CONFIG: Config = {
         template: include_str!("config.toml"),
         migration: [
-            include_str!("migrate_v0.js")
+            include_str!("migrate_v0.js"),
+            include_str!("migrate_v1.js"),
         ],
     }
 }
@@ -198,8 +197,6 @@ struct Config {
 struct ConfigDefaultVersion {
     #[serde(default)]
     pub node: String,
-    #[serde(default)]
-    pub pnpm: String,
     #[serde(default)]
     pub yarn: String,
 }
