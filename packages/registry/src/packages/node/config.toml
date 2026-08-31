@@ -1,11 +1,10 @@
 [[section]]
 key = ["default-version"]
 comment = """
-The default versions to install when syncing
-empty string = not specifed = latest/default
+The default engine/package-manager versions to install when syncing
+empty-string = not-specifed = default
 """
 children = [
     { key = ["node"], value = "" },
     { key = ["yarn"], value = "" },
-    { key = ["pnpm"], value = "" },
 ]
