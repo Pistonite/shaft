@@ -3,12 +3,12 @@
 key = []
 children = [
     { 
-        key = ["global_registry"],
+        key = ["global-registry"],
         comment = "Set the global registry for PNPM (and NPM if configured). Empty uses https://registry.npmjs.org/",
         value = "",
     },
     {
-        key = ["install_npm"],
+        key = ["install-npm"],
         comment = "Also install NPM with PNPM. '*' to install the default version. Empty will not install NPM.",
         value = "",
     }
