@@ -15,7 +15,6 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_shaft!("pnpx");
     check_outdated!(version.trim(), metadata[pnpm]::VERSION);
     check_in_path!("node");
-    // check_in_path!("yarn");
     check_config_version_cache!(ALIAS_VERSION);
     Ok(Verified::UpToDate)
 }
@@ -108,7 +107,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     {
         let result = pnpm_bin
             .command()
-            .args(["config", "set", "--global", registry])
+            .args(["config", "set", "--global", "registry", registry])
             .env("PNPM_HOME", &pnpm_home)
             .env("PATH", &modified_path)
             .stderr(cu::lv::E)
@@ -172,7 +171,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         let npm_bin = pnpm_home_bin.join(bin_name!("npm.exe"));
         let result = npm_bin
             .command()
-            .args(["config", "set", "--global", registry])
+            .args(["config", "set", "--global", "registry", registry])
             .env("PNPM_HOME", &pnpm_home)
             .env("PATH", &modified_path)
             .stderr(cu::lv::E)

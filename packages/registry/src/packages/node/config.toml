@@ -4,7 +4,7 @@ key = []
 children = [
     { 
         key = ["global_registry"],
-        comment = "Set the global registry for PNPM (and NPM if configured). Empty uses https://registry.npmjs.org/"
+        comment = "Set the global registry for PNPM (and NPM if configured). Empty uses https://registry.npmjs.org/",
         value = "",
     },
     {
