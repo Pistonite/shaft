@@ -64,7 +64,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     // pnpm may reject calls if the bin dir is not in path
     let modified_path = {
         let current_path = cu::env_var("PATH").unwrap_or_default();
-        let mut new_path = pnpm_home_bin.into_utf8()?;
+        let mut new_path = pnpm_home_bin.as_utf8()?.to_string();
         if !current_path.is_empty() {
             if cfg!(windows) {
                 new_path.push(';');
@@ -91,6 +91,32 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     // note we don't expose pn/pnx alias because I don't use them
 
     let config = ctx.load_config(CONFIG)?;
+    // configure registry first
+    let registry = if config.global_registry.is_empty() {
+        cu::print!(
+            "using default registry: {}",
+            metadata::pnpm::DEFAULT_REGISTRY
+        );
+        metadata::pnpm::DEFAULT_REGISTRY
+    } else {
+        cu::warn!("pinning global pnpm registry to {}", config.global_registry);
+        if !config.install_npm.is_empty() {
+            cu::warn!("pinning global npm registry to {}", config.global_registry);
+        }
+        &config.global_registry
+    };
+    {
+        let result = pnpm_bin
+            .command()
+            .args(["config", "set", "--global", registry])
+            .env("PNPM_HOME", &pnpm_home)
+            .env("PATH", &modified_path)
+            .stderr(cu::lv::E)
+            .stdio_null()
+            .wait_nz();
+        cu::check!(result, "failed to set pnpm registry")?;
+    }
+
     let default_version = &config.default_version;
     {
         let mut package = "node".to_string();
@@ -117,31 +143,44 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         child.wait_nz()?;
         bar.done();
     }
-    // {
-    //     let mut package = "yarn".to_string();
-    //     let version = &default_version.yarn;
-    //     let resolved_version = if version.is_empty() {
-    //         metadata::pnpm::yarn::DEFAULT_VERSION
-    //     } else {
-    //         cu::warn!("yarn version is pinned to {version}");
-    //         version
-    //     };
-    //     package.push('@');
-    //     package.push_str(resolved_version);
-    //     let (child, bar, _) = pnpm_bin
-    //         .command()
-    //         .args(["install", "--global", &package])
-    //         .env("PNPM_HOME", &pnpm_home)
-    //         .env("PATH", &modified_path)
-    //         .stdoe(
-    //             cu::pio::spinner(format!("pnpm install {package}"))
-    //                 .configure_spinner(|b| b.parent(ctx.bar())),
-    //         )
-    //         .stdin_null()
-    //         .spawn()?;
-    //     child.wait_nz()?;
-    //     bar.done();
-    // }
+
+    if !config.install_npm.is_empty() {
+        let mut package = "npm".to_string();
+        let version = &config.install_npm;
+        let resolved_version = if version == "*" {
+            metadata::pnpm::npm::DEFAULT_VERSION
+        } else {
+            cu::warn!("npm version is pinned to {version}");
+            version
+        };
+        package.push('@');
+        package.push_str(resolved_version);
+        let (child, bar, _) = pnpm_bin
+            .command()
+            .args(["install", "--global", &package])
+            .env("PNPM_HOME", &pnpm_home)
+            .env("PATH", &modified_path)
+            .stdoe(
+                cu::pio::spinner(format!("npm install {package}"))
+                    .configure_spinner(|b| b.parent(ctx.bar())),
+            )
+            .stdin_null()
+            .spawn()?;
+        child.wait_nz()?;
+        bar.done();
+
+        let npm_bin = pnpm_home_bin.join(bin_name!("npm.exe"));
+        let result = npm_bin
+            .command()
+            .args(["config", "set", "--global", registry])
+            .env("PNPM_HOME", &pnpm_home)
+            .env("PATH", &modified_path)
+            .stderr(cu::lv::E)
+            .stdio_null()
+            .wait_nz();
+        cu::check!(result, "failed to set npm registry")?;
+    }
+
     ALIAS_VERSION.update()?;
     Ok(())
 }
@@ -192,6 +231,7 @@ config_file! {
         migration: [
             include_str!("migrate_v0.js"),
             include_str!("migrate_v1.js"),
+            include_str!("migrate_v2.js"),
         ],
     }
 }
@@ -201,12 +241,14 @@ config_file! {
 struct Config {
     #[serde(default)]
     pub default_version: ConfigDefaultVersion,
+    #[serde(default)]
+    pub global_registry: String,
+    #[serde(default)]
+    pub install_npm: String,
 }
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 struct ConfigDefaultVersion {
     #[serde(default)]
     pub node: String,
-    #[serde(default)]
-    pub yarn: String,
 }

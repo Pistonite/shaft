@@ -145,9 +145,10 @@ VERSION = "12.2.1"
 'cfg(target_os="macos")'.SHA.__match__ = "opfs::cpu_arch()"
 'cfg(target_os="macos")'.SHA.'opfs::CpuArch::Arm64' = "ba343408b8479857fde5c42b2285e78e068f0e18c35824cd0a551197c6d8b774"
 'cfg(target_os="macos")'.SHA.'opfs::CpuArch::X64' = "<unsupported>"
-ALIAS_VERSION = "4"
+ALIAS_VERSION = "5"
 node.DEFAULT_VERSION = "26"
-yarn.DEFAULT_VERSION = "4"
+npm.DEFAULT_VERSION = "12"
+DEFAULT_REGISTRY = "https://registry.npmjs.org/"
 
 [bun]
 REPO = "https://github.com/oven-sh/bun"
