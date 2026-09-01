@@ -117,31 +117,31 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         child.wait_nz()?;
         bar.done();
     }
-    {
-        let mut package = "yarn".to_string();
-        let version = &default_version.yarn;
-        let resolved_version = if version.is_empty() {
-            metadata::pnpm::yarn::DEFAULT_VERSION
-        } else {
-            cu::warn!("yarn version is pinned to {version}");
-            version
-        };
-        package.push('@');
-        package.push_str(resolved_version);
-        let (child, bar, _) = pnpm_bin
-            .command()
-            .args(["install", "--global", &package])
-            .env("PNPM_HOME", &pnpm_home)
-            .env("PATH", &modified_path)
-            .stdoe(
-                cu::pio::spinner(format!("pnpm install {package}"))
-                    .configure_spinner(|b| b.parent(ctx.bar())),
-            )
-            .stdin_null()
-            .spawn()?;
-        child.wait_nz()?;
-        bar.done();
-    }
+    // {
+    //     let mut package = "yarn".to_string();
+    //     let version = &default_version.yarn;
+    //     let resolved_version = if version.is_empty() {
+    //         metadata::pnpm::yarn::DEFAULT_VERSION
+    //     } else {
+    //         cu::warn!("yarn version is pinned to {version}");
+    //         version
+    //     };
+    //     package.push('@');
+    //     package.push_str(resolved_version);
+    //     let (child, bar, _) = pnpm_bin
+    //         .command()
+    //         .args(["install", "--global", &package])
+    //         .env("PNPM_HOME", &pnpm_home)
+    //         .env("PATH", &modified_path)
+    //         .stdoe(
+    //             cu::pio::spinner(format!("pnpm install {package}"))
+    //                 .configure_spinner(|b| b.parent(ctx.bar())),
+    //         )
+    //         .stdin_null()
+    //         .spawn()?;
+    //     child.wait_nz()?;
+    //     bar.done();
+    // }
     ALIAS_VERSION.update()?;
     Ok(())
 }
