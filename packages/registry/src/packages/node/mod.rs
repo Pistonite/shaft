@@ -2,7 +2,7 @@
 
 use crate::pre::*;
 
-register_binaries!("node", "pnpm", "yarn");
+register_binaries!("node", "pnpm");
 binary_dependencies!(_7z);
 version_cache!(static ALIAS_VERSION = metadata::pnpm::ALIAS_VERSION);
 
@@ -15,7 +15,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_in_shaft!("pnpx");
     check_outdated!(version.trim(), metadata[pnpm]::VERSION);
     check_in_path!("node");
-    check_in_path!("yarn");
+    // check_in_path!("yarn");
     check_config_version_cache!(ALIAS_VERSION);
     Ok(Verified::UpToDate)
 }
