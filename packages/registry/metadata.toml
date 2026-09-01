@@ -145,7 +145,7 @@ VERSION = "12.1.0"
 'cfg(target_os="macos")'.SHA.__match__ = "opfs::cpu_arch()"
 'cfg(target_os="macos")'.SHA.'opfs::CpuArch::Arm64' = "927542783706b6966b6792f263b9b958dcd9909c5174965cd1aae0f4ab7f613c"
 'cfg(target_os="macos")'.SHA.'opfs::CpuArch::X64' = "<unsupported>"
-ALIAS_VERSION = "3"
+ALIAS_VERSION = "4"
 node.DEFAULT_VERSION = "26"
 yarn.DEFAULT_VERSION = "4"
 

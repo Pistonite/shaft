@@ -78,7 +78,12 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
 
     let pnpm_bin = install_dir.join(bin_name!("pnpm"));
     let pnpm_bin_str = pnpm_bin.clone().into_utf8()?;
-    ctx.add_item(Item::link_bin(bin_name!("pnpm"), pnpm_bin_str.clone()))?;
+    // pnpm requires shim because it ships with node-gyp and is discovered
+    // from the real binary path
+    ctx.add_item(Item::shim_bin(
+        bin_name!("pnpm"),
+        ShimCommand::target(pnpm_bin_str.clone()),
+    ))?;
     ctx.add_item(Item::shim_bin(
         bin_name!("pnpx"),
         ShimCommand::target(pnpm_bin_str).args(["dlx"]),
