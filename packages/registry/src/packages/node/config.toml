@@ -1,3 +1,19 @@
+
+[[section]]
+key = []
+children = [
+    { 
+        key = ["global_registry"],
+        comment = "Set the global registry for PNPM (and NPM if configured). Empty uses https://registry.npmjs.org/",
+        value = "",
+    },
+    {
+        key = ["install_npm"],
+        comment = "Also install NPM with PNPM. '*' to install the default version. Empty will not install NPM.",
+        value = "",
+    }
+]
+
 [[section]]
 key = ["default-version"]
 comment = """
@@ -6,5 +22,4 @@ empty-string = not-specifed = default
 """
 children = [
     { key = ["node"], value = "" },
-    { key = ["yarn"], value = "" },
 ]
