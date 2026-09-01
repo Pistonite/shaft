@@ -1,6 +1,12 @@
 local devicons = require("nvim-web-devicons")
 local icons = devicons.get_icons_by_extension()
 
+local cargo_icon = {
+    icon = "󰏗",
+    color = icons.rs.color,
+    name = "CargoRust"
+}
+
 devicons.setup({
     strict = true,
     override_by_extension = {
@@ -13,5 +19,7 @@ devicons.setup({
         }),
     },
     override_by_filename = {
+        ["Cargo.toml"] = cargo_icon,
+        ["Cargo.lock"] = cargo_icon,
     }
 })
