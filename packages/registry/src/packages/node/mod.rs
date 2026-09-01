@@ -160,7 +160,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
             .env("PNPM_HOME", &pnpm_home)
             .env("PATH", &modified_path)
             .stdoe(
-                cu::pio::spinner(format!("npm install {package}"))
+                cu::pio::spinner(format!("pnpm install {package}"))
                     .configure_spinner(|b| b.parent(ctx.bar())),
             )
             .stdin_null()
@@ -168,7 +168,8 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         child.wait_nz()?;
         bar.done();
 
-        let npm_bin = pnpm_home_bin.join(bin_name!("npm.exe"));
+        let npm_bin_name = if cfg!(windows) { "npm.cmd" } else { "npm" };
+        let npm_bin = pnpm_home_bin.join(npm_bin_name);
         let result = npm_bin
             .command()
             .args(["config", "set", "--global", "registry", registry])
