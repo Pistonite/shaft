@@ -261,7 +261,7 @@ kbd_uleds.COMMIT = "51af3af4b857edb73117898369fe4658d0113703"
 
 [vcpkg]
 REPO = "https://github.com/microsoft/vcpkg-tool"
-VERSION = "2026-09-26"
+VERSION = "2026-07-27"
 source.REPO = "https://github.com/microsoft/vcpkg"
 source.TAG = "2026.07.29"
 'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
