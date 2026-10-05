@@ -19,12 +19,12 @@ members = [
 
 [workspace.dependencies.cu]
 package = "pistonite-cu"
-version = "0.9.2"
+version = "0.9.7"
 # path = "../cu/packages/copper"
 
 [workspace.dependencies.pm]
 package = "pistonite-pm"
-version = "0.2.7"
+version = "0.3.1"
 default-features = false
 # path = "../cu/packages/promethium"
 
@@ -32,8 +32,8 @@ default-features = false
 enum-map = "2.7.3"
 enumset = "1.1.14"
 itertools = "0.15.0"
-flate2 = "1.1.9"
-libc = "0.2.189"
+flate2 = "1.1.10"
+libc = "0.2.190"
 shell-words = "1.1.1"
 sha2 = "0.11.0"
 windows = "0.62.2"
@@ -41,12 +41,12 @@ phf = "0.14.0"
 serde = "1"
 tokio = "1"
 sysinfo = "0.38.4" # need to build on rust-version 1.93
-reqwest = "0.13.4"
-boa_engine = "0.21.1"
+reqwest = "0.13.5"
+boa_engine = "0.22.0"
 fs2 = "0.4.3"
 fxhash = "0.2.1"
 winreg = "0.56.0"
-which = "8.0.5"
-clap = "4.6.6"
+which = "8.0.6"
+clap = "4.6.7"
 tungstenite = "0.30.0"
 clipboard-win = "5.4.1"
