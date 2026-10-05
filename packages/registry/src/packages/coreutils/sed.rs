@@ -9,7 +9,7 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     if let Ok(Verified::UpToDate) = verify() {
         return Ok(());
     }
-    epkg::cargo::binstall("sed", ctx.bar_ref())?;
+    epkg::cargo::install("sed", None, ctx.bar_ref())?;
     Ok(())
 }
 pub fn uninstall(_: &Context) -> cu::Result<()> {
