@@ -297,6 +297,25 @@ export const pkg_bun: PackageFn = (meta) =>
         })
     });
 
+export const pkg_gh: PackageFn = (meta) =>
+    fetch_from_github_release({
+        repo: meta.repo(),
+        artifacts: (tag) => {
+            const version = strip_v(tag);
+            return [
+                `gh_${version}_windows_arm64.zip`,
+                `gh_${version}_windows_amd64.zip`,
+                `gh_${version}_linux_amd64.tar.gz`,
+                `gh_${version}_macOS_arm64.zip`,
+            ];
+        },
+        query: (_, tag, [arm64, x64, linux, mac]) => ({
+            "VERSION": strip_v(tag),
+            ...match_cpu_arch(cfg_windows("SHA"), { arm: arm64.sha, x64: x64.sha }),
+            ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
+            ...match_cpu_arch(cfg_macos("SHA"), { arm: mac.sha, x64: "<unsupported>" }),
+        })
+    });
 export const pkg_uv = default_cratesio_fetcher("uv");
 export const pkg_gnucc: PackageFn = () => [
     fetch_from_arch_linux({ package: "gcc", query: (v) => ({ "gcc.VERSION": v.split("+", 2)[0] })}),

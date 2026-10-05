@@ -163,6 +163,19 @@ VERSION = "1.4.0"
 'cfg(target_os="macos")'.SHA.'opfs::CpuArch::Arm64' = "1d0211b8f1dc991182344687ad15e72ee86f154845a5f7fa477994cd341dd9b0"
 'cfg(target_os="macos")'.SHA.'opfs::CpuArch::X64' = "<unsupported>"
 
+[gh]
+REPO = "https://github.com/cli/cli"
+VERSION = "2.101.0"
+'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"
+'cfg(windows)'.SHA.'opfs::CpuArch::Arm64' = "e6cbb2d4afdad3e70f3d38b8d1ebaa3a0870a897cfc0e4cf569826710b96b4fd"
+'cfg(windows)'.SHA.'opfs::CpuArch::X64' = "bc6c814367b193cd8e713611d61e36013c0ef843b8f516458fe3eda039192794"
+'cfg(target_os="linux")'.SHA.__match__ = "opfs::cpu_arch()"
+'cfg(target_os="linux")'.SHA.'opfs::CpuArch::Arm64' = "<unsupported>"
+'cfg(target_os="linux")'.SHA.'opfs::CpuArch::X64' = "9bca2d1c16825f109907a23307628a2f0698fbf99662b73a5cf0b020293072b8"
+'cfg(target_os="macos")'.SHA.__match__ = "opfs::cpu_arch()"
+'cfg(target_os="macos")'.SHA.'opfs::CpuArch::Arm64' = "e4303e39d8f07141c4bad4b99b01079f05029c59b27076e8fbc825c985ecdd8b"
+'cfg(target_os="macos")'.SHA.'opfs::CpuArch::X64' = "<unsupported>"
+
 [uv]
 ALIAS_VERSION = "1"
 VERSION = "0.12.5"
