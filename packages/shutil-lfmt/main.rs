@@ -73,7 +73,7 @@ enum LineEnd {
 }
 
 #[cu::cli(flags = "flags", preprocess = Cli::preprocess)]
-async fn main(args: Cli) -> cu::Result<()> {
+async fn main(mut args: Cli) -> cu::Result<()> {
     let end = args.end;
     let check = args.check;
     let quieter_check = args.quieter_check;
@@ -109,8 +109,19 @@ async fn main(args: Cli) -> cu::Result<()> {
     let mut handles = vec![];
     let mut main_error = false;
     let mut check_error = false;
+    if args.paths.is_empty() {
+        args.paths.push(".".to_string());
+    }
+    cu::debug!("checking paths: {:?}", args.paths);
     for path in &args.paths {
-        let walker = match create_walker(path.as_ref(), &args) {
+        let path = Path::new(&path);
+        if !path.is_dir() {
+            let path = path.to_path_buf();
+            let handle = pool.spawn(async move { process_file(&path, end, check).await });
+            handles.push(handle);
+            continue;
+        }
+        let walker = match create_walker(path, &args) {
             Err(e) => {
                 process_message(
                     Err(format!("failed to walk directory: {e}")),
