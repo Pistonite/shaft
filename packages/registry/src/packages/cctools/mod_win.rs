@@ -30,7 +30,7 @@ static GNU_CC_BINUTILS_BASH_WRAP: &[&str] = &[ "ld","objdump" ];
 static CLANG_LLVM_SHIM: &[&str] = &[
     "amdgpu-arch", "c-index-test", "diagtool", "find-all-symbols",
     "modularize", "nvptx-arch", "offload-arch", "pp-trace",
-    "bugpoint", "dsymutil", "opt", "reduce-chunk-list",
+    "dsymutil", "opt", "reduce-chunk-list",
     "sancov", "sanstats", "verify-uselistorder", "wasm-ld"
 ];
 //clang*, llvm*, lldb* are also included
