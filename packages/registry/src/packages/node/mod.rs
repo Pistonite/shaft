@@ -168,8 +168,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         child.wait_nz()?;
         bar.done();
 
-        let npm_bin_name = if cfg!(windows) { "npm.cmd" } else { "npm" };
-        let npm_bin = pnpm_home_bin.join(npm_bin_name);
+        let npm_bin = pnpm_home_bin.join(bin_name!("npm"));
         let result = npm_bin
             .command()
             .args(["config", "set", "--global", "registry", registry])
