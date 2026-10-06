@@ -218,7 +218,7 @@ fn pnpm_file_name() -> cu::Result<&'static str> {
     } else if cfg!(target_os = "linux") {
         Ok("pnpm-linux-x64.tar.gz")
     } else if cfg!(target_os = "macos") {
-        Ok("pnpm-darwin-x64.tar.gz")
+        Ok("pnpm-darwin-arm64.tar.gz")
     } else {
         cu::bail!("platform not supported");
     }
