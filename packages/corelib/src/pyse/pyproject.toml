@@ -1,0 +1,27 @@
+[project]
+name = "do-not-edit"
+version = "0.0.0"
+requires-python = "==!!PYTHON_VERSION!!"
+
+# This file is managed by shaft for a standalone python environment.
+#
+# DO NOT run uv commands (uv sync, uv add, uv run, ...) in this directory
+# directly. They would create a .venv instead of installing packages into
+# the standalone python. Use the pipi script instead:
+#   pipi <package>...  add packages and install them
+#   pipi               sync the environment after editing this file
+# 
+#==================================================
+
+# User dependencies
+dependencies = !!USER_REQUIREMENTS!!
+
+#==================================================
+#
+# Below are managed by the standalone python environment
+# DO NOT MODIFY !
+[dependency-groups]
+managed = !!MANAGED_REQUIREMENTS!!
+
+[tool.uv]
+default-groups = ["managed"]

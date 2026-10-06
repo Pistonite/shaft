@@ -8,6 +8,9 @@ pub mod opfs;
 /// JSON execution
 pub mod jsexe;
 
+/// Python standalone environment manager (needs UV)
+pub mod pyse;
+
 pub use hmgr::{ItemMgr, Version, VersionCache};
 
 pub(crate) mod internal;

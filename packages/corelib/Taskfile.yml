@@ -14,3 +14,8 @@ tasks:
     - task: cargo:fmt-fix
   test:
     - cargo test
+
+  pyse:
+    desc: Run the Python Standalone Environment example
+    cmds:
+      - cargo run --example pyse -- {{.CLI_ARGS}}
