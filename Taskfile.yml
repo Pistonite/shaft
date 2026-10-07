@@ -58,7 +58,18 @@ tasks:
     - cargo run --bin shaft -- {{.CLI_ARGS}}
 
   run-build:
-    - cargo run --bin shaft-build
+    # the build script is only compiled if .cache/shaft-build is missing;
+    # delete it manually to recompile after changing the build script
+    # in that case, make sure to bump the MINOR version in the VERSION file,
+    # so installation also rebuilds the build script
+    - silent: true
+      cmd: |
+        if [[ ! -f .cache/shaft-build{{exeExt}} ]]; then
+          cargo build --bin shaft-build
+          mkdir -p .cache
+          cp target/debug/shaft-build{{exeExt}} .cache/shaft-build{{exeExt}}
+        fi
+        .cache/shaft-build{{exeExt}}
 
   build-shutil:
     - cargo build --bin lfmt

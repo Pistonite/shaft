@@ -83,20 +83,30 @@ pub fn local_update() -> cu::Result<()> {
     let repo_path = hmgr::paths::repo();
     ensure_checkout()?;
 
-    match get_cli_version() {
+    let current_version = opfs::cli_version();
+    let next_version = match get_cli_version() {
         Err(e) => {
             cu::warn!("failed to get next CLI version! {e:?}");
+            None
         }
         Ok(None) => {
             cu::warn!("failed to get next CLI version!");
+            None
         }
         Ok(Some(v)) => {
-            let current_version = opfs::cli_version();
             cu::hint!("upgrading: {current_version} -> {v}");
+            Some(v)
         }
-    }
+    };
 
-    {
+    // the build script is cached and only rebuilt if minor version is bumped
+    // (for performance reasons)
+    let build_script = repo_path.join(".cache").join(bin_name!("shaft-build"));
+    let use_cached_build_script = build_script.exists()
+        && next_version.is_some_and(|v| is_same_minor_version(current_version, &v));
+    if use_cached_build_script {
+        cu::hint!("using cached pre-build script");
+    } else {
         let command = cu::which("cargo")?.command().current_dir(&repo_path).args([
             "build",
             "--bin",
@@ -109,19 +119,24 @@ pub fn local_update() -> cu::Result<()> {
             .spawn()?;
         child.wait_nz()?;
         bar.done();
-    }
-    {
+
         #[cfg(feature = "build-x64")]
-        let build_script = repo_path
+        let build_output = repo_path
             .join("target")
             .join(epkg::cargo::BUILD_X64_TARGET_TRIPLE)
             .join("debug")
             .join(bin_name!("shaft-build"));
         #[cfg(not(feature = "build-x64"))]
-        let build_script = repo_path
+        let build_output = repo_path
             .join("target")
             .join("debug")
             .join(bin_name!("shaft-build"));
+        cu::check!(
+            cu::fs::copy(build_output, &build_script),
+            "failed to cache pre-build script"
+        )?;
+    }
+    {
         build_script
             .command()
             .current_dir(&repo_path)
@@ -180,14 +195,19 @@ pub fn local_update() -> cu::Result<()> {
     Ok(())
 }
 
+/// Check if 2 versions have the same major and minor version
+fn is_same_minor_version(a: &str, b: &str) -> bool {
+    fn major_minor(v: &str) -> (Option<&str>, Option<&str>) {
+        let mut parts = v.trim().split('.');
+        (parts.next(), parts.next())
+    }
+    major_minor(a) == major_minor(b)
+}
+
 /// Get the current version of the CLI as specified in the repo (not the version
 /// of the running binary)
 pub fn get_cli_version() -> cu::Result<Option<String>> {
-    let path = {
-        let mut p = hmgr::paths::repo();
-        p.push("VERSION");
-        p
-    };
+    let path = cu::path!((hmgr::paths::repo()) / "VERSION");
 
     if !path.exists() {
         return Ok(None);

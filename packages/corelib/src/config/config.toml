@@ -1,0 +1,23 @@
+[[section]]
+comment = "Configuration for shaft itself"
+
+[[section]]
+key = ["windows"]
+comment = "Windows-specific settings (ignored on other platforms)"
+children = [{
+    comment = 'if true, the "HOME" user environment variable is checked to be %USERPROFILE%',
+    key = ["control-home"],
+    value = true,
+}]
+
+[[section]]
+key = ["cargo"]
+comment = "Settings for installing packages with cargo"
+children = [{
+    comment = """
+If true, allow cargo-binstall to fallback to compiling from source
+when a prebuilt binary is not available
+""",
+    key = ["binstall-fallback"],
+    value = false,
+}]
