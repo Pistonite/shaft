@@ -264,16 +264,22 @@ fn find_in_wingit_impl(path: &Path) -> cu::Result<PathBuf> {
     // find the mingw64 or clangarm64 (in arm installation)
     let mut mingw64_path = git_path.join("mingw64");
     let mut clangarm64_path = git_path.join("clangarm64");
-    while !mingw64_path.is_dir() && !clangarm64_path.is_dir() {
+    // ucrt64 in newer microsoft-git
+    let mut ucrt64_path = git_path.join("ucrt64");
+    while !mingw64_path.is_dir() && !clangarm64_path.is_dir() && !ucrt64_path.is_dir() {
         git_path = git_path.parent_abs()?;
         mingw64_path = git_path.join("mingw64");
         clangarm64_path = git_path.join("clangarm64");
+        ucrt64_path = git_path.join("ucrt64");
     }
     if mingw64_path.is_dir() {
         cu::trace!("found mingw64: '{}'", mingw64_path.display());
     }
     if clangarm64_path.is_dir() {
         cu::trace!("found clangarm64: '{}'", clangarm64_path.display());
+    }
+    if ucrt64_path.is_dir() {
+        cu::trace!("found ucrt64: '{}'", ucrt64_path.display());
     }
     git_path.join(path).normalize_executable()
 }
