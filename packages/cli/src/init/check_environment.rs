@@ -1,12 +1,10 @@
 use corelib::hmgr;
 
-use crate::config::Config;
-
-pub fn check_init_environment(_config: &Config) -> cu::Result<()> {
+pub fn check_init_environment() -> cu::Result<()> {
     hmgr::init_env()?;
     #[cfg(windows)]
     {
-        windows::check_init_environment(_config)?;
+        windows::check_init_environment()?;
     }
     Ok(())
 }
@@ -15,9 +13,9 @@ pub fn check_init_environment(_config: &Config) -> cu::Result<()> {
 pub mod windows {
     use super::*;
     use cu::pre::*;
-    pub fn check_init_environment(config: &Config) -> cu::Result<()> {
+    pub fn check_init_environment() -> cu::Result<()> {
         // check HOME = %USERPROFILE% for max compatibility
-        if config.windows.control_home {
+        if corelib::config::get_config()?.windows.control_home {
             let user_profile = cu::env_var("USERPROFILE")?;
             let home = cu::check!(hmgr::windows::get_user("HOME"), "failed to get user home")?;
             if home != user_profile {

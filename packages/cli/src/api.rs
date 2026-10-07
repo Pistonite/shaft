@@ -55,9 +55,9 @@ impl CliApi {
         )?;
         cu::check!(opfs::init(), "failed to init platform")?;
         cu::check!(crate::init::check_init_home(), "failed to init home")?;
-        let config = crate::config::load_config()?;
+        corelib::config::init_config()?;
         cu::check!(
-            crate::init::check_init_environment(&config),
+            crate::init::check_init_environment(),
             "failed to init environment"
         )?;
 

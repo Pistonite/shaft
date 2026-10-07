@@ -171,9 +171,19 @@ pub fn install_local(path: &Path, bin: &str, bar: Option<&Arc<cu::ProgressBar>>)
     Ok(())
 }
 
+/// Get the value for `--strategies` for `cargo binstall`, based on config
+fn binstall_strategies() -> cu::Result<&'static str> {
+    if crate::config::get_config()?.cargo.binstall_fallback {
+        Ok("crate-meta-data,compile")
+    } else {
+        Ok("crate-meta-data")
+    }
+}
+
 /// Install a package using `cargo binstall` (with fallback)
 #[cu::context("failed to install '{package}' with cargo-binstall")]
 pub fn binstall(package: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result<()> {
+    let strategies = binstall_strategies()?;
     let mut state = cargo::instance()?;
     let (child, bar) = cu::which("cargo-binstall")?
         .command()
@@ -181,7 +191,7 @@ pub fn binstall(package: &str, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Result
         .add(cu::args![
             package,
             "--strategies",
-            "crate-meta-data",
+            strategies,
             "--no-confirm",
             "--locked",
         ])
@@ -206,6 +216,7 @@ pub fn binstall_git(
     git: &str,
     bar: Option<&Arc<cu::ProgressBar>>,
 ) -> cu::Result<()> {
+    let strategies = binstall_strategies()?;
     let mut state = cargo::instance()?;
     let (child, bar) = cu::which("cargo-binstall")?
         .command()
@@ -213,7 +224,7 @@ pub fn binstall_git(
         .add(cu::args![
             package,
             "--strategies",
-            "crate-meta-data",
+            strategies,
             "--no-confirm",
             "--locked",
             "--git",

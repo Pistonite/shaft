@@ -13,6 +13,8 @@ pub mod pyse;
 
 pub use hmgr::{ItemMgr, Version, VersionCache};
 
+pub mod config;
+
 pub(crate) mod internal;
 
 pub fn check_requirements() -> cu::Result<()> {
