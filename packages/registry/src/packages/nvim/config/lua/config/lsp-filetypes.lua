@@ -42,7 +42,7 @@ end
 -- in which case it should be an object
 local FILE_TYPES = {
     lua = "lua_ls",
-    python = "pyright",
+    python = "basedpyright",
     c = "clangd",
     cpp = "clangd",
     typescript = { "eslint", "tsc" },
@@ -67,7 +67,7 @@ local SERVERS = {
         config = true,
         mason_package = "lua-language-server"
     },
-    pyright = {},
+    basedpyright = {},
     eslint = {
         mason_package = "eslint-lsp"
     },
