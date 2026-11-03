@@ -276,10 +276,14 @@ impl ModuleMetadata<'_> {
             }
             ModuleMetadata::LinuxMux {
                 data_pacman,
-                data_apt: _,
+                data_apt,
             } => {
                 if data_pacman.is_some() {
-                    "enum_set!{ corelib::opfs::LinuxFlavor::Pacman }"
+                    if data_apt.is_some() {
+                        "corelib::opfs::LinuxFlavor::all()"
+                    } else {
+                        "enum_set!{ corelib::opfs::LinuxFlavor::Pacman }"
+                    }
                 } else {
                     "enum_set!{ corelib::opfs::LinuxFlavor::Apt }"
                 }

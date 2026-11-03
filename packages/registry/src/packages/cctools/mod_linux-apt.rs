@@ -1,4 +1,4 @@
-//! GNU Toolchain and binutils
+//! GNU and LLVM C/C++ Toolchain
 
 use crate::pre::*;
 
