@@ -325,6 +325,14 @@ export const pkg_gnucc: PackageFn = () => [
 ];
 export const pkg_build_essential_apt: PackageFn = () =>
     fetch_from_apt({ package: "build-essential", query: (v) => ({ "VERSION": v }) });
+export const pkg_llvm_apt: PackageFn = () => [
+    fetch_from_apt({ package: "clang", query: (v) => ({ "clang.VERSION": v }) }),
+    fetch_from_apt({ package: "llvm", query: (v) => ({ "llvm.VERSION": v }) }),
+    fetch_from_apt({ package: "lldb", query: (v) => ({ "lldb.VERSION": v }) }),
+    fetch_from_apt({ package: "clangd", query: (v) => ({ "clangd.VERSION": v }) }),
+    fetch_from_apt({ package: "clang-format", query: (v) => ({ "clang_format.VERSION": v }) }),
+    fetch_from_apt({ package: "clang-tidy", query: (v) => ({ "clang_tidy.VERSION": v }) }),
+];
 export const pkg_clang: PackageFn = (meta) => [
     fetch_from_github_release({
         repo: meta.repo(),

@@ -188,6 +188,14 @@ gdb.VERSION = "18.1"
 [build_essential_apt]
 VERSION = "12.12ubuntu2.26.04.2"
 
+[llvm_apt]
+clang.VERSION = "21.1.6-71"
+llvm.VERSION = "21.1.6-71"
+lldb.VERSION = "21.1.6-71"
+clangd.VERSION = "21.1.6-71"
+clang_format.VERSION = "21.1.6-71"
+clang_tidy.VERSION = "21.1.6-71"
+
 [clang]
 REPO = "https://github.com/llvm/llvm-project"
 'cfg(windows)'.SHA.__match__ = "opfs::cpu_arch()"

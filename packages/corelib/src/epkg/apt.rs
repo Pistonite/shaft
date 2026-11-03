@@ -65,7 +65,8 @@ fn sudo_apt_get(reason: &str) -> cu::Result<cu::Command<(), (), ()>> {
     Ok(command)
 }
 
-/// Check if a package is installed with apt, returns the version if installed
+/// Check if a package is installed with apt, returns the version if installed.
+/// The epoch is removed from the version
 pub fn installed_version(package_name: &str) -> cu::Result<Option<String>> {
     let mut state = apt::instance()?;
     if state.installed_packages.is_empty() {
@@ -88,6 +89,7 @@ pub fn installed_version(package_name: &str) -> cu::Result<Option<String>> {
                 continue;
             }
             cu::trace!("apt: queried installed package '{name}', version='{version}'");
+            let version = version.split_once(':').map_or(version, |x| x.1);
             state
                 .installed_packages
                 .insert(name.to_string(), version.to_string());

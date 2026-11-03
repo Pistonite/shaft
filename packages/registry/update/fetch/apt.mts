@@ -9,7 +9,8 @@ const DEFAULT_POCKETS = ["Release", "Security", "Updates"];
 
 export type AptArgs = {
     package: string;
-    query: (version: string) => Promise<MetaKeyValues> | MetaKeyValues;
+    /** version has the epoch stripped. epoch is "0" if the version has no epoch */
+    query: (version: string, epoch: string) => Promise<MetaKeyValues> | MetaKeyValues;
 };
 type LaunchpadBinariesResponse = { entries: { binary_package_version: string; pocket: string }[] };
 /** Fetch package version from the Ubuntu archive, as reported by apt/dpkg on amd64 */
@@ -32,7 +33,10 @@ export const fetch_from_apt = async ({ package: pkg, query }: AptArgs): Promise<
     if (!match) {
         throw new Error(`apt package not found: ${pkg}`);
     }
-    const version = match.binary_package_version;
-    console.log(`-- -- latest version of ${pkg} on apt: ${version}`);
-    return await query(version);
+    const full_version = match.binary_package_version;
+    console.log(`-- -- latest version of ${pkg} on apt: ${full_version}`);
+    const i_epoch = full_version.indexOf(":");
+    const epoch = i_epoch === -1 ? "0" : full_version.substring(0, i_epoch);
+    const version = full_version.substring(i_epoch + 1);
+    return await query(version, epoch);
 };
