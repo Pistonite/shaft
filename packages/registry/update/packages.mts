@@ -2,6 +2,7 @@ import type { MetafilePkg, MetaKeyValues } from "./metafile.mts"
 
 import { fetch_from_github_release } from "./fetch/github_release.mts";
 import { fetch_from_cratesio } from "./fetch/cratesio.mts";
+import { fetch_from_apt } from "./fetch/apt.mts";
 import { fetch_from_arch_linux, fetch_from_aur } from "./fetch/arch_linux.mts";
 import { fetch_from_local_cargo_toml } from "./fetch/cargo_toml.mts";
 import { fetch_latest_commit } from "./fetch/latest_commit.mts";
@@ -322,6 +323,8 @@ export const pkg_gnucc: PackageFn = () => [
     fetch_from_arch_linux({ package: "binutils", query: (v) => ({ "binutils.VERSION": v.split("+", 2)[0] })}),
     fetch_from_arch_linux({ package: "gdb", query: (v) => ({ "gdb.VERSION": v }) })
 ];
+export const pkg_build_essential_apt: PackageFn = () =>
+    fetch_from_apt({ package: "build-essential", query: (v) => ({ "VERSION": v }) });
 export const pkg_clang: PackageFn = (meta) => [
     fetch_from_github_release({
         repo: meta.repo(),

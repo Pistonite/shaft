@@ -500,13 +500,13 @@ impl ModuleMetadata<'_> {
         // mux module
         macro_rules! write_end_match {
             (none) => {
-                let _ = writeln!(out, "        _ => Ok(None),\n    }} }}");
+                let _ = writeln!(out, "        #[allow(unreachable_patterns)] _ => Ok(None),\n    }} }}");
             };
             (default) => {
-                let _ = writeln!(out, "        _ => Default::default(),\n    }} }}");
+                let _ = writeln!(out, "        #[allow(unreachable_patterns)] _ => Default::default(),\n    }} }}");
             };
             (unreachable) => {
-                let _ = writeln!(out, "        _ => cu::bail!(\"unreachable\"),\n    }} }}");
+                let _ = writeln!(out, "        #[allow(unreachable_patterns)] _ => cu::bail!(\"unreachable\"),\n    }} }}");
             };
         }
         {

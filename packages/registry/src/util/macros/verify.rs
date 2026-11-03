@@ -126,6 +126,22 @@ macro_rules! check_pacman {
 #[cfg(target_os = "linux")]
 pub(crate) use check_pacman;
 
+/// Check apt install metadata for an apt package
+#[cfg(target_os = "linux")]
+macro_rules! check_apt {
+    ($l:literal) => {
+        match epkg::apt::installed_version($l)? {
+            None => {
+                cu::error!("verify: apt package not installed: '{}'", $l);
+                return Ok(Verified::NotInstalled);
+            }
+            Some(x) => x,
+        }
+    };
+}
+#[cfg(target_os = "linux")]
+pub(crate) use check_apt;
+
 /// Check brew install metadata for a homebrew package
 #[cfg(target_os = "macos")]
 macro_rules! check_homebrew {

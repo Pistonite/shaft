@@ -1,4 +1,4 @@
-use super::{CURRENT_FLAVOR, IS_WSL, CpuArch, LinuxFlavor};
+use super::{CURRENT_FLAVOR, CpuArch, IS_WSL, LinuxFlavor};
 use std::path::Path;
 pub fn init() -> cu::Result<()> {
     init_is_wsl();
