@@ -16,6 +16,8 @@ binary_dependencies!(Scalar, _7z, CargoBinstall);
 
 mod cargoones;
 mod common;
+mod fzf;
+mod jq;
 mod shutil;
 mod task;
 mod wget;
@@ -34,16 +36,8 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
         return Ok(v);
     }
 
-    check_in_shaft!("fzf");
-    let v = command_output!("fzf", ["--version"]);
-    let v = v.split_once(' ').map(|x| x.0).unwrap_or(&v);
-    check_outdated!(v.trim(), metadata[fzf]::VERSION);
-
-    check_in_shaft!("jq");
-    let v = command_output!("jq", ["--version"]);
-    let v = v.strip_prefix("jq-").unwrap_or(&v);
-    check_outdated!(v.trim(), metadata[jq]::VERSION);
-
+    check_verified!(fzf::verify()?);
+    check_verified!(jq::verify()?);
     check_verified!(task::verify()?);
     check_verified!(cargoones::verify()?);
     check_verified!(shutil::verify()?);
@@ -58,8 +52,8 @@ pub fn download(ctx: &Context) -> cu::Result<()> {
         metadata::wget::SHA,
         ctx.bar(),
     )?;
-    hmgr::download_file("fzf.zip", fzf_url(), metadata::fzf::SHA(), ctx.bar())?;
-    hmgr::download_file("jq.exe", jq_url(), metadata::jq::SHA, ctx.bar())?;
+    fzf::download(ctx)?;
+    jq::download(ctx)?;
     task::download(ctx)?;
     Ok(())
 }
@@ -71,13 +65,8 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
     let wget_7z = hmgr::paths::download("wget.7z", metadata::wget::URL);
     opfs::unarchive(wget_7z, &install_dir, false)?;
 
-    let fzf_zip = hmgr::paths::download("fzf.zip", fzf_url());
-    opfs::unarchive(fzf_zip, &install_dir, false)?;
-
-    let jq_exe = hmgr::paths::download("jq.exe", jq_url());
-    let jq_target = install_dir.join(bin_name!("jq"));
-    cu::fs::copy(jq_exe, jq_target)?;
-
+    fzf::install(ctx)?;
+    jq::install(ctx)?;
     task::install(ctx)?;
     cargoones::install(ctx)?;
     shutil::install(ctx)?;
@@ -105,15 +94,9 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
         hmgr::paths::binary(bin_name!("wget")).into_utf8()?,
         ctx.install_dir().join(bin_name!("wget")).into_utf8()?,
     ))?;
-    ctx.add_item(Item::link_bin(
-        hmgr::paths::binary(bin_name!("fzf")).into_utf8()?,
-        ctx.install_dir().join(bin_name!("fzf")).into_utf8()?,
-    ))?;
-    ctx.add_item(Item::link_bin(
-        hmgr::paths::binary(bin_name!("jq")).into_utf8()?,
-        ctx.install_dir().join(bin_name!("jq")).into_utf8()?,
-    ))?;
 
+    fzf::configure(ctx)?;
+    jq::configure(ctx)?;
     task::configure(ctx)?;
 
     ctx.add_item(Item::user_env_var("EDITOR", "viopen"))?;
@@ -145,17 +128,4 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
 
     common::ALIAS_VERSION.update()?;
     Ok(())
-}
-
-fn fzf_url() -> String {
-    let repo = metadata::fzf::REPO;
-    let ver = metadata::fzf::VERSION;
-    let arch = if opfs::is_arm() { "arm64" } else { "amd64" };
-    format!("{repo}/releases/download/v{ver}/fzf-{ver}-windows_{arch}.zip")
-}
-
-fn jq_url() -> String {
-    let repo = metadata::jq::REPO;
-    let ver = metadata::jq::VERSION;
-    format!("{repo}/releases/download/jq-{ver}/jq-windows-amd64.exe")
 }

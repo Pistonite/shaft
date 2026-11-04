@@ -13,6 +13,8 @@ binary_dependencies!(CargoBinstall);
 
 mod cargoones;
 mod common;
+mod fzf;
+mod jq;
 mod perl;
 mod shutil;
 mod task;
@@ -29,11 +31,9 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
     check_outdated!(&v, metadata[curl]::VERSION);
     let v = check_pacman!("wget");
     check_outdated!(&v, metadata[wget]::VERSION);
-    let v = check_pacman!("fzf");
-    check_outdated!(&v, metadata[fzf]::VERSION);
-    let v = check_pacman!("jq");
-    check_outdated!(&v, metadata[jq]::VERSION);
 
+    check_verified!(fzf::verify()?);
+    check_verified!(jq::verify()?);
     check_verified!(task::verify()?);
     check_verified!(cargoones::verify()?);
     check_verified!(shutil::verify()?);
@@ -43,17 +43,21 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 }
 
 pub fn download(ctx: &Context) -> cu::Result<()> {
+    fzf::download(ctx)?;
+    jq::download(ctx)?;
     task::download(ctx)?;
     Ok(())
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
     epkg::pacman::install_many(
-        &["perl", "curl", "wget", "fzf", "jq"],
+        &["perl", "curl", "wget"],
         "[shellutils] installing common shell utilities",
         ctx.bar_ref(),
     )?;
 
+    fzf::install(ctx)?;
+    jq::install(ctx)?;
     task::install(ctx)?;
     cargoones::install(ctx)?;
     shutil::install(ctx)?;
@@ -64,14 +68,14 @@ pub fn uninstall(ctx: &Context) -> cu::Result<()> {
     epkg::pacman::uninstall("perl", ctx.bar_ref())?;
     epkg::pacman::uninstall("curl", ctx.bar_ref())?;
     epkg::pacman::uninstall("wget", ctx.bar_ref())?;
-    epkg::pacman::uninstall("fzf", ctx.bar_ref())?;
-    epkg::pacman::uninstall("jq", ctx.bar_ref())?;
     cargoones::uninstall(ctx)?;
     shutil::uninstall(ctx)?;
     Ok(())
 }
 
 pub fn configure(ctx: &Context) -> cu::Result<()> {
+    fzf::configure(ctx)?;
+    jq::configure(ctx)?;
     task::configure(ctx)?;
 
     ctx.add_item(Item::user_env_var("EDITOR", "viopen"))?;

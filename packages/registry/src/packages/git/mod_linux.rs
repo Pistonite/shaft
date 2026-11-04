@@ -1,14 +1,19 @@
-//! Git version control System
+//! Git version control System. Uses Microsoft fork on Ubuntu
 
 use crate::pre::*;
 
 mod version;
 
-register_binaries!("git");
+register_binaries!("git", "scalar");
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
-    check_pacman!("git");
-    version::verify(false)
+    if opfs::is_pacman() {
+        check_pacman!("git");
+        version::verify(false)
+    } else {
+        check_in_path!("git");
+        version::verify(true)
+    }
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {

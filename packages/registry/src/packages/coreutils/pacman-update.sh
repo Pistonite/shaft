@@ -1,15 +1,15 @@
 #!/bin/bash
-if [ "$(id -u)" -ne 0 ]; then
-  echo "error: please run sudo pacman-update"
+if [ "$(id -u)" -eq 0 ]; then
+  echo "error: do not run pacman-update as root, it runs sudo internally"
   exit 1
 fi
 
 echo "== refreshing mirror list using reflector..."
-reflector -x 'cdnmirror|losangeles|niranjan|cicku|osbeck|fastly|frankfurt|theash|kescher' -l 20 -p https --sort rate --save /etc/pacman.d/mirrorlist
+sudo reflector -x 'cdnmirror|losangeles|niranjan|cicku|osbeck|fastly|frankfurt|theash|kescher' -l 20 -p https --sort score --save /etc/pacman.d/mirrorlist
 echo "== syncing pacman database..."
-pacman -Syy
+sudo pacman -Syy
 echo "== refreshing keys..."
-pacman-key --refresh-keys
+sudo pacman-key --refresh-keys
 echo "== syncing pacman database..."
-pacman -Syy
+sudo pacman -Syy
 
