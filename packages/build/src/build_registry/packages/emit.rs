@@ -276,10 +276,14 @@ impl ModuleMetadata<'_> {
             }
             ModuleMetadata::LinuxMux {
                 data_pacman,
-                data_apt: _,
+                data_apt,
             } => {
                 if data_pacman.is_some() {
-                    "enum_set!{ corelib::opfs::LinuxFlavor::Pacman }"
+                    if data_apt.is_some() {
+                        "corelib::opfs::LinuxFlavor::all()"
+                    } else {
+                        "enum_set!{ corelib::opfs::LinuxFlavor::Pacman }"
+                    }
                 } else {
                     "enum_set!{ corelib::opfs::LinuxFlavor::Apt }"
                 }
@@ -500,13 +504,13 @@ impl ModuleMetadata<'_> {
         // mux module
         macro_rules! write_end_match {
             (none) => {
-                let _ = writeln!(out, "        _ => Ok(None),\n    }} }}");
+                let _ = writeln!(out, "        #[allow(unreachable_patterns)] _ => Ok(None),\n    }} }}");
             };
             (default) => {
-                let _ = writeln!(out, "        _ => Default::default(),\n    }} }}");
+                let _ = writeln!(out, "        #[allow(unreachable_patterns)] _ => Default::default(),\n    }} }}");
             };
             (unreachable) => {
-                let _ = writeln!(out, "        _ => cu::bail!(\"unreachable\"),\n    }} }}");
+                let _ = writeln!(out, "        #[allow(unreachable_patterns)] _ => cu::bail!(\"unreachable\"),\n    }} }}");
             };
         }
         {

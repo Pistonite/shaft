@@ -155,7 +155,9 @@ password",
 }
 
 fn check_credential(sudo_path: &Path) -> cu::Result<bool> {
-    let status = sudo_path.command().args(["-Nnv"]).all_null().wait()?;
+    // note we refresh the validity after checking to avoid time-of-check-time-of-use
+    // issues
+    let status = sudo_path.command().args(["-nv"]).all_null().wait()?;
     Ok(status.success())
 }
 

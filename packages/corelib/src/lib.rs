@@ -62,6 +62,37 @@ pub fn check_requirements() -> cu::Result<()> {
     if cu::which("brew").is_err() {
         cu::bail!("requirement not satisfied: homebrew is required for macos. See brew.sh");
     }
+
+    #[cfg(target_os = "linux")]
+    check_ubuntu_version()?;
+
+    Ok(())
+}
+
+/// If running on Ubuntu, check that the release is supported. Other distros are not checked
+#[cfg(target_os = "linux")]
+fn check_ubuntu_version() -> cu::Result<()> {
+    let os_release = match cu::fs::read_string("/etc/os-release") {
+        Ok(x) => x,
+        Err(e) => {
+            cu::debug!("failed to read /etc/os-release, assuming not Ubuntu: {e}");
+            return Ok(());
+        }
+    };
+    let get = |key: &str| {
+        os_release.lines().find_map(|line| {
+            let (k, v) = line.split_once('=')?;
+            (k == key).then(|| v.trim_matches(['"', '\'']))
+        })
+    };
+    if get("ID") != Some("ubuntu") {
+        return Ok(());
+    }
+    let version = get("VERSION_ID").unwrap_or("unknown");
+    cu::debug!("ubuntu version: {version}");
+    if !version.starts_with("26.") {
+        cu::bail!("requirement not satisfied: Ubuntu 26 is required, but found {version}");
+    }
     Ok(())
 }
 

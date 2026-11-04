@@ -15,6 +15,7 @@ mod imp;
 mod imp;
 
 mod cpu_arch;
+
 pub use cpu_arch::*;
 mod linux_flavor;
 pub use linux_flavor::*;
@@ -22,6 +23,7 @@ pub use linux_flavor::*;
 #[cfg(target_os = "linux")]
 static CURRENT_FLAVOR: cu::Atomic<u8, LinuxFlavor> = cu::Atomic::new_u8(0);
 static CURRENT_ARCH: cu::Atomic<u8, CpuArch> = cu::Atomic::new_u8(0);
+static IS_WSL: cu::Atomic<bool, bool> = cu::Atomic::new_bool(false);
 
 #[cfg(target_os = "linux")]
 pub fn linux_flavor() -> LinuxFlavor {
@@ -34,6 +36,10 @@ pub fn cli_version() -> &'static str {
 
 pub fn cpu_arch() -> CpuArch {
     CURRENT_ARCH.get()
+}
+
+pub fn is_wsl() -> bool {
+    IS_WSL.get()
 }
 
 #[cfg(target_arch = "aarch64")]

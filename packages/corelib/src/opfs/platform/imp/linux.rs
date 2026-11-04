@@ -1,8 +1,22 @@
-use super::{CURRENT_FLAVOR, CpuArch, LinuxFlavor};
+use super::{CURRENT_FLAVOR, CpuArch, IS_WSL, LinuxFlavor};
 use std::path::Path;
 pub fn init() -> cu::Result<()> {
+    init_is_wsl();
     init_flavor()?;
     super::imp_unix::init_arch_with_uname(CpuArch::X64)
+}
+
+fn init_is_wsl() {
+    // the kernel version contains "microsoft" on both WSL1 and WSL2
+    let is_wsl = match cu::fs::read_string("/proc/version") {
+        Ok(version) => version.to_ascii_lowercase().contains("microsoft"),
+        Err(e) => {
+            cu::debug!("failed to read /proc/version, assuming not WSL: {e}");
+            false
+        }
+    };
+    cu::debug!("is_wsl: {is_wsl}");
+    IS_WSL.set(is_wsl);
 }
 
 fn init_flavor() -> cu::Result<()> {

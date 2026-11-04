@@ -1,3 +1,5 @@
+#[cfg(target_os = "linux")]
+pub mod apt;
 #[cfg(target_os = "macos")]
 pub mod brew;
 pub mod cargo;
