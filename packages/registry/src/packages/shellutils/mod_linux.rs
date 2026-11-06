@@ -1,0 +1,131 @@
+//! Additional essential shell utilities
+
+use crate::pre::*;
+
+#[rustfmt::skip]
+register_binaries!(
+    "perl", "gpg", "curl", "wget",
+    "fzf", "jq", "task", "x",
+    "bat", "dust", "fd", "rg", "websocat", "zoxide", "c", "ci",
+    "viopen", "vibash", "vibashpf", "vihosts", "n", "lfmt"
+);
+binary_dependencies!(CargoBinstall);
+
+mod cargoones;
+mod common;
+mod fzf;
+mod jq;
+mod perl;
+mod shutil;
+mod task;
+
+pub fn verify(_: &Context) -> cu::Result<Verified> {
+    if opfs::is_pacman() {
+        check_pacman!("perl");
+        check_verified!(perl::version_check()?);
+        cu::check!(
+            cu::which("gpg"),
+            "gnupg is a dependency of Arch Linux and is not found"
+        )?;
+
+        let v = check_pacman!("curl");
+        check_outdated!(&v, metadata[curl]::VERSION);
+        let v = check_pacman!("wget");
+        check_outdated!(&v, metadata[wget]::VERSION);
+    } else {
+        // no need to check version for now
+        check_apt!("perl");
+        check_apt!("gpg");
+        check_apt!("curl");
+        check_apt!("wget");
+    }
+
+    check_verified!(fzf::verify()?);
+    check_verified!(jq::verify()?);
+    check_verified!(task::verify()?);
+    check_verified!(cargoones::verify()?);
+    check_verified!(shutil::verify()?);
+
+    check_config_version_cache!(common::ALIAS_VERSION);
+    Ok(Verified::UpToDate)
+}
+
+pub fn download(ctx: &Context) -> cu::Result<()> {
+    fzf::download(ctx)?;
+    jq::download(ctx)?;
+    task::download(ctx)?;
+    Ok(())
+}
+
+pub fn install(ctx: &Context) -> cu::Result<()> {
+    if opfs::is_pacman() {
+        epkg::pacman::install_many(
+            &["perl", "curl", "wget"],
+            "[shellutils] installing common shell utilities",
+            ctx.bar_ref(),
+        )?;
+    } else {
+        epkg::apt::install_many(
+            &["perl", "gpg", "curl", "wget"],
+            "[shellutils] installing common shell utilities",
+            ctx.bar_ref(),
+        )?;
+    }
+
+    fzf::install(ctx)?;
+    jq::install(ctx)?;
+    task::install(ctx)?;
+    cargoones::install(ctx)?;
+    shutil::install(ctx)?;
+    Ok(())
+}
+
+pub fn uninstall(ctx: &Context) -> cu::Result<()> {
+    if opfs::is_pacman() {
+        epkg::pacman::uninstall("perl", ctx.bar_ref())?;
+        epkg::pacman::uninstall("curl", ctx.bar_ref())?;
+        epkg::pacman::uninstall("wget", ctx.bar_ref())?;
+    } else {
+        // not uninstalling the apt packages: unlike pacman, `apt-get remove -y`
+        // also removes every package that depends on them, and many packages
+        // in the base system depend on perl, gpg and curl
+        cu::warn!("not uninstalling apt packages perl, gpg, curl and wget");
+    }
+    cargoones::uninstall(ctx)?;
+    shutil::uninstall(ctx)?;
+    Ok(())
+}
+
+pub fn configure(ctx: &Context) -> cu::Result<()> {
+    fzf::configure(ctx)?;
+    jq::configure(ctx)?;
+    task::configure(ctx)?;
+
+    ctx.add_item(Item::user_env_var("EDITOR", "viopen"))?;
+
+    // zoxide needs to be after starship, recommended to be at the end
+    let script = command_output!("zoxide", ["init", "bash", "--cmd", "c"]);
+    ctx.add_priority_item(-1, Item::bash(script))?;
+    let script = command_output!("zoxide", ["init", "zsh", "--cmd", "c"]);
+    ctx.add_priority_item(-1, Item::zsh(script))?;
+
+    if let Some(mut home) = std::env::home_dir() {
+        let bash_profile = home.join(".bash_profile");
+        ctx.add_item(Item::shim_bin(
+            "vibashpf",
+            ShimCommand::target("viopen").args([bash_profile.into_utf8()?]),
+        ))?;
+        home.push(".bashrc");
+        ctx.add_item(Item::shim_bin(
+            "vibash",
+            ShimCommand::target("viopen").args([home.into_utf8()?]),
+        ))?;
+    }
+    ctx.add_item(Item::shim_bin(
+        "vihosts",
+        ShimCommand::target("viopen").args(["/etc/hosts"]),
+    ))?;
+
+    common::ALIAS_VERSION.update()?;
+    Ok(())
+}

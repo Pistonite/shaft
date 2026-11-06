@@ -25,6 +25,13 @@ const match_cpu_arch = <T,>(key: string, obj: { arm: T, x64: T }) => {
         [`${key}.'opfs::CpuArch::X64'`]: obj.x64,
     } as const;
 }
+const match_linux_flavor = <T,>(key: string, obj: { pacman: T, apt: T }) => {
+    return {
+        [`${key}.__match__`]: "opfs::linux_flavor()",
+        [`${key}.'opfs::LinuxFlavor::Pacman'`]: obj.pacman,
+        [`${key}.'opfs::LinuxFlavor::Apt'`]: obj.apt,
+    } as const;
+}
 
 const default_cratesio_fetcher = (crate: string): PackageFn => {
     return () => fetch_from_cratesio({crate});
@@ -130,11 +137,16 @@ export const pkg_shellutils: PackageFn = async () => {
 export const pkg_git: PackageFn = async () => [
     fetch_from_github_release({
         repo: "https://github.com/microsoft/git",
-        query: (_, tag) => {
+        artifacts: (tag) => {
+            tag = strip_v(tag);
+            return [`microsoft-git_${tag}_linux_amd64.deb`];
+        },
+        query: (_, tag, [linux]) => {
             tag = strip_v(tag);
             const i = tag.indexOf(".vfs");
             if (i===-1) { throw new Error("latest microsoft/git is not vfs"); }
-            // lower 1 minor version for the requirement
+            // lower 1 minor version for the requirement, since sometimes packagers like winget
+            // lags behind
             let version = tag.substring(0, i);
             const i_dot = version.indexOf(".");
             if (i_dot===-1) { throw new Error("failed to parse git version"); }
@@ -145,10 +157,15 @@ export const pkg_git: PackageFn = async () => [
                 if (!Number.isInteger(minor_version)) {throw new Error("failed to parse git version")}
                 version = version.substring(0,i_dot+1) + (minor_version-1) + version.substring(i_dot2);
             }
-            return { [cfg_windows("VERSION")]: version }
+            return {
+                [cfg_windows("VERSION_REQ")]: version,
+                [cfg_linux("MICROSOFT_VERSION_REQ")]: version,
+                [cfg_linux("SHA")]: linux.sha,
+                [cfg_linux("URL")]: linux.url,
+            }
         }
     }),
-    fetch_from_arch_linux({ package: "git", query: (version) => ({ [cfg_linux("VERSION")]: version }) }),
+    fetch_from_arch_linux({ package: "git", query: (version) => ({ [cfg_linux("PACMAN_VERSION")]: version }) }),
     fetch_from_cratesio({ crate: "git-delta", query: (version) => ({ "delta.VERSION": version }) }),
 ]
 export const pkg_perl: PackageFn = () => fetch_from_arch_linux({ package: "perl", query: (v) => ({ [cfg_linux("VERSION")]: v }) });
@@ -180,22 +197,42 @@ export const pkg_fzf: PackageFn = (meta) =>
         repo: meta.repo(),
         artifacts: (tag) => {
             tag = strip_v(tag);
-            return [`fzf-${tag}-windows_arm64.zip`, `fzf-${tag}-windows_amd64.zip`];
+            return [
+                `fzf-${tag}-windows_arm64.zip`,
+                `fzf-${tag}-windows_amd64.zip`,
+                `fzf-${tag}-darwin_arm64.tar.gz`,
+                `fzf-${tag}-linux_amd64.tar.gz`,
+            ];
         },
-        query: (_, tag, [arm64, x64]) => ({
+        query: (_, tag, [arm64, x64, mac, linux]) => ({
             VERSION: strip_v(tag),
             ...match_cpu_arch(cfg_windows("SHA"), { arm: arm64.sha, x64: x64.sha }),
+            ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
+            ...match_cpu_arch(cfg_macos("SHA"), { arm: mac.sha, x64: "<unsupported>" }),
+            ...match_cpu_arch(cfg_windows("URL"), { arm: arm64.url, x64: x64.url }),
+            ...match_cpu_arch(cfg_linux("URL"), { arm: "<unsupported>", x64: linux.url }),
+            ...match_cpu_arch(cfg_macos("URL"), { arm: mac.url, x64: "<unsupported>" }),
         })
     });
 export const pkg_jq: PackageFn = (meta) =>
     fetch_from_github_release({
         repo: meta.repo(),
-        artifacts: () => ["jq-windows-amd64.exe"],
-        query: (_, tag, [artifact]) => {
+        artifacts: () => [
+            "jq-windows-arm64.exe",
+            "jq-windows-amd64.exe",
+            "jq-linux-amd64",
+            "jq-macos-arm64",
+        ],
+        query: (_, tag, [arm64, x64, linux, mac]) => {
             if (!tag.startsWith("jq-")) { throw new Error("invalid jq tag format: "+tag); }
             return {
                 VERSION: tag.substring(3),
-                [cfg_windows("SHA")]: artifact.sha,
+                ...match_cpu_arch(cfg_windows("SHA"), { arm: arm64.sha, x64: x64.sha }),
+                ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
+                ...match_cpu_arch(cfg_macos("SHA"), { arm: mac.sha, x64: "<unsupported>" }),
+                ...match_cpu_arch(cfg_windows("URL"), { arm: arm64.url, x64: x64.url }),
+                ...match_cpu_arch(cfg_linux("URL"), { arm: "<unsupported>", x64: linux.url }),
+                ...match_cpu_arch(cfg_macos("URL"), { arm: mac.url, x64: "<unsupported>" }),
             };
         }
     });

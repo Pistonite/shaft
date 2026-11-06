@@ -47,9 +47,9 @@ static CLANG_LLVM_LINK_DLL: &[&str] = &[
 
 binary_dependencies!(_7z, Scalar, Python, Cmake);
 
-mod clang;
+mod clang_win;
 pub fn verify(ctx: &Context) -> cu::Result<Verified> {
-    check_verified!(clang::verify(ctx)?);
+    check_verified!(clang_win::verify(ctx)?);
     Ok(Verified::UpToDate)
 }
 

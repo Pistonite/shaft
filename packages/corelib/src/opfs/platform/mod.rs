@@ -30,6 +30,11 @@ pub fn linux_flavor() -> LinuxFlavor {
     CURRENT_FLAVOR.get()
 }
 
+#[cfg(target_os = "linux")]
+pub fn is_pacman() -> bool {
+    linux_flavor() == LinuxFlavor::Pacman
+}
+
 pub fn cli_version() -> &'static str {
     include_str!("../../../../../VERSION").trim()
 }

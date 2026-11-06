@@ -13,6 +13,8 @@ binary_dependencies!(CargoBinstall);
 
 mod cargoones;
 mod common;
+mod fzf;
+mod jq;
 mod shutil;
 mod task;
 
@@ -25,11 +27,9 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 
     let v = check_homebrew!("wget");
     check_outdated!(&v, metadata[wget]::VERSION);
-    let v = check_homebrew!("fzf");
-    check_outdated!(&v, metadata[fzf]::VERSION);
-    let v = check_homebrew!("jq");
-    check_outdated!(&v, metadata[jq]::VERSION);
 
+    check_verified!(fzf::verify()?);
+    check_verified!(jq::verify()?);
     check_verified!(task::verify()?);
     check_verified!(cargoones::verify()?);
     check_verified!(shutil::verify()?);
@@ -39,14 +39,16 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 }
 
 pub fn download(ctx: &Context) -> cu::Result<()> {
+    fzf::download(ctx)?;
+    jq::download(ctx)?;
     task::download(ctx)?;
     Ok(())
 }
 
 pub fn install(ctx: &Context) -> cu::Result<()> {
     epkg::brew::install("wget", false, ctx.bar_ref())?;
-    epkg::brew::install("fzf", false, ctx.bar_ref())?;
-    epkg::brew::install("jq", false, ctx.bar_ref())?;
+    fzf::install(ctx)?;
+    jq::install(ctx)?;
     task::install(ctx)?;
     cargoones::install(ctx)?;
     shutil::install(ctx)?;
@@ -55,14 +57,14 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
 
 pub fn uninstall(ctx: &Context) -> cu::Result<()> {
     epkg::brew::uninstall("wget", ctx.bar_ref())?;
-    epkg::brew::uninstall("fzf", ctx.bar_ref())?;
-    epkg::brew::uninstall("jq", ctx.bar_ref())?;
     cargoones::uninstall(ctx)?;
     shutil::uninstall(ctx)?;
     Ok(())
 }
 
 pub fn configure(ctx: &Context) -> cu::Result<()> {
+    fzf::configure(ctx)?;
+    jq::configure(ctx)?;
     task::configure(ctx)?;
 
     ctx.add_item(Item::user_env_var("EDITOR", "viopen"))?;
