@@ -65,8 +65,9 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
             ctx.bar_ref(),
         )?;
     } else {
+        // pkg-config and libssl-dev are dependencies for some rust crates
         epkg::apt::install_many(
-            &["perl", "gpg", "curl", "wget"],
+            &["perl", "gpg", "curl", "wget", "pkg-config", "libssl-dev"],
             "[shellutils] installing common shell utilities",
             ctx.bar_ref(),
         )?;
