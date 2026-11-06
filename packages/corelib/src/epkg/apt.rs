@@ -157,7 +157,11 @@ pub fn install_file(path: &Path, bar: Option<&Arc<cu::ProgressBar>>) -> cu::Resu
     let reason = format!("installing package file '{}'", path.display());
     sync_database(bar, &reason)?;
     let mut state = apt::instance()?;
-    // apt-get treats the argument as a package name unless it contains a slash
+    // apt-get treats the argument as a local package file (instead of a package
+    // name) when it contains a slash, so the path is normalized to be absolute.
+    //
+    // `dpkg -i` is not used because it does not resolve dependencies.
+    // we can run apt-get install -f afterwards but that's more work
     let path = path.normalize()?;
     let child = sudo_apt_get(&reason)?
         .add(cu::args!["install", &path])

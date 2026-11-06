@@ -44,7 +44,7 @@ ms_coreutils.SHA.'opfs::CpuArch::X64' = "e01a35c1856991e313564f02b540c6079274f0e
 uutils_sed.VERSION = "0.2.0"
 
 [shellutils]
-ALIAS_VERSION = "9"
+ALIAS_VERSION = "10"
 which.VERSION = "0.1.6"
 viopen.VERSION = "0.2.2"
 vipath.VERSION = "0.1.9"

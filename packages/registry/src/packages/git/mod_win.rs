@@ -19,7 +19,7 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 fn verify_git_installed() -> cu::Result<Verified> {
     check_in_path!("git");
     check_in_path!("scalar");
-    check_verified!(version::verify(true)?);
+    check_verified!(version::verify(metadata::git::VERSION, true)?);
     Ok(Verified::UpToDate)
 }
 

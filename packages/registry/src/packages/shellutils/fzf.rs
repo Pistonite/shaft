@@ -10,7 +10,12 @@ pub fn verify() -> cu::Result<Verified> {
 }
 
 pub fn download(ctx: &Context) -> cu::Result<()> {
-    hmgr::download_file(fzf_filename(), metadata::fzf::URL(), metadata::fzf::SHA(), ctx.bar())?;
+    hmgr::download_file(
+        fzf_filename(),
+        metadata::fzf::URL(),
+        metadata::fzf::SHA(),
+        ctx.bar(),
+    )?;
     Ok(())
 }
 

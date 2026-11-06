@@ -35,7 +35,6 @@ pub fn is_pacman() -> bool {
     return linux_flavor() == LinuxFlavor::Pacman;
 }
 
-
 pub fn cli_version() -> &'static str {
     include_str!("../../../../../VERSION").trim()
 }
