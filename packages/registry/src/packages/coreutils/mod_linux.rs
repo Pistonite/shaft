@@ -42,7 +42,6 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
         check_outdated!(&v, metadata[coreutils::yay]::VERSION);
     } else {
         check_in_path!("bash");
-        check_in_path!("bash-completion");
         check_in_path!("tar");
     }
 
@@ -70,6 +69,11 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
             ctx.bar_ref(),
         )?;
     } else {
+        epkg::apt::install_many(
+            &["bash-completion"],
+            "[coreutils] install core utilities with pacman",
+            ctx.bar_ref(),
+        )?;
         cu::fs::write(update_sh, include_bytes!("./pacman-update-apt.sh"))?;
     }
 
