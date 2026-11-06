@@ -88,7 +88,10 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
 
     ctx.add_item(Item::link_bin("pacman-update", update_sh.into_utf8()?))?;
 
-    common::linux_configure(ctx)?;
+    // using shell alias for UI-only differences
+    let grep_alias = "alias grep='grep --color=auto'";
+    ctx.add_item(Item::bash(grep_alias))?;
+    ctx.add_item(Item::zsh(grep_alias))?;
     common::ALIAS_VERSION.update()?;
 
     Ok(())

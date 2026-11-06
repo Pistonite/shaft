@@ -32,7 +32,7 @@ pub fn linux_flavor() -> LinuxFlavor {
 
 #[cfg(target_os = "linux")]
 pub fn is_pacman() -> bool {
-    return linux_flavor() == LinuxFlavor::Pacman;
+    linux_flavor() == LinuxFlavor::Pacman
 }
 
 pub fn cli_version() -> &'static str {
