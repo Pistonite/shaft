@@ -27,15 +27,13 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
 }
 
 pub fn download(ctx: &Context) -> cu::Result<()> {
-    hmgr::download_file("cmake.zip", cmake_url(), metadata::cmake::SHA(), ctx.bar())?;
+    hmgr::download_file(
+        "cmake.zip",
+        metadata::cmake::URL(),
+        metadata::cmake::SHA(),
+        ctx.bar(),
+    )?;
     Ok(())
-}
-
-fn cmake_url() -> String {
-    let repo = metadata::cmake::REPO;
-    let version = metadata::cmake::VERSION;
-    let release_name = release_name();
-    format!("{repo}/releases/download/v{version}/{release_name}.zip")
 }
 
 fn release_name() -> String {
@@ -52,7 +50,7 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
             .parent(ctx.bar())
             .spawn();
         let temp_extract_dir = hmgr::paths::temp_dir("cmake-extract");
-        let cmake_zip = hmgr::paths::download("cmake.zip", cmake_url());
+        let cmake_zip = hmgr::paths::download("cmake.zip", metadata::cmake::URL());
         opfs::unarchive_rename(
             &cmake_zip,
             &temp_extract_dir,
