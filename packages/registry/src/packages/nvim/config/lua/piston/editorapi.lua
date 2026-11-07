@@ -1162,6 +1162,19 @@ local _ = (function()
     if vim.fn.has("win32") ~= 0 then
         cmd = '(Get-Content ' .. yank_file_quoted .. ') -replace "`0","`n" | set-clipboard'
         desc = "yanked to host clipboard with powershell"
+    elseif vim.fn.getenv("WSL_DISTRO_NAME") ~= vim.NIL then
+        if vim.fn.executable("clip.exe") == 0 then
+            desc = "clip.exe is not found in PATH, is WSL interop enabled?"
+        else
+            -- clip.exe reads input with the console codepage, so convert to
+            -- UTF-16LE to preserve non-ASCII characters
+            local encode = ""
+            if vim.fn.executable("iconv") ~= 0 then
+                encode = " | iconv -f utf-8 -t utf-16le"
+            end
+            cmd = 'bash -c "cat ' .. yank_file_quoted .. " | tr '\\0' '\\n'" .. encode .. ' | clip.exe"'
+            desc = "yanked to host clipboard from within WSL"
+        end
     elseif vim.env.SSH_CLIENT then
         if vim.fn.executable("websocat") == 0 then
             desc = "websocat is needed for yanking to ssh client over websocket"

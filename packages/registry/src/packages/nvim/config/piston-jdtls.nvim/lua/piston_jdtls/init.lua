@@ -112,7 +112,7 @@ function M.start_current_buf()
     end
 
     if M._server_cmd_cache == nil then
-        local python_path = vim.fn.exepath('python')
+        local python_path = vim.fn.exepath('python3')
         local launcher_py = M._PISTON_JDTLS_HOME .. "/launcher.py"
         M._server_cmd_cache = {
             python_path, launcher_py, "-jdtls", M._JDTLS_HOME, "-data", M._server_workspace
