@@ -420,26 +420,36 @@ export const pkg_cmake: PackageFn = (meta) => [
         },
         artifacts: (tag) => {
             tag = strip_v(tag);
-            return [`cmake-${tag}-windows-arm64.zip`, `cmake-${tag}-windows-x86_64.zip` ]
+            return [
+                `cmake-${tag}-windows-arm64.zip`,
+                `cmake-${tag}-windows-x86_64.zip`,
+                `cmake-${tag}-linux-x86_64.tar.gz`,
+            ];
         },
-        query: (_, tag, [arm, x64]) => ({
+        query: (_, tag, [arm, x64, linux]) => ({
             [cfg_windows("VERSION")]: strip_v(tag),
+            [cfg_linux("VERSION")]: strip_v(tag),
             ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
+            ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
+            ...match_cpu_arch(cfg_windows("URL"), { arm: arm.url, x64: x64.url }),
+            ...match_cpu_arch(cfg_linux("URL"), { arm: "<unsupported>", x64: linux.url }),
         })
     }),
-    fetch_from_arch_linux({ package: "cmake", query: (v) => ({ [cfg_linux("VERSION")]: v }) }),
     fetch_from_homebrew({ package: "cmake", query: (v) => ({ [cfg_macos("VERSION")]: v }) })
 ];
 export const pkg_ninja: PackageFn = (meta) => [
     fetch_from_github_release({
         repo: meta.repo(),
-        artifacts: () => ["ninja-winarm64.zip", "ninja-win.zip"],
-        query: (_, tag, [arm, x64]) => ({
+        artifacts: () => ["ninja-winarm64.zip", "ninja-win.zip", "ninja-linux.zip"],
+        query: (_, tag, [arm, x64, linux]) => ({
             [cfg_windows("VERSION")]: strip_v(tag),
+            [cfg_linux("VERSION")]: strip_v(tag),
             ...match_cpu_arch(cfg_windows("SHA"), { arm: arm.sha, x64: x64.sha }),
+            ...match_cpu_arch(cfg_linux("SHA"), { arm: "<unsupported>", x64: linux.sha }),
+            ...match_cpu_arch(cfg_windows("URL"), { arm: arm.url, x64: x64.url }),
+            ...match_cpu_arch(cfg_linux("URL"), { arm: "<unsupported>", x64: linux.url }),
         })
     }),
-    fetch_from_arch_linux({ package: "ninja", query: (v) => ({ [cfg_linux("VERSION")]: v }) }),
     fetch_from_homebrew({ package: "ninja", query: (v) => ({ [cfg_macos("VERSION")]: v }) })
 ]
 export const pkg_starship = default_cratesio_fetcher("starship");
