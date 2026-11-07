@@ -4,6 +4,7 @@ use crate::pre::*;
 register_binaries!("vi", "vim", "nvim");
 binary_dependencies!(
     _7z, TreeSitter, Git,      // various
+    Unzip,    // need for mason
     Clang,    // compile tree sitter
     Diff,     // undo tree
     Websocat, // yank to host
@@ -140,7 +141,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     };
     cu::fs::write(config_gen_path, config_lua)?;
     // invoke config
-    cu::which("python")?
+    cu::which("python3")?
         .command()
         .args(["setup.py", "apply"])
         .current_dir(&config_dir)
@@ -160,7 +161,7 @@ pub fn uninstall(_: &Context) -> cu::Result<()> {
 }
 
 pub fn clean(_: &Context) -> cu::Result<()> {
-    cu::which("python")?
+    cu::which("python3")?
         .command()
         .args(["setup.py", "clean"])
         .current_dir(nvim_config_dir()?)

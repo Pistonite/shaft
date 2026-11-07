@@ -27,7 +27,7 @@ vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 -- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-vim.opt.rtp:prepend(lazypath) -- assume lazypath exists, saves 1 fs_stat on start up, `python setup.py apply`
+vim.opt.rtp:prepend(lazypath) -- assume lazypath exists, saves 1 fs_stat on start up, `python3 setup.py apply`
 -- Load Own configurations
 require('piston.options')
 require('piston.keymaps').setup()

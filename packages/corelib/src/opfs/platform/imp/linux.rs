@@ -30,13 +30,13 @@ fn init_flavor() -> cu::Result<()> {
     }
 
     if cu::which("pacman").is_ok() {
-        cu::debug!("linux_flavor: pacman (Unknown)");
+        cu::debug!("linux_flavor: pacman (not Arch Linux)");
         CURRENT_FLAVOR.set(LinuxFlavor::Pacman);
         return Ok(());
     }
 
     if cu::which("apt").is_ok() {
-        cu::debug!("linux_flavor: apt (Unknown)");
+        cu::debug!("linux_flavor: apt");
         CURRENT_FLAVOR.set(LinuxFlavor::Apt);
         return Ok(());
     }

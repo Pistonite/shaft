@@ -1,7 +1,7 @@
 //! UV, `python` manager by Astro
 use crate::pre::*;
 
-register_binaries!("uv", "uvx", "python");
+register_binaries!("uv", "uvx", "python", "python3"); // uv creates both python/python3
 binary_dependencies!(CargoBinstall);
 
 pub fn verify(_: &Context) -> cu::Result<Verified> {
@@ -15,9 +15,11 @@ pub fn verify(_: &Context) -> cu::Result<Verified> {
             }
         }
         check_in_shaft!("python");
+        check_in_shaft!("python3");
     } else {
         // python might be shipped with other OS
         check_in_path!("python");
+        check_in_path!("python3");
     }
     let v = check_cargo!("uv");
     check_outdated!(&v.version, metadata[uv]::VERSION);
