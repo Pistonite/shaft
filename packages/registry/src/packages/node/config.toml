@@ -10,7 +10,7 @@ children = [
     {
         key = ["install-npm"],
         comment = "Also install NPM with PNPM. '*' to install the default version. Empty will not install NPM.",
-        value = "",
+        value = "*",
     }
 ]
 
