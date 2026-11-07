@@ -96,7 +96,7 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
             [
                 "config",
                 "--global",
-                "credential.https://dev.azure.com/useHttpPath",
+                "credential.https://dev.azure.com.useHttpPath",
                 "true"
             ]
         );
