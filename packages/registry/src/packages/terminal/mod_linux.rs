@@ -22,8 +22,9 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
             &["ttf-hack-nerd", "kitty"],
             "installing terminal ui packages",
             ctx.bar_ref(),
-        )
+        )?;
     }
+    Ok(())
 }
 
 pub fn configure(_: &Context) -> cu::Result<()> {
