@@ -75,6 +75,7 @@ pub fn system_drive() -> cu::Result<String> {
     // from the host
     let (child, stdout) = Path::new("cmd.exe")
         .command()
+        .args(["/c", "echo", "%SYSTEMDRIVE%"])
         .stdout(cu::pio::string())
         .stdie_null()
         .spawn()?;
