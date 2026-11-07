@@ -1,9 +1,11 @@
+use std::path::Path;
 use std::time::Duration;
 
 use cu::pre::*;
 use sysinfo::{Pid, System};
 
 use crate::internal;
+use crate::opfs;
 
 #[derive(Deref, DerefMut)]
 pub(crate) struct State(System);
@@ -56,4 +58,32 @@ fn get_process_pid(s: &mut System, exe_name: &str) -> Option<Pid> {
         }
     }
     None
+}
+
+/// Get SYSTEMDRIVE. Also works on WSL
+pub fn system_drive() -> cu::Result<String> {
+    if let Ok(x) = cu::env_var("SYSTEMDRIVE") {
+        let x = x.trim();
+        if !x.is_empty() {
+            return Ok(x.to_string());
+        }
+    }
+    if !opfs::is_wsl() {
+        cu::bail!("SYSTEMDRIVE environment variable not defined");
+    }
+    // from WSL, we can spawn cmd.exe to get any environment variable
+    // from the host
+    let (child, stdout) = Path::new("cmd.exe")
+        .command()
+        .stdout(cu::pio::string())
+        .stdie_null()
+        .spawn()?;
+    child.wait_nz()?;
+    let stdout = stdout.join()??;
+    let x = stdout.trim();
+    if x.is_empty() {
+        cu::bail!("failed to get SYSTEMDRIVE from Windows host: cmd.exe output is empty");
+    }
+
+    Ok(x.to_string())
 }

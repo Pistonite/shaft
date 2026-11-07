@@ -60,7 +60,7 @@ lfmt.VERSION = "0.2.2"
 'cfg(target_os="linux")'.SHA = "adafa2cacccec68c0dae0fddfa5db83ea8f7afd3b6630501f3dbcd9dc210db5f"
 'cfg(target_os="linux")'.URL = "https://github.com/microsoft/git/releases/download/v2.56.0.vfs.0.2/microsoft-git_2.56.0.vfs.0.2_linux_amd64.deb"
 delta.VERSION = "0.20.1"
-CFG_VERSION = "2"
+CFG_VERSION = "3"
 
 [perl]
 'cfg(target_os="linux")'.VERSION = "5.42.2"
