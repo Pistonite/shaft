@@ -110,7 +110,7 @@ fn get_wsl_git_credential_manager_path() -> cu::Result<PathBuf> {
     let system_drive = opfs::system_drive()?;
     let system_drive = system_drive.trim_end_matches([' ', ':']);
     let system_drive = system_drive.to_lowercase();
-    let git_path = PathBuf::from(format!("/mnt/{system_drive}/Program Files/Git"));
+    let git_path = PathBuf::from(format!("/mnt/{system_drive}/Program\\ Files/Git"));
     if !git_path.is_dir() {
         cu::bail!("failed to get git-credential-manager: Git is not installed on Windows!");
     }
