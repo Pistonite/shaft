@@ -117,7 +117,7 @@ fn get_wsl_git_credential_manager_path() -> cu::Result<PathBuf> {
         cu::bail!("failed to get git-credential-manager: Git is not installed on Windows!");
     }
     let mut plat_path = None;
-    for plat in ["mingw64", "clangarm64"] {
+    for plat in ["ucrt64", "mingw64", "clangarm64"] {
         let p = git_path.join(plat);
         if !p.is_dir() {
             continue;
