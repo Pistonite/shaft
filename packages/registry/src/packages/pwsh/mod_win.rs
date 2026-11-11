@@ -6,6 +6,8 @@ register_binaries!("pwsh");
 binary_dependencies!(_7z);
 config_dependencies!(Shellutils); // for vipwsh
 
+version_cache!(static ALIAS_VERSION = metadata::pwsh::ALIAS_VERSION);
+
 pub fn verify(ctx: &Context) -> cu::Result<Verified> {
     match cu::which("pwsh") {
         Err(_) => return Ok(Verified::NotInstalled),
@@ -33,6 +35,9 @@ pub fn verify(ctx: &Context) -> cu::Result<Verified> {
         ]
     );
     check_outdated!(version.trim(), metadata[pwsh]::VERSION);
+
+    check_config_version_cache!(ALIAS_VERSION);
+
     Ok(Verified::UpToDate)
 }
 
