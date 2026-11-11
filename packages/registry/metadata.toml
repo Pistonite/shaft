@@ -17,6 +17,7 @@ VERSION = "26.03"
 
 
 [pwsh]
+ALIAS_VERSION = "2"
 REPO = "https://github.com/PowerShell/PowerShell"
 VERSION = "7.6.6"
 SHA.__match__ = "opfs::cpu_arch()"
