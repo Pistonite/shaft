@@ -19,23 +19,23 @@ members = [
 
 [workspace.dependencies.cu]
 package = "pistonite-cu"
-version = "0.9.8"
+version = "0.9.9"
 # path = "../cu/packages/copper"
 
 [workspace.dependencies.pm]
 package = "pistonite-pm"
-version = "0.3.1"
+version = "0.3.2"
 default-features = false
 # path = "../cu/packages/promethium"
 
 [workspace.dependencies]
 enum-map = "2.7.3"
-enumset = "1.1.14"
+enumset = "1.1.15"
 itertools = "0.15.0"
-flate2 = "1.1.10"
-libc = "0.2.190"
+flate2 = "1.1.11"
+libc = "0.2.191"
 shell-words = "1.1.1"
-sha2 = "0.11.0"
+sha2 = "0.11.1"
 windows = "0.62.2"
 phf = "0.14.0"
 serde = "1"
@@ -47,6 +47,6 @@ fs2 = "0.4.3"
 fxhash = "0.2.1"
 winreg = "0.56.0"
 which = "8.0.6"
-clap = "4.6.7"
+clap = "4.6.9"
 tungstenite = "0.30.0"
 clipboard-win = "5.4.3"

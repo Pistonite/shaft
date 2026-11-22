@@ -131,7 +131,9 @@ require("catppuccin").setup({
             DiffDelete = { bg = "#53394d" }, -- 25% mocha.red on mocha.base
             DiffAdd = { bg = "#475951"}, -- 30% mocha.green on mocha.base
             CodeDiffLineInsert = { link = "DiffAdd" },
-            CodeDiffLineDelete = { link = "DiffDelete" }
+            CodeDiffLineDelete = { link = "DiffDelete" },
+
+            TrailingWhiteSpace = { bg = "#ff0000" }
         }
     end,
     default_integrations = true,

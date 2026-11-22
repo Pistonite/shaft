@@ -18,6 +18,35 @@ vim.opt.rnu = true       -- Relative line numbers by default
 vim.opt.signcolumn = "yes"
 -- hidden characters (controlled by keymapping)
 vim.opt.listchars = "tab:▸ ,space:·,trail:·,nbsp:␣,extends:»,precedes:«,eol:↲"
+-- trailing whitespace detection
+local function update_trailing_whitespace_match(args)
+    local bo = vim.bo
+    local event = args and args.event
+    -- mode() is not yet/no longer insert during InsertEnter/InsertLeave
+    local inserting = event == "InsertEnter"
+        or (event ~= "InsertLeave" and vim.fn.mode():match("^[iR]") ~= nil)
+    local id = vim.w.trailing_whitespace_match_id
+    -- the match may have been removed externally (e.g. clearmatches())
+    if id and not vim.iter(vim.fn.getmatches()):any(function(m) return m.id == id end) then
+        id = nil
+        vim.w.trailing_whitespace_match_id = nil
+    end
+    if not inserting and bo.modifiable and not bo.readonly and bo.buftype == "" then
+        if not id then
+            vim.w.trailing_whitespace_match_id = vim.fn.matchadd("TrailingWhiteSpace", [[\s\+$]])
+        end
+    elseif id then
+        pcall(vim.fn.matchdelete, id)
+        vim.w.trailing_whitespace_match_id = nil
+    end
+end
+vim.api.nvim_create_autocmd({ "VimEnter", "BufWinEnter", "WinEnter", "FileType", "TermOpen", "InsertEnter", "InsertLeave" }, {
+    callback = update_trailing_whitespace_match
+})
+vim.api.nvim_create_autocmd("OptionSet", {
+    pattern = { "modifiable", "readonly", "buftype" },
+    callback = update_trailing_whitespace_match
+})
 -- indent
 vim.opt.expandtab = true -- Tab become spaces
 vim.opt.shiftwidth = 4   -- Indent 4
