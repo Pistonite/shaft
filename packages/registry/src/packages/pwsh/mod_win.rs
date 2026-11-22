@@ -131,6 +131,8 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
             ShimCommand::target("viopen").args([edit_profile_path.into_utf8()?]),
         ))?;
     }
+
+    ALIAS_VERSION.update()?;
     Ok(())
 }
 
