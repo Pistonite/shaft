@@ -133,7 +133,7 @@ require("catppuccin").setup({
             CodeDiffLineInsert = { link = "DiffAdd" },
             CodeDiffLineDelete = { link = "DiffDelete" },
 
-            TrailingWhiteSpace = { bg = "#ff0000" }
+            TrailingWhiteSpace = { fg = "#ff0000" }
         }
     end,
     default_integrations = true,
