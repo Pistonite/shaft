@@ -2575,7 +2575,6 @@ dependencies = [
 name = "shaftim"
 version = "0.0.0"
 dependencies = [
- "libc",
  "pistonite-cu",
  "shaftim-build",
  "shell-words",
