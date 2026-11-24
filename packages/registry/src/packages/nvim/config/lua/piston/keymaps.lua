@@ -42,7 +42,7 @@ function M.setup()
     noremap('n', '<C-w><', '<C-w>20<')
     noremap('n', '<C-w>+', '<C-w>10+')
     noremap('n', '<C-w>-', '<C-w>10-')
-    -- copy to system clipboard (see extra.lua)
+    -- copy to system clipboard (see Yank to Host in editorapi.lua)
     noremap('v', '<leader>y', '"ay')
     -- convert between Rust /// doc and JS /** doc */
     noremap('n', '<leader>J', '0f/wBR/**<esc>A */<esc>')

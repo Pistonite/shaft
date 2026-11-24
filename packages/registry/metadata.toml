@@ -301,7 +301,7 @@ VERSION = "0.12.6"
 'cfg(target_os="macos")'.SHA.__match__ = "opfs::cpu_arch()"
 'cfg(target_os="macos")'.SHA.'opfs::CpuArch::Arm64' = "1dbd148222b051ba6c307c4d17a318ed083df018a4f6a5a0ce46955ffc9ab87b"
 'cfg(target_os="macos")'.SHA.'opfs::CpuArch::X64' = "<unsupported>"
-NVIM_CFG = "47"
+NVIM_CFG = "49"
 
 [tree_sitter]
 VERSION = "0.27.2"

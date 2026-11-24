@@ -31,7 +31,6 @@ vim.opt.rtp:prepend(lazypath) -- assume lazypath exists, saves 1 fs_stat on star
 -- Load Own configurations
 require('piston.options')
 require('piston.keymaps').setup()
-require('piston.extra')
 local configpath = vim.fn.stdpath("config")
 require("lazy").setup {
     defaults = {
@@ -195,3 +194,22 @@ require("lazy").setup {
     },
     change_detection = { enabled = false }
 }
+-- Register extra file types
+-- au BufRead,BufNewFile *.md.txtpp        set filetype=markdown
+-- au BufRead,BufNewFile *.html.txtpp      set filetype=html
+-- au BufRead,BufNewFile *.rs.txtpp        set filetype=rust
+-- au BufRead,BufNewFile *.ts.txtpp        set filetype=typescript
+-- au BufRead,BufNewFile *.tsx.txtpp       set filetype=typescriptreact
+-- au BufRead,BufNewFile *.js.txtpp        set filetype=javascript
+-- au BufRead,BufNewFile *.jsx.txtpp       set filetype=javascriptreact
+-- au BufRead,BufNewFile *.py.txtpp        set filetype=python
+-- au BufRead,BufNewFile *.css.txtpp       set filetype=css
+-- au BufRead,BufNewFile *.json.txtpp      set filetype=json
+-- au BufRead,BufNewFile *.yaml.txtpp      set filetype=yaml
+-- au BufRead,BufNewFile *.yml.txtpp       set filetype=yaml
+-- au BufRead,BufNewFile *.toml.txtpp      set filetype=toml
+-- au BufRead,BufNewFile *.bash.txtpp      set filetype=bash
+vim.cmd [[
+  au BufRead,BufNewFile *.rasi            set filetype=css
+  au BufRead,BufNewFile *.mdx             set filetype=markdown
+]]
