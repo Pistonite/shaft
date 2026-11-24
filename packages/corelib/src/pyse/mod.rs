@@ -255,7 +255,7 @@ impl PythonStandaloneEnvironment {
         Ok(())
     }
 
-    /// Read `dependencies` in [project] from the existing pyproject.toml
+    /// Read `dependencies` in `[project]` from the existing pyproject.toml
     fn read_user_requirements(&self) -> cu::Result<Vec<String>> {
         let path = self.location.join("pyproject.toml");
         if !path.exists() {
