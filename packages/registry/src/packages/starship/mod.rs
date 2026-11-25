@@ -262,8 +262,12 @@ disabled = {}
 
 pub fn clean(ctx: &Context) -> cu::Result<()> {
     let _ = cu::fs::make_dir_absent_or_empty(ctx.install_dir().join("cache"));
-    let Some(home) = std::env::home_dir() else {
-        return Ok(());
+    let home = match opfs::user_home() {
+        Ok(home) => home,
+        Err(e) => {
+            cu::warn!("error cleaning starship config: {e:?}");
+            return Ok(());
+        }
     };
     let starship_old_home = home.join(".starship");
     let _ = cu::fs::rec_remove(starship_old_home);

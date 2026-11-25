@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use corelib::ItemMgr;
 use cu::pre::*;
 
-use corelib::hmgr;
+use corelib::{hmgr, opfs};
 
 pub fn check_init_home() -> cu::Result<()> {
     let home_path_str = cu::env_var("SHAFT_HOME")?;
@@ -46,25 +46,13 @@ to see why the auto-mount fails.
             );
             let dev_drive = cu::prompt!("if you want to set up SHAFT_HOME on a Windows Dev Drive, enter the drive letter; otherwise press ENTER")?.to_ascii_uppercase();
             let default_home = if dev_drive.is_empty() {
-                match std::env::home_dir() {
-                    Some(mut x) => {
-                        x.push(".config\\pistonite-shaft");
-                        x
-                    }
-                    None => cu::bail!("failed to get user home"),
-                }
+                cu::path!((opfs::user_home()?) / ".config" / "pistonite-shaft")
             } else {
                 PathBuf::from(format!("{dev_drive}:\\.config\\pistonite-shaft"))
             };
             default_home.normalize()?
         } else {
-            match std::env::home_dir() {
-                Some(mut x) => {
-                    x.push(".config/pistonite-shaft");
-                    x.normalize()?
-                }
-                None => PathBuf::from("/opt/pistonite-shaft"),
-            }
+            cu::path!((opfs::user_home()?) / ".config" / "pistonite-shaft").normalize()?
         };
         prompt_user_input_for_home(&default_home)?
     };

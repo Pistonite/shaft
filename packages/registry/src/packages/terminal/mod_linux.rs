@@ -29,9 +29,8 @@ pub fn install(ctx: &Context) -> cu::Result<()> {
 
 pub fn configure(_: &Context) -> cu::Result<()> {
     if opfs::is_pacman() {
-        let mut home = cu::check!(std::env::home_dir(), "failed to get home dir")?;
-        home.extend([".config", "kitty", "kitty.conf"]);
-        cu::fs::write(home, include_bytes!("kitty.conf"))?;
+        let config_path = cu::path!((opfs::user_home()?) / ".config" / "kitty" / "kitty.conf");
+        cu::fs::write(config_path, include_bytes!("kitty.conf"))?;
         CFG_VERSION.update()?;
     }
     Ok(())
