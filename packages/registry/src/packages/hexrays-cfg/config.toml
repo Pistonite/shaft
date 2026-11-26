@@ -1,0 +1,9 @@
+[[section]]
+key = []
+children = [
+    { 
+        key = ["clean-plugins"],
+        comment = "Clean the plugins directory before installation. Change to false for plugin testing",
+        value = false,
+    }
+]

@@ -2550,7 +2550,6 @@ dependencies = [
  "serde",
  "sha2",
  "shaftim-build",
- "shell-words",
  "sysinfo",
  "tokio",
  "win-envedit",

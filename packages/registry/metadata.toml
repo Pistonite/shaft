@@ -343,3 +343,7 @@ VERSION = "0.1.1"
 
 [hexrays]
 CFG_VERSION = "1"
+catppuccin.REPO = "https://github.com/Pistonight/catppuccin-ida"
+catppuccin.VERSION = "0.2.2"
+catppuccin.URL = "https://github.com/Pistonight/catppuccin-ida/releases/download/v0.2.2/catppuccin-ida.zip"
+catppuccin.SHA = "6d208c3e28bf5c2cbe64446fb6bec60773566401e76c61c27358def8dba276ed"
