@@ -80,11 +80,19 @@ impl PythonStandaloneEnvironment {
         Ok(self.python_executable_from_dist_root(&dist_root))
     }
 
-    /// Ensure the environment is set-up. Does not install dependencies
+    /// Get the path to the python dynamic library (python3.dll or libpython3.so)
+    pub fn python_dynamic_library(&self) -> cu::Result<PathBuf> {
+        let dist_root = self.python_dist_root()?;
+        Ok(self.python_dynamic_library_from_dist_root(&dist_root))
+    }
+
+    /// Ensure the environment is set-up and the dependencies are synced
     pub fn ensure(&self, bar: Option<Arc<cu::ProgressBar>>) -> cu::Result<()> {
         if self.python_dist_root().is_err() {
-            self.install(bar)?;
+            self.install(bar.clone())?;
         }
+
+        self.sync_deps(bar)?;
         Ok(())
     }
 
@@ -229,6 +237,31 @@ impl PythonStandaloneEnvironment {
         Ok(())
     }
 
+    /// Run `uv sync --project` to sync the packages in the standalone python
+    /// with the project. Same as running the pipi script with no args
+    pub fn sync_deps(&self, bar: Option<Arc<cu::ProgressBar>>) -> cu::Result<()> {
+        let uv = cu::check!(
+            cu::which("uv"),
+            "uv is required to sync python standalone environment. please run 'shaft sync uv'"
+        )?;
+        let dist_root = self.python_dist_root()?;
+        // these settings should be synced with the pipi script
+        let (child, bar2, _) = uv
+            .command()
+            .add(cu::args!["sync", "--project", &self.location])
+            .env("UV_PROJECT_ENVIRONMENT", &dist_root)
+            .env("UV_PYTHON_DOWNLOADS", "never")
+            .stdin_null()
+            .stdoe(
+                cu::pio::spinner("syncing python packages")
+                    .configure_spinner(|b| b.parent(bar.clone())),
+            )
+            .spawn()?;
+        child.wait_nz()?;
+        bar2.done();
+        Ok(())
+    }
+
     /// Write the pipi and python scripts with the paths of this environment
     fn write_scripts(&self, dist_root: &Path) -> cu::Result<()> {
         let python = self.python_executable_from_dist_root(dist_root);
@@ -255,7 +288,7 @@ impl PythonStandaloneEnvironment {
         Ok(())
     }
 
-    /// Read `dependencies` in [project] from the existing pyproject.toml
+    /// Read `dependencies` in `[project]` from the existing pyproject.toml
     fn read_user_requirements(&self) -> cu::Result<Vec<String>> {
         let path = self.location.join("pyproject.toml");
         if !path.exists() {
@@ -345,6 +378,14 @@ impl PythonStandaloneEnvironment {
             cu::path!(&dist_root / "python.exe")
         } else {
             cu::path!(&dist_root / "bin" / format!("python{}", self.version_without_patch()))
+        }
+    }
+
+    fn python_dynamic_library_from_dist_root(&self, dist_root: &Path) -> PathBuf {
+        if cfg!(windows) {
+            cu::path!(&dist_root / "python3.dll")
+        } else {
+            cu::path!(&dist_root / "lib" / "libpython3.so")
         }
     }
 }

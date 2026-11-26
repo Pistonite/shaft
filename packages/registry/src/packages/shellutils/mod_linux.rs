@@ -110,18 +110,18 @@ pub fn configure(ctx: &Context) -> cu::Result<()> {
     let script = command_output!("zoxide", ["init", "zsh", "--cmd", "c"]);
     ctx.add_priority_item(-1, Item::zsh(script))?;
 
-    if let Some(mut home) = std::env::home_dir() {
-        let bash_profile = home.join(".bash_profile");
-        ctx.add_item(Item::shim_bin(
-            "vibashpf",
-            ShimCommand::target("viopen").args([bash_profile.into_utf8()?]),
-        ))?;
-        home.push(".bashrc");
-        ctx.add_item(Item::shim_bin(
-            "vibash",
-            ShimCommand::target("viopen").args([home.into_utf8()?]),
-        ))?;
-    }
+    let mut home = opfs::user_home()?;
+    let bash_profile = home.join(".bash_profile");
+    ctx.add_item(Item::shim_bin(
+        "vibashpf",
+        ShimCommand::target("viopen").args([bash_profile.into_utf8()?]),
+    ))?;
+    home.push(".bashrc");
+    ctx.add_item(Item::shim_bin(
+        "vibash",
+        ShimCommand::target("viopen").args([home.into_utf8()?]),
+    ))?;
+
     ctx.add_item(Item::shim_bin(
         "vihosts",
         ShimCommand::target("viopen").args(["/etc/hosts"]),

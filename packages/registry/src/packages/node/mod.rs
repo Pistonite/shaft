@@ -45,15 +45,21 @@ pub fn uninstall(_: &Context) -> cu::Result<()> {
             cu::fs::rec_remove(Path::new(&local).join("npm-cache"))?;
         }
     } else {
-        if let Some(home) = std::env::home_dir() {
-            cu::fs::rec_remove(home.join(".npm"))?;
-            cu::fs::rec_remove(home.join(".pnpm"))?;
-        }
+        let home = match opfs::user_home() {
+            Ok(home) => home,
+            Err(e) => {
+                cu::warn!("error cleaning node config: {e:?}");
+                return Ok(());
+            }
+        };
+
+        cu::fs::rec_remove(home.join(".npm"))?;
+        cu::fs::rec_remove(home.join(".pnpm"))?;
     }
     Ok(())
 }
 pub fn configure(ctx: &Context) -> cu::Result<()> {
-    let home = cu::check!(std::env::home_dir(), "failed to get home directory")?;
+    let home = opfs::user_home()?;
     let pnpm_home = cu::path!(home / ".pnpm");
     ctx.add_item(Item::user_env_var("PNPM_HOME", pnpm_home.as_utf8()?))?;
     let pnpm_home_bin = cu::path!(&pnpm_home / "bin");

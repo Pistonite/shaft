@@ -530,3 +530,15 @@ export const pkg_gradle: PackageFn = (meta) => [
         query: (_, tag) => ({ "VERSION": strip_v(tag) }),
     })
 ];
+export const pkg_hexrays: PackageFn = (meta) => [
+    fetch_from_github_release({
+        repo: meta.repo("catppuccin"),
+        minReleaseAgeDays: 0,
+        artifacts: () => [ "catppuccin-ida.zip" ],
+        query: (_, tag, [zip]) => ({
+            "catppuccin.VERSION": strip_v(tag),
+            "catppuccin.URL": zip.url,
+            "catppuccin.SHA": zip.sha,
+        }),
+    })
+];

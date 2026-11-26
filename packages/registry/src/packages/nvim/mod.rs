@@ -177,12 +177,7 @@ fn nvim_config_dir() -> cu::Result<PathBuf> {
         p.push("nvim");
         Ok(p)
     } else {
-        let mut p = cu::check!(
-            std::env::home_dir(),
-            "failed to get user home dir to figure out nvim config dir"
-        )?;
-        p.extend([".config", "nvim"]);
-        Ok(p)
+        Ok(cu::path!((opfs::user_home()?) / ".config" / "nvim"))
     }
 }
 

@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use cu::pre::*;
@@ -63,7 +63,7 @@ fn get_process_pid(s: &mut System, exe_name: &str) -> Option<Pid> {
 /// Get SYSTEMDRIVE. Also works on WSL
 pub fn system_drive() -> cu::Result<String> {
     if let Ok(x) = cu::env_var("SYSTEMDRIVE") {
-        let x = x.trim();
+        let x = x.trim_end_matches([' ', '\\', '/']);
         if !x.is_empty() {
             return Ok(x.to_string());
         }
@@ -81,10 +81,42 @@ pub fn system_drive() -> cu::Result<String> {
         .spawn()?;
     child.wait_nz()?;
     let stdout = stdout.join()??;
-    let x = stdout.trim();
+    let x = stdout.trim_end_matches([' ', '\\', '/']);
     if x.is_empty() {
         cu::bail!("failed to get SYSTEMDRIVE from Windows host: cmd.exe output is empty");
     }
 
     Ok(x.to_string())
+}
+
+pub fn user_home() -> cu::Result<PathBuf> {
+    cu::check!(std::env::home_dir(), "failed to get user home directory")
+}
+
+pub fn user_local_appdata() -> cu::Result<PathBuf> {
+    if !cfg!(windows) {
+        cu::bail!("LOCALAPPDATA only applies to Windows");
+    }
+    if let Ok(x) = cu::env_var("LOCALAPPDATA") {
+        let x = x.trim_end_matches([' ', '\\', '/']);
+        if !x.is_empty() {
+            return Ok(x.into());
+        }
+    }
+    let home = user_home()?;
+    Ok(cu::path!(home / "AppData" / "Local"))
+}
+
+pub fn user_appdata() -> cu::Result<PathBuf> {
+    if !cfg!(windows) {
+        cu::bail!("APPDATA only applies to Windows");
+    }
+    if let Ok(x) = cu::env_var("APPDATA") {
+        let x = x.trim_end_matches([' ', '\\', '/']);
+        if !x.is_empty() {
+            return Ok(x.into());
+        }
+    }
+    let home = user_home()?;
+    Ok(cu::path!(home / "AppData" / "Roaming"))
 }
