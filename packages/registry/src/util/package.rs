@@ -71,10 +71,8 @@ impl Package {
                 return false;
             }
         }
-        if self.cpu_archs != EnumSet::all() && !self.cpu_archs.contains(opfs::cpu_arch()) {
-            return false;
-        }
-        true
+
+        self.cpu_archs == EnumSet::all() || self.cpu_archs.contains(opfs::cpu_arch())
     }
 
     /// Get the binaries this package provides
