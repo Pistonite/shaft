@@ -1089,6 +1089,10 @@ function M.fix_buffer_issues(restart_lsp)
 end
 
 ---Toggle comment
+---Note that we use https://github.com/JoosepAlviste/nvim-ts-context-commentstring
+---for contextual comment toggling in JSX, but this patch is still needed
+---to pre-process the comment lines so that toggling works even when
+---commenting the lines break the JSX syntax
 function M.toggle_comment(is_visual_mode)
     local ft = vim.bo.filetype
     if not (ft == "typescriptreact" or ft == "javascriptreact") then

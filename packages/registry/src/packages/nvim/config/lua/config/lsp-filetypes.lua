@@ -45,8 +45,8 @@ local FILE_TYPES = {
     python = "basedpyright",
     c = "clangd",
     cpp = "clangd",
-    typescript = { "eslint", "tsc" },
-    typescriptreact = { "eslint", "tsc" },
+    typescript = { "eslint", "oxlint", "tsc" },
+    typescriptreact = { "eslint", "oxlint", "tsc" },
     javascript = "tsc",
     rust = "rust_analyzer",
     java = {
@@ -59,6 +59,24 @@ local FILE_TYPES = {
     }
 }
 
+
+-- Search the file's ancestor directories for any of `names`, stopping at
+-- (and including) the project root. Returns true if one is found.
+local function has_config_upward(bufnr, file_path, markers, names)
+    if file_path == "" then return false end
+    local start = vim.fs.dirname(file_path)
+    local root = vim.fs.root(bufnr, markers) or start
+    local found = vim.fs.find(names, {
+        path = start,
+        upward = true,
+        -- `stop` itself is not searched, so stop at root's parent to include root
+        stop = vim.fs.dirname(root),
+        limit = 1,
+    })
+    return #found > 0
+end
+
+
 -- server registration
 -- config = true will require( config.lsp.<server_name> )
 -- mason_package is the name of the mason package if different from the server name
@@ -69,9 +87,24 @@ local SERVERS = {
     },
     basedpyright = {},
     eslint = {
-        mason_package = "eslint-lsp"
+        mason_package = "eslint-lsp",
+        should_enable = function(bufnr, file_path)
+            local ESLINT_CONFIGS = {
+                "eslint.config.js", "eslint.config.mjs", "eslint.config.cjs",
+                "eslint.config.ts", "eslint.config.mts", "eslint.config.cts",
+                ".eslintrc", ".eslintrc.js", ".eslintrc.cjs",
+                ".eslintrc.yaml", ".eslintrc.yml", ".eslintrc.json",
+            }
+            return has_config_upward(bufnr, file_path, {".git", "package.json"}, ESLINT_CONFIGS)
+        end
     },
-    tsc = { config = true },
+    oxlint = {
+        should_enable = function(bufnr, file_path)
+            local OXLINT_CONFIGS = { ".oxlintrc.json", "oxlint.config.mts", "oxlint.config.ts" }
+            return has_config_upward(bufnr, file_path, {".git", "package.json"}, OXLINT_CONFIGS)
+        end
+    },
+    tsc = {},
     rust_analyzer = {
         config = true,
         mason_package = "rust-analyzer"
@@ -79,13 +112,20 @@ local SERVERS = {
     clangd = {},
 }
 
+
 local STARTED_FILE_TYPES = {}
 local ENABLED_SERVERS = {}
 
 -- Autocommand to auto-load LSP configs based on filetype
 vim.api.nvim_create_autocmd("FileType", {
-    callback = function()
-        local ft = vim.bo.filetype
+    callback = function(args)
+        local time_start = vim.uv.hrtime()
+
+        local bufnr = args.buf
+        local file_path = vim.api.nvim_buf_get_name(bufnr)
+        if file_path == "" then return end
+
+        local ft = args.match
         local servers = FILE_TYPES[ft]
         if not servers then return end
 
@@ -97,10 +137,12 @@ vim.api.nvim_create_autocmd("FileType", {
         elseif servers.start then
             servers.start()
             if first_start then
-                M.echo("started language server for "..ft)
+                local elapsed_ms = (vim.uv.hrtime() - time_start) / 1e6
+                M.echo(string.format("started language server for %s (%.2fms)", ft, elapsed_ms))
             end
             return
         end
+
         local output = ""
         for _, s in ipairs(servers) do
             if type(s) == "string" then
@@ -108,15 +150,26 @@ vim.api.nvim_create_autocmd("FileType", {
                 if config then
                     local mason_package = config.mason_package or s;
                     if mason_registry.is_installed(mason_package) then
-                        if config.config then
-                            require("config.lsp."..s)
-                            output = output..", [configured "..s.."]"
-                        else
-                            output = output..", "..s
+                        local should_enable = true
+                        if config.should_enable then
+                            should_enable = config.should_enable(bufnr, file_path)
                         end
-                        if ENABLED_SERVERS[s] ~= true then
-                            vim.lsp.enable(s)
-                            ENABLED_SERVERS[s] = true
+                        if should_enable then
+                            if config.config then
+                                require("config.lsp."..s)
+                                output = output..", [configured "..s.."]"
+                            else
+                                output = output..", "..s
+                            end
+                            if ENABLED_SERVERS[s] ~= true then
+                                -- local config_time_start = vim.uv.hrtime()
+                                vim.lsp.enable(s)
+                                -- local elapsed_ms = (vim.uv.hrtime() - config_time_start) / 1e6
+                                -- output = output..string.format("--enale took %.2fms--", elapsed_ms)
+                                ENABLED_SERVERS[s] = true
+                            end
+                        else
+                            output = output..", [skipped: "..mason_package.."]"
                         end
                     else
                         output = output..", [package not installed: "..mason_package.."]"
@@ -127,7 +180,8 @@ vim.api.nvim_create_autocmd("FileType", {
             end
         end
         if output ~= "" and first_start then
-            M.echo("started lsp servers: "..output:sub(3))
+            local elapsed_ms = (vim.uv.hrtime() - time_start) / 1e6
+            M.echo(string.format("started lsp servers: %s (%.2fms)", output:sub(3), elapsed_ms))
         end
     end
 })

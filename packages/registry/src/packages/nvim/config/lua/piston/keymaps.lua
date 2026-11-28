@@ -63,7 +63,7 @@ function M.setup()
         vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
     end)
     local ibl_enabled = false
-    noremap('n', '<leader>vg', function() if ibl_enabled then vim.cmd.IBLToggle() return end ibl_enabled = true vim.cmd.IBLEnable() end)
+    noremap('n', '<leader>vs', function() if ibl_enabled then vim.cmd.IBLToggle() return end ibl_enabled = true vim.cmd.IBLEnable() end)
 
     -- view change
     -- toggle undotree

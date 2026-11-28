@@ -41,8 +41,8 @@ require("lazy").setup {
     spec = {
         {
             -- note the version must be kept in sync with info.json
-            -- https://github.com/lazy/lazy.nvim
-            "lazy/lazy.nvim", tag = "v11.17.5", lazy = false, priority = 9999
+            -- https://github.com/folke/lazy.nvim
+            "folke/lazy.nvim", tag = "v11.17.5", lazy = false, priority = 9999
         },
         -- ## UI AND EDITOR FUNCTION
         {   -- optimization for big files
@@ -50,7 +50,7 @@ require("lazy").setup {
             'pteroctopus/faster.nvim',                 commit = "6b7cb8b1a9628d4b87009c4849d510d1a3a14319", lazy = false
         }, {
             -- https://github.com/nvim-tree/nvim-tree.lua
-            'nvim-tree/nvim-tree.lua',                 commit = "b2aadda94b107480c48e548d6db51c6840b7b33c", lazy = false, priority = 2000, -- needs to be before cat for colors in tree to load properly
+            'nvim-tree/nvim-tree.lua',                 commit = "d0b8d652d3a776a29b09f9c14f87717e455c52f6", lazy = false, priority = 2000, -- needs to be before cat for colors in tree to load properly
             config = function() require("config.nvim-tree") end
         }, {
             -- https://github.com/catppuccin/nvim
@@ -58,12 +58,12 @@ require("lazy").setup {
             config = function() require("config.theme") end
         }, {
             -- https://github.com/nvim-tree/nvim-web-devicons
-            'nvim-tree/nvim-web-devicons',             commit = "5f032a85be210cd1c6ac98861eb3b187ff3bd5eb",
+            'nvim-tree/nvim-web-devicons',             commit = "0dc0cfb0c6858041174a53c7aa4adaf65e994b3c",
             config = function() require("config.icons") end
         }, {
             -- https://github.com/nvim-lualine/lualine.nvim
             'nvim-lualine/lualine.nvim',               commit = "221ce6b2d999187044529f49da6554a92f740a96",
-        }, { -- patch for commentstring in tsx
+        }, { -- patch for commentstring in tsx (see editorapi.toggle_comment)
             -- https://github.com/JoosepAlviste/nvim-ts-context-commentstring
             'JoosepAlviste/nvim-ts-context-commentstring', commit = "6141a40173c6efa98242dc951ed4b6f892c97027",
             ft = { "typescriptreact", "javascriptreact" },
@@ -79,7 +79,7 @@ require("lazy").setup {
             end
         }, {
             -- https://github.com/lukas-reineke/indent-blankline.nvim
-            "lukas-reineke/indent-blankline.nvim",     commit = "d28a3f70721c79e3c5f6693057ae929f3d9c0a03",
+            "lukas-reineke/indent-blankline.nvim",     commit = "fbc6d88222b5f75613cb95a22e89aa2f4e318a81",
             cmd = { "IBLToggle", "IBLEnable", "IBLDisable" },
             config = function() require("ibl").setup() end
         },
@@ -89,28 +89,25 @@ require("lazy").setup {
             cmd = "UndotreeToggle"
         }, {
             -- https://github.com/voldikss/vim-floaterm
-            'voldikss/vim-floaterm', name="floaterm",  commit = "bb4ba7952e906408e1f83b215f55ffe57efcade6",
+            'voldikss/vim-floaterm', name="floaterm",  commit = "c74c5cd791befcd1000cbee35f07d45b912908e3",
             cmd = "FloatermToggle"
         }, {
             -- https://github.com/esmuellert/codediff.nvim
-            'esmuellert/codediff.nvim',                tag = "v2.54.0", -- L: 2.55 introduced 500ms poll which fork bombs the machine if diff takes longer
+            'esmuellert/codediff.nvim',                tag = "v4.0.8",
             cmd = "CodeDiff",
             config = function()
                 require("codediff").setup({
                     keymaps = require("piston.keymaps").get_codediff_mappings()
                 })
             end
-        }, { -- codediff dependency
-            -- https://github.com/MunifTanjim/nui.nvim
-            'MunifTanjim/nui.nvim',                    commit = "10fc361835c856ba4233ef5ea135b919bf3dce97",
         }, {
             -- https://github.com/nvim-treesitter/nvim-treesitter
-            'nvim-treesitter/nvim-treesitter',         commit = "8b98b4470eb326f1c7b50dae79f8c963568e5720", lazy = false,
+            'nvim-treesitter/nvim-treesitter',         commit = "52773f0d13a0c11d0c3ef33c14ab6ecc1c17148b", lazy = false,
             build = ":TSUpdate",
             config = function() require("config.nvim-treesitter")         end
         }, {
             -- https://github.com/nvim-treesitter/nvim-treesitter-context
-            'nvim-treesitter/nvim-treesitter-context', commit = "f3061339b8eaf9fda873600bc425b8d2d8502533", lazy = false,
+            'nvim-treesitter/nvim-treesitter-context', commit = "8decd73460d26ef0a0befb745d022dd1fc2c38b8", lazy = false,
             config = function()
                 require('treesitter-context').setup({
                     enable = true,
@@ -119,7 +116,7 @@ require("lazy").setup {
             end
         }, {
             -- https://github.com/nvim-telescope/telescope.nvim
-            'nvim-telescope/telescope.nvim',           commit = "40aedd8a68c78a656a10a8d62d80c54af59420fb",
+            'nvim-telescope/telescope.nvim',           commit = "1e1bab730218eaf97fce743be3f56e51075928ac",
             cmd = "Telescope", event = "LspAttach",
             config = function() require("config.telescope")               end
         }, {
@@ -138,7 +135,7 @@ require("lazy").setup {
             config = function() require("config.lsp-filetypes") end
         }, {
             -- https://github.com/mason-org/mason-lspconfig.nvim
-            'mason-org/mason-lspconfig.nvim',          commit = "24d4ab0838b250753b307a8747ade06dc99aed9d",
+            'mason-org/mason-lspconfig.nvim',          commit = "761d376b5fbe6b21f659432ffadc1205c660176c",
             config = function()
                 require("mason-lspconfig").setup({ automatic_enable = false })
             end,
@@ -152,18 +149,19 @@ require("lazy").setup {
             end
         }, {
             -- https://github.com/neovim/nvim-lspconfig
-            'neovim/nvim-lspconfig',                   commit = "af9adce488c75ca0a81017945c2b7fa7b461bc23",
+            -- https://github.com/neovim/nvim-lspconfig/pull/4591
+            'Pistonight/nvim-lspconfig',                   commit = "207232333c401e24c66ef809fa1c3495c4af1a02",
         }, {
             -- https://github.com/felpafel/inlay-hint.nvim
             'felpafel/inlay-hint.nvim',                commit = "369aa3d5f10b41580242cd6e825bd00cfa565464",
         }, {
             -- https://github.com/hrsh7th/nvim-cmp
-            'hrsh7th/nvim-cmp',                        commit = "2ffe79f1f021def8dd1fcd81deb16f1bb0d989f3",
+            'hrsh7th/nvim-cmp',                        commit = "fe29aba4117227a6df637bc41e4b4fb4e98864a0",
             event = "InsertEnter",
             config = function() require("config.lsp-cmp") end
         },
         -- https://github.com/hrsh7th/cmp-nvim-lsp
-        { 'hrsh7th/cmp-nvim-lsp',                    commit = "cbc7b02bb99fae35cb42f514762b89b5126651ef" },
+        { 'hrsh7th/cmp-nvim-lsp',                    commit = "cd4ee08a988deb47ac3726f418fb27fe1a95729d" },
         -- https://github.com/hrsh7th/cmp-path
         { 'hrsh7th/cmp-path',                        commit = "c642487086dbd9a93160e1679a1327be111cbc25" },
         -- https://github.com/hrsh7th/cmp-buffer
